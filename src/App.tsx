@@ -80,8 +80,10 @@ const App: React.FC = () => (
         </Route>
         <Route exact path="/escrutinio">
           <Escrutinio />
+        </Route>
         <Route exact path="/voter-count">
           <VoterCount />
+        </Route>
         <Route exact path="/login">
           <Login />
         </Route>
