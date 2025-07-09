@@ -51,51 +51,37 @@ const App: React.FC = () => (
     <IonReactRouter>
       <AuthProvider>
         <IonRouterOutlet>
+          <Route exact path="/register">
+            <Register />
+          </Route>
+          <Route exact path="/login">
+            <Login />
+          </Route>
+          <Route exact path="/mesas">
+            <MesaSelection />
+          </Route>
+          <Route exact path="/vote">
+            <VoteSubmission />
+          </Route>
+          <Route exact path="/voter">
+            <VoterDetails />
+          </Route>
           <Route exact path="/home">
             <Home />
           </Route>
           <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
           <PrivateRoute exact path="/voters" component={VoterList} />
+          <Route exact path="/escrutinio">
+            <Escrutinio />
+          </Route>
+          <Route exact path="/voter-count">
+            <VoterCount />
+          </Route>
           <Route exact path="/">
-            <Redirect to="/home" />
+            <Redirect to="/login" />
           </Route>
         </IonRouterOutlet>
       </AuthProvider>
-      <IonRouterOutlet>
-        <Route exact path="/register">
-          <Register />
-        </Route>
-        <Route exact path="/login">
-          <Login />
-        </Route>
-        <Route exact path="/mesas">
-          <MesaSelection />
-        </Route>
-        <Route exact path="/vote">
-          <VoteSubmission />
-        </Route>
-        <Route exact path="/voter">
-          <VoterDetails />
-        </Route>
-        <Route exact path="/home">
-          <Home />
-        </Route>
-        <Route exact path="/escrutinio">
-          <Escrutinio />
-        </Route>
-        <Route exact path="/voter-count">
-          <VoterCount />
-        </Route>
-        <Route exact path="/login">
-          <Login />
-        </Route>
-        <Route exact path="/register">
-          <Register />
-        </Route>
-        <Route exact path="/">
-          <Redirect to="/register" />
-        </Route>
-      </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
 );
