@@ -6,7 +6,8 @@ describe('Full Voting Flow', () => {
 
   it('registers a new user', () => {
     cy.visit('/register');
-    cy.get('input[ng-model], ion-input').first().type('testuser');
+    cy.get('ion-input').eq(0).type('testuser');
+    cy.get('ion-input').eq(1).type('12345678');
     cy.get('input[type="password"], ion-input[type="password"]').type('pass');
     cy.contains('button', 'Register').click();
     cy.url().should('include', '/login');
@@ -17,8 +18,8 @@ describe('Full Voting Flow', () => {
 
   it('logs in and completes flow', () => {
     cy.visit('/login');
-    cy.get('input').first().type('testuser');
-    cy.get('input[type="password"], ion-input[type="password"]').type('pass');
+    cy.get('ion-input').first().type('testuser');
+    cy.get('ion-input[type="password"]').type('pass');
     cy.contains('button', 'Login').click();
     cy.url().should('include', '/mesas');
 
