@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import MesaSelection from './pages/MesaSelection';
 import VoteSubmission from './pages/VoteSubmission';
 import VoterDetails from './pages/VoterDetails';
+import VoterList from './pages/VoterList';
 import Escrutinio from './pages/Escrutinio';
 import VoterCount from './pages/VoterCount';
 import SelectMesa from './pages/SelectMesa';
@@ -54,6 +55,7 @@ const App: React.FC = () => (
             <Home />
           </Route>
           <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
+          <PrivateRoute exact path="/voters" component={VoterList} />
           <Route exact path="/">
             <Redirect to="/home" />
           </Route>

@@ -13,7 +13,7 @@ const Login: React.FC = () => {
     const user = users.find((u) => u.username === username && u.password === password);
     if (user) {
       localStorage.setItem('loggedIn', 'true');
-      history.push('/mesas');
+      history.push('/select-mesa');
     }
   };
 
