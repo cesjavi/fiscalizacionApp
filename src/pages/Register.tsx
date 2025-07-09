@@ -39,6 +39,9 @@ const Register: React.FC = () => {
           </IonItem>
           <IonButton expand="block" type="submit" className="ion-margin-top">Register</IonButton>
         </form>
+        <IonButton expand="block" routerLink="/login" className="ion-margin-top">
+          Login
+        </IonButton>
       </IonContent>
     </IonPage>
   );
