@@ -1,15 +1,20 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonItem } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
 import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    history.push('/home');
+    const users: { username: string; password: string }[] = JSON.parse(localStorage.getItem('users') || '[]');
+    const user = users.find((u) => u.username === username && u.password === password);
+    if (user) {
+      localStorage.setItem('loggedIn', 'true');
+      history.push('/mesas');
+    }
   };
 
   return (
@@ -20,27 +25,16 @@ const Login: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleLogin}>
           <IonItem>
-            <IonInput
-              label="Email"
-              value={email}
-              onIonChange={e => setEmail(e.detail.value!)}
-              required
-            />
+            <IonLabel position="stacked">Username</IonLabel>
+            <IonInput value={username} onIonChange={e => setUsername(e.detail.value!)} required />
           </IonItem>
           <IonItem>
-            <IonInput
-              type="password"
-              label="Password"
-              value={password}
-              onIonChange={e => setPassword(e.detail.value!)}
-              required
-            />
+            <IonLabel position="stacked">Password</IonLabel>
+            <IonInput type="password" value={password} onIonChange={e => setPassword(e.detail.value!)} required />
           </IonItem>
-          <IonButton expand="block" type="submit">
-            Login
-          </IonButton>
+          <IonButton expand="block" type="submit" className="ion-margin-top">Login</IonButton>
         </form>
       </IonContent>
     </IonPage>

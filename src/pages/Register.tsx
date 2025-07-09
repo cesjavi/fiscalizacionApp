@@ -1,15 +1,18 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonItem } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
 import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
 const Register: React.FC = () => {
   const history = useHistory();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    history.push('/home');
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    users.push({ username, password });
+    localStorage.setItem('users', JSON.stringify(users));
+    history.push('/login');
   };
 
   return (
@@ -20,27 +23,16 @@ const Register: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleRegister}>
           <IonItem>
-            <IonInput
-              label="Email"
-              value={email}
-              onIonChange={e => setEmail(e.detail.value!)}
-              required
-            />
+            <IonLabel position="stacked">Username</IonLabel>
+            <IonInput value={username} onIonChange={e => setUsername(e.detail.value!)} required />
           </IonItem>
           <IonItem>
-            <IonInput
-              type="password"
-              label="Password"
-              value={password}
-              onIonChange={e => setPassword(e.detail.value!)}
-              required
-            />
+            <IonLabel position="stacked">Password</IonLabel>
+            <IonInput type="password" value={password} onIonChange={e => setPassword(e.detail.value!)} required />
           </IonItem>
-          <IonButton expand="block" type="submit">
-            Register
-          </IonButton>
+          <IonButton expand="block" type="submit" className="ion-margin-top">Register</IonButton>
         </form>
       </IonContent>
     </IonPage>
