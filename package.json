@@ -45,10 +45,5 @@
     "vitest": "^0.34.6"
   },
   "description": "An Ionic project",
-  "license": "MIT",
-    "browserslist": [
-    "defaults",
-    "Safari >= 14",
-    "iOS >= 14"
-  ]
+  "license": "MIT"
 }
