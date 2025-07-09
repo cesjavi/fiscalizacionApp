@@ -6,81 +6,72 @@ import {
   IonContent,
   IonItem,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
+  IonInput,
   IonButton,
 } from '@ionic/react';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
-const sessions = ['Mañana', 'Tarde', 'Noche'];
-const circuits = ['Circuito 1', 'Circuito 2', 'Circuito 3'];
-const mesas = ['Mesa 1', 'Mesa 2', 'Mesa 3'];
-
 const SelectMesa: React.FC = () => {
   const history = useHistory();
-  const [session, setSession] = useState<string>();
-  const [circuit, setCircuit] = useState<string>();
-  const [mesa, setMesa] = useState<string>();
+  const [seccion, setSeccion] = useState('');
+  const [circuito, setCircuito] = useState('');
+  const [mesa, setMesa] = useState('');
 
   const handleNext = () => {
-    history.push('/home');
+    localStorage.setItem('seccion', seccion);
+    localStorage.setItem('circuito', circuito);
+    localStorage.setItem('mesa', mesa);
+    history.push('/voters');
   };
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Seleccionar Mesa</IonTitle>
+          <IonTitle>Configurar Mesa</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
         <IonItem>
-          <IonLabel>Sesión</IonLabel>
-          <IonSelect
-            value={session}
-            placeholder="Seleccione sesión"
-            onIonChange={(e) => setSession(e.detail.value)}
-          >
-            {sessions.map((s) => (
-              <IonSelectOption key={s} value={s}>
-                {s}
-              </IonSelectOption>
-            ))}
-          </IonSelect>
+          <IonLabel position="stacked">Sección</IonLabel>
+          <IonInput
+            value={seccion}
+            inputmode="numeric"
+            maxlength={3}
+            onIonChange={(e) => setSeccion(e.detail.value ?? '')}
+          />
         </IonItem>
-
         <IonItem>
-          <IonLabel>Circuito</IonLabel>
-          <IonSelect
-            value={circuit}
-            placeholder="Seleccione circuito"
-            onIonChange={(e) => setCircuit(e.detail.value)}
-          >
-            {circuits.map((c) => (
-              <IonSelectOption key={c} value={c}>
-                {c}
-              </IonSelectOption>
-            ))}
-          </IonSelect>
+          <IonLabel position="stacked">Circuito</IonLabel>
+          <IonInput
+            value={circuito}
+            inputmode="numeric"
+            maxlength={3}
+            onIonChange={(e) => setCircuito(e.detail.value ?? '')}
+          />
         </IonItem>
-
         <IonItem>
-          <IonLabel>Mesa</IonLabel>
-          <IonSelect
+          <IonLabel position="stacked">Mesa</IonLabel>
+          <IonInput
             value={mesa}
-            placeholder="Seleccione mesa"
-            onIonChange={(e) => setMesa(e.detail.value)}
-          >
-            {mesas.map((m) => (
-              <IonSelectOption key={m} value={m}>
-                {m}
-              </IonSelectOption>
-            ))}
-          </IonSelect>
+            inputmode="numeric"
+            maxlength={4}
+            onIonChange={(e) => setMesa(e.detail.value ?? '')}
+          />
         </IonItem>
 
-        <IonButton expand="block" onClick={handleNext}>
+        <IonButton
+          expand="block"
+          onClick={handleNext}
+          disabled={
+            !(
+              seccion.length === 3 &&
+              circuito.length === 3 &&
+              mesa.length === 4
+            )
+          }
+        >
           Siguiente
         </IonButton>
       </IonContent>
