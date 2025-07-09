@@ -9,7 +9,7 @@ const Login: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const users: { username: string; password: string }[] = JSON.parse(localStorage.getItem('users') || '[]');
+    const users: { username: string; dni: string; password: string }[] = JSON.parse(localStorage.getItem('users') || '[]');
     const user = users.find((u) => u.username === username && u.password === password);
     if (user) {
       localStorage.setItem('loggedIn', 'true');

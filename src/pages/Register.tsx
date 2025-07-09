@@ -5,12 +5,13 @@ import { useHistory } from 'react-router-dom';
 const Register: React.FC = () => {
   const history = useHistory();
   const [username, setUsername] = useState('');
+  const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     const users = JSON.parse(localStorage.getItem('users') || '[]');
-    users.push({ username, password });
+    users.push({ username, dni, password });
     localStorage.setItem('users', JSON.stringify(users));
     history.push('/login');
   };
@@ -27,6 +28,10 @@ const Register: React.FC = () => {
           <IonItem>
             <IonLabel position="stacked">Username</IonLabel>
             <IonInput value={username} onIonChange={e => setUsername(e.detail.value!)} required />
+          </IonItem>
+          <IonItem>
+            <IonLabel position="stacked">DNI</IonLabel>
+            <IonInput value={dni} onIonChange={e => setDni(e.detail.value!)} required />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Password</IonLabel>
