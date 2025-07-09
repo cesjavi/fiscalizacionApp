@@ -47,3 +47,22 @@ Make sure the dev server is running, then run Cypress:
 npm run test.e2e
 ```
 
+## Building an Android APK
+
+This project uses Capacitor to generate native Android binaries. To build an APK:
+
+1. Install **Android Studio** and ensure the Android SDK tools are available in your PATH.
+2. Build the web assets and sync them to the Android platform:
+
+   ```bash
+   npm run build.android
+   ```
+
+3. Open the Android project in Android Studio:
+
+   ```bash
+   npm run open.android
+   ```
+
+4. In Android Studio, use **Build > Build Bundle(s) / APK(s)** to create the APK.
+
