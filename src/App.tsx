@@ -2,6 +2,9 @@ import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
+import SelectMesa from './pages/SelectMesa';
+import { AuthProvider } from './AuthContext';
+import PrivateRoute from './PrivateRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -40,6 +43,17 @@ setupIonicReact();
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
+      <AuthProvider>
+        <IonRouterOutlet>
+          <Route exact path="/home">
+            <Home />
+          </Route>
+          <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
+          <Route exact path="/">
+            <Redirect to="/home" />
+          </Route>
+        </IonRouterOutlet>
+      </AuthProvider>
       <IonRouterOutlet>
         <Route exact path="/home">
           <Home />
