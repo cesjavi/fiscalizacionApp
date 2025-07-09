@@ -3,6 +3,7 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
 import Escrutinio from './pages/Escrutinio';
+import VoterCount from './pages/VoterCount';
 import SelectMesa from './pages/SelectMesa';
 import { AuthProvider } from './AuthContext';
 import PrivateRoute from './PrivateRoute';
@@ -62,6 +63,8 @@ const App: React.FC = () => (
         </Route>
         <Route exact path="/escrutinio">
           <Escrutinio />
+        <Route exact path="/voter-count">
+          <VoterCount />
         <Route exact path="/login">
           <Login />
         </Route>
