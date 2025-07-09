@@ -1,9 +1,11 @@
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 
 const Login: React.FC = () => {
   const history = useHistory();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -12,8 +14,8 @@ const Login: React.FC = () => {
     const users: { username: string; dni: string; password: string }[] = JSON.parse(localStorage.getItem('users') || '[]');
     const user = users.find((u) => u.username === username && u.password === password);
     if (user) {
-      localStorage.setItem('loggedIn', 'true');
-      history.push('/mesas');
+      login();
+      history.push('/select-mesa');
     }
   };
 
