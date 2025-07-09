@@ -7,6 +7,11 @@ import Login from './pages/Login';
 import MesaSelection from './pages/MesaSelection';
 import VoteSubmission from './pages/VoteSubmission';
 import VoterDetails from './pages/VoterDetails';
+import Escrutinio from './pages/Escrutinio';
+import VoterCount from './pages/VoterCount';
+import SelectMesa from './pages/SelectMesa';
+import { AuthProvider } from './AuthContext';
+import PrivateRoute from './PrivateRoute';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -43,6 +48,17 @@ setupIonicReact();
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
+      <AuthProvider>
+        <IonRouterOutlet>
+          <Route exact path="/home">
+            <Home />
+          </Route>
+          <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
+          <Route exact path="/">
+            <Redirect to="/home" />
+          </Route>
+        </IonRouterOutlet>
+      </AuthProvider>
       <IonRouterOutlet>
         <Route exact path="/register">
           <Register />
@@ -61,6 +77,16 @@ const App: React.FC = () => (
         </Route>
         <Route exact path="/home">
           <Home />
+        </Route>
+        <Route exact path="/escrutinio">
+          <Escrutinio />
+        <Route exact path="/voter-count">
+          <VoterCount />
+        <Route exact path="/login">
+          <Login />
+        </Route>
+        <Route exact path="/register">
+          <Register />
         </Route>
         <Route exact path="/">
           <Redirect to="/register" />
