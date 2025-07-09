@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton } from '@ionic/react';
 import ExploreContainer from '../components/ExploreContainer';
 import './Home.css';
 
@@ -17,6 +17,9 @@ const Home: React.FC = () => {
           </IonToolbar>
         </IonHeader>
         <ExploreContainer />
+        <IonButton routerLink="/escrutinio" expand="block" className="ion-margin-top">
+          Ir a Escrutinio
+        </IonButton>
       </IonContent>
     </IonPage>
   );
