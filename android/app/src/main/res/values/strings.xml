@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">fiscalizacionApp</string>
+    <string name="title_activity_main">fiscalizacionApp</string>
+    <string name="package_name">com.example.fiscalizacionapp</string>
+    <string name="custom_url_scheme">com.example.fiscalizacionapp</string>
+</resources>
