@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import SelectMesa from './pages/SelectMesa';
 import { AuthProvider } from './AuthContext';
 import PrivateRoute from './PrivateRoute';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -52,6 +54,20 @@ const App: React.FC = () => (
           </Route>
         </IonRouterOutlet>
       </AuthProvider>
+      <IonRouterOutlet>
+        <Route exact path="/home">
+          <Home />
+        </Route>
+        <Route exact path="/login">
+          <Login />
+        </Route>
+        <Route exact path="/register">
+          <Register />
+        </Route>
+        <Route exact path="/">
+          <Redirect to="/home" />
+        </Route>
+      </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
 );
