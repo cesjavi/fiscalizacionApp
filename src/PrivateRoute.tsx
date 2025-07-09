@@ -12,7 +12,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ component: Component, ...re
     <Route
       {...rest}
       render={(props) =>
-        isAuthenticated ? <Component {...props} /> : <Redirect to="/home" />
+        isAuthenticated ? <Component {...props} /> : <Redirect to="/login" />
       }
     />
   );
