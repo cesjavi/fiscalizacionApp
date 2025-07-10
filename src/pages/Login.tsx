@@ -6,10 +6,9 @@ import {
   IonContent,
   IonItem,
   IonLabel,
-  IonInput,
-  IonButton,
   IonList
 } from '@ionic/react';
+import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
@@ -47,7 +46,7 @@ const Login: React.FC = () => {
           <IonList>
             <IonItem>
               <IonLabel position="floating">Username</IonLabel>
-              <IonInput
+              <Input
                 value={username}
                 onIonChange={(e) => setUsername(e.detail.value!)}
                 required
@@ -55,7 +54,7 @@ const Login: React.FC = () => {
             </IonItem>
             <IonItem>
               <IonLabel position="floating">Password</IonLabel>
-              <IonInput
+              <Input
                 type="password"
                 value={password}
                 onIonChange={(e) => setPassword(e.detail.value!)}
@@ -63,18 +62,18 @@ const Login: React.FC = () => {
               />
             </IonItem>
           </IonList>
-          <IonButton expand="block" type="submit" className="ion-margin-top">
+          <Button expand="block" type="submit" className="ion-margin-top">
             LOGIN
-          </IonButton>
+          </Button>
         </form>
-        <IonButton
+        <Button
           expand="block"
           routerLink="/register"
           color="secondary"
           className="ion-margin-top"
         >
           REGISTER
-        </IonButton>
+        </Button>
       </IonContent>
     </IonPage>
   );

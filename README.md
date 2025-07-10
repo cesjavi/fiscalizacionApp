@@ -66,3 +66,17 @@ This project uses Capacitor to generate native Android binaries. To build an APK
 
 4. In Android Studio, use **Build > Build Bundle(s) / APK(s)** to create the APK.
 
+
+## Shared Components
+
+Reusable UI components are available under `src/components`. These wrappers apply common Tailwind styles on top of Ionic elements:
+
+```tsx
+import { Button, Input, Card } from './src/components';
+
+<Button expand="block">Click me</Button>
+<Input value={text} onIonChange={...} />
+<Card>Content</Card>
+```
+
+Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look.

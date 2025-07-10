@@ -6,13 +6,12 @@ import {
   IonTitle,
   IonContent,
   IonItem,
-  IonInput,
   IonSelect,
   IonSelectOption,
-  IonButton,
   IonIcon,
   IonList
 } from '@ionic/react';
+import { Button, Input } from '../components';
 import { add, trash } from 'ionicons/icons';
 
 interface Voter {
@@ -54,12 +53,12 @@ const VoterDetail: React.FC = () => {
         <IonList>
           {voters.map((voter, index) => (
             <IonItem key={index} lines="none">
-              <IonInput
+              <Input
                 placeholder="Numero de Orden"
                 value={voter.numero_de_orden}
                 onIonChange={e => updateVoter(index, 'numero_de_orden', e.detail.value || '')}
               />
-              <IonInput
+              <Input
                 placeholder="DNI"
                 value={voter.dni}
                 onIonChange={e => updateVoter(index, 'dni', e.detail.value || '')}
@@ -73,20 +72,20 @@ const VoterDetail: React.FC = () => {
                 <IonSelectOption value="Femenino">Femenino</IonSelectOption>
                 <IonSelectOption value="Otro">Otro</IonSelectOption>
               </IonSelect>
-              <IonButton
+              <Button
                 color="danger"
                 fill="clear"
                 onClick={() => removeRow(index)}
                 aria-label="Eliminar fila"
               >
                 <IonIcon icon={trash} />
-              </IonButton>
+              </Button>
             </IonItem>
           ))}
         </IonList>
-        <IonButton expand="block" onClick={addRow} aria-label="Agregar fila">
+        <Button expand="block" onClick={addRow} aria-label="Agregar fila">
           <IonIcon icon={add} slot="start" />Agregar
-        </IonButton>
+        </Button>
       </IonContent>
     </IonPage>
   );
