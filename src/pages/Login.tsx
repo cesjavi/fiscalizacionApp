@@ -5,6 +5,7 @@ import {
   IonTitle,
   IonContent
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
@@ -71,7 +72,7 @@ const Login: React.FC = () => {
           </button>
         </div>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 
