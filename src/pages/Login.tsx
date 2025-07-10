@@ -11,6 +11,7 @@ import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import Layout from '../components/Layout';
 
 const Login: React.FC = () => {
   const history = useHistory();

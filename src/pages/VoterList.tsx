@@ -12,6 +12,8 @@ import {
   useIonViewWillEnter
 } from '@ionic/react';
 import { Button } from '../components';
+// import Layout from the correct path where it is exported
+import Layout from '../components/Layout';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
