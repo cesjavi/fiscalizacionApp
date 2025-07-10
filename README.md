@@ -92,7 +92,7 @@ Install the backend dependencies and run the server:
 cd server
 npm install
 cd ..
-npm run start:server
+node server/index.js
 ```
 
 This will initialize the database tables and serve the API on port `3000`.
