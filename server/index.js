@@ -1,16 +1,19 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
+import './db.js';
 import voterRoutes from './routes/voters.js';
+import mesaRoutes from './routes/mesas.js';
+import userRoutes from './routes/users.js';
+import escrutinioRoutes from './routes/escrutinio.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fiscalizacion';
-mongoose.connect(MONGODB_URI);
-
 app.use('/api/voters', voterRoutes);
+app.use('/api/mesas', mesaRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/escrutinio', escrutinioRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
