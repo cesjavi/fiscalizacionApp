@@ -79,6 +79,17 @@ import { Button, Input, Card } from './src/components';
 <Card>Content</Card>
 ```
 
+You can also wrap pages with the `Layout` component to render the common header
+and an optional footer:
+
+```tsx
+import Layout from './src/components/Layout';
+
+<Layout>
+  <IonContent>...</IonContent>
+</Layout>
+```
+
 Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look.
 
 ## Backend API
