@@ -2,6 +2,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel
 import { Button } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import Layout from '../components/Layout';
 
 const VoteSubmission: React.FC = () => {
   const history = useHistory();
