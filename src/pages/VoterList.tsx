@@ -9,10 +9,9 @@ import {
   IonButtons,
   IonFooter,
   IonIcon,
-  useIonViewWillEnter
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { Button } from '../components';
-// import Layout from the correct path where it is exported
 import Layout from '../components/Layout';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
@@ -30,7 +29,7 @@ interface Voter {
     nombre: string;
     apellido: string;
   };
-  personasVotantes: {
+  personasVotantes?: {
     numero_de_orden: number;
     dni: string;
     genero: string;
@@ -43,9 +42,30 @@ const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const history = useHistory();
 
-  const loadVoters = () => {
-    voterDB.voters.toArray().then((data) => setVoters(data));
+  const loadVoters = async () => {
+    try {
+      const data = await voterDB.voters.toArray();
+      setVoters(data);
+    } catch (error) {
+      console.error('Error al cargar votantes:', error);
+    }
   };
+  const deleteVoter = async (index: number) => {
+  const voterToDelete = voters[index];
+  const id = (voterToDelete as any).id; // asumiendo que `id` está incluido
+
+  if (!id) return;
+
+  try {
+    if (window.confirm('¿Estás seguro de que querés eliminar este votante?')) {
+      await voterDB.voters.delete(id);
+      setVoters((prev) => prev.filter((_, i) => i !== index));
+    }
+  } catch (error) {
+    console.error('Error al eliminar votante:', error);
+  }
+};
+
 
   const handleEndVoting = () => {
     history.push('/escrutinio');
@@ -61,11 +81,14 @@ const VoterList: React.FC = () => {
   };
 
   const markAsVoted = (index: number) => {
-    setVoters(voters.map((voter, i) => i === index ? { ...voter, voted: true } : voter));
+    setVoters((prev) =>
+      prev.map((voter, i) => (i === index ? { ...voter, voted: true } : voter))
+    );
   };
 
-
-  useIonViewWillEnter(loadVoters);
+  useIonViewWillEnter(() => {
+    loadVoters();
+  });
 
   useEffect(() => {
     loadVoters();
@@ -85,23 +108,10 @@ const VoterList: React.FC = () => {
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        <IonList>
-          {voters.map((voter, index) => (
-            <IonItem key={index} lines="full">
-              <IonLabel>
-                {voter.persona?.nombre ?? ''} {voter.persona?.apellido ?? ''}
-                {voter.personasVotantes[0]?.dni && ` - ${voter.personasVotantes[0].dni}`}
-              </IonLabel>
-              {voter.personasVotantes[0] && (
-                <IonLabel slot="end">
-                  {voter.personasVotantes[0].numero_de_orden}
-                </IonLabel>
-              )}
-            </IonItem>
-          ))}
-        </IonList>
+
+      <IonContent>        
       </IonContent>
+
       <IonFooter>
         <IonToolbar>
           <IonButtons>
@@ -117,55 +127,80 @@ const VoterList: React.FC = () => {
           </IonButtons>
         </IonToolbar>
       </IonFooter>
-      <IonContent className="p-4">
-        <div className="grid gap-4">
-          {voters.map((voter, index) => (
-            <div
-              key={index}
-              className="bg-white rounded shadow p-4 flex flex-col md:grid md:grid-cols-5 md:items-center gap-2"
-            >
-              <div>
-                <div className="font-medium">
-                  {voter.persona?.nombre ?? ''} {voter.persona?.apellido ?? ''}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {voter.personasVotantes[0]?.dni || '-'}
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                {voter.personasVotantes[0]?.numero_de_orden ?? '-'}
-              </div>
-              <div>
-                <span
-                  className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded ${voter.voted ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                >
-                  {voter.voted ? 'Votó' : 'No votó'}
-                </span>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
-                  onClick={() => markAsVoted(index)}
-                >
-                  Marcar como votó
-                </button>
-                <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
-                  Editar
-                </button>
-                <button className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600">
-                  Eliminar
-                </button>
-              </div>
+<IonContent className="p-4">
+  <div className="grid gap-4">
+    {voters.length === 0 ? (
+      <div className="text-gray-500 text-center">No hay votantes cargados.</div>
+    ) : (
+      voters.map((voter, index) => {
+        const persona = { nombre: (voter as any).nombre ?? '-', apellido: (voter as any).apellido ?? '-' };
+const votante = {
+  dni: (voter as any).dni ?? '-',
+  numero_de_orden: (voter as any).numero_de_orden ?? '-'
+};
+
+
+        return (
+          <div
+            key={index}
+            className="bg-white rounded shadow p-4 flex flex-col md:grid md:grid-cols-5 md:items-center gap-2"
+          >
+            {/* Columna 1: Nombre y Apellido */}
+            <div className="font-medium">
+              {persona.nombre ?? '-'} {persona.apellido ?? '-'}
             </div>
-          ))}
-        </div>
-      </IonContent>
+
+            {/* Columna 2: DNI */}
+            <div className="text-sm text-gray-500">
+              {votante?.dni ?? '-'}
+            </div>
+
+            {/* Columna 3: Número de orden */}
+            <div className="text-sm text-gray-500">
+              {votante?.numero_de_orden ?? '-'}
+            </div>
+
+            {/* Columna 4: Estado */}
+            <div>
+              <span
+                className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded ${
+                  voter.voted
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}
+              >
+                {voter.voted ? 'Votó' : 'No votó'}
+              </span>
+            </div>
+
+            {/* Columna 5: Acciones */}
+            <div className="flex space-x-2">
+              <button
+                className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
+                onClick={() => markAsVoted(index)}
+              >
+                Marcar como votó
+              </button>
+              <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
+                Editar
+              </button>
+              <button className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
+              onClick={() => deleteVoter(index)}>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        );
+      })
+    )}
+  </div>
+</IonContent>
+
     </Layout>
   );
 };
 
 function logout() {
-  // Remove authentication token and user data from localStorage/sessionStorage
   localStorage.removeItem('authToken');
   localStorage.removeItem('user');
   sessionStorage.removeItem('authToken');
@@ -173,4 +208,3 @@ function logout() {
 }
 
 export default VoterList;
-

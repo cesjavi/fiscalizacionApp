@@ -1,13 +1,14 @@
 import {
   IonContent,
   IonItem,
-  IonLabel
+  IonLabel,
+  IonInput,
 } from '@ionic/react';
-import { Button, Input } from '../components';
+import { Button } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { voterDB } from '../voterDB';
+import { voterDB } from '../db/voters';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
@@ -19,30 +20,32 @@ const AddVoter: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validación básica
+    if (!nombre || !apellido || !votanteDni || !orden) {
+      alert('Por favor completá todos los campos obligatorios.');
+      return;
+    }
+
     const data = {
-      establecimiento: {
-        seccion: localStorage.getItem('seccion') || undefined,
-        circuito: localStorage.getItem('circuito') || undefined,
-        mesa: localStorage.getItem('mesa') || undefined,
-      },
-      persona: {
-        dni: votanteDni,
-        nombre,
-        apellido,
-      },
-      personasVotantes: [
-        {
-          numero_de_orden: parseInt(orden, 10) || 0,
-          dni: votanteDni,
-          genero,
-        },
-      ],
+      seccion: localStorage.getItem('seccion') ?? '',
+      circuito: localStorage.getItem('circuito') ?? '',
+      mesa: localStorage.getItem('mesa') ?? '',
+      dni: votanteDni,
+      nombre,
+      apellido,
+      numero_de_orden: parseInt(orden, 10) || 0,
+      genero,
       fechaEnviado: new Date().toISOString(),
+      voted: false
     };
+
     try {
-      await voterDB.voters.add(data);
+      const id = await voterDB.voters.add(data);
+      console.log('Votante guardado con ID:', id);
       history.push('/voters');
-    } catch {
+    } catch (error) {
+      console.error('Error al guardar votante:', error);
       alert('Error al guardar votante');
     }
   };
@@ -53,31 +56,43 @@ const AddVoter: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <IonItem>
             <IonLabel position="stacked">Nombre</IonLabel>
-            <Input value={nombre} onIonChange={e => setNombre(e.detail.value ?? '')} />
+            <IonInput
+              value={nombre}
+              onInput={e => setNombre((e.target as HTMLInputElement).value)}
+              required
+            />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Apellido</IonLabel>
-            <Input value={apellido} onIonChange={e => setApellido(e.detail.value ?? '')} />
+            <IonInput
+              value={apellido}
+              onInput={e => setApellido((e.target as HTMLInputElement).value)}
+              required
+            />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Número de Orden</IonLabel>
-            <Input
+            <IonInput
               value={orden}
-              onIonChange={e => setOrden(e.detail.value ?? '')}
+              type="number"
+              onInput={e => setOrden((e.target as HTMLInputElement).value)}              
               required
             />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">DNI Votante</IonLabel>
-            <Input
+            <IonInput
               value={votanteDni}
-              onIonChange={e => setVotanteDni(e.detail.value ?? '')}
+              onInput={e => setVotanteDni((e.target as HTMLInputElement).value)}
               required
             />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Género</IonLabel>
-            <Input value={genero} onIonChange={e => setGenero(e.detail.value ?? '')} />
+            <IonInput
+              value={genero}
+              onInput={e => setGenero((e.target as HTMLInputElement).value)}
+            />
           </IonItem>
           <Button expand="block" type="submit" className="ion-margin-top">
             Guardar
