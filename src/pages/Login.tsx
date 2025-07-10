@@ -7,7 +7,6 @@ import {
   IonLabel,
   IonList
 } from '@ionic/react';
-import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';

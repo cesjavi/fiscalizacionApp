@@ -11,7 +11,6 @@ import {
   IonIcon,
   useIonViewWillEnter
 } from '@ionic/react';
-import Layout from '../components/Layout';
 import { Button } from '../components';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
