@@ -6,6 +6,7 @@ import {
 import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import Layout from '../components/Layout';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();

@@ -6,6 +6,7 @@ import {
 } from '@ionic/react';
 import { Button, Input } from '../components';
 import { useState } from 'react';
+import Layout from '../components/Layout';
 
 interface ResultadoEscrutinio {
   lista100: number;
