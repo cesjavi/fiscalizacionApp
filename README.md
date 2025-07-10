@@ -23,6 +23,22 @@ npm run dev
 
 The app will be available at [http://localhost:5173](http://localhost:5173).
 
+### API server
+
+Start the Express API with:
+
+```bash
+npm run start:server
+```
+
+By default it listens on port `3000` as defined in `server/index.js`.
+
+You can point the frontend to a different API by setting `VITE_API_URL`:
+
+```bash
+VITE_API_URL=http://myhost:3000 npm run dev
+```
+
 ## Linting
 
 Run ESLint to analyze the project:
