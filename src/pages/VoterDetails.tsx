@@ -1,4 +1,5 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
+import { IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 
 const VoterDetails: React.FC = () => {
@@ -12,12 +13,7 @@ const VoterDetails: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Voter Details</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
@@ -31,7 +27,7 @@ const VoterDetails: React.FC = () => {
           <IonButton expand="block" type="submit" className="ion-margin-top">Save Details</IonButton>
         </form>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

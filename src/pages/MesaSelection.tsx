@@ -1,4 +1,5 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem } from '@ionic/react';
+import { IonContent, IonList, IonItem } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useHistory } from 'react-router-dom';
 
 const mesas = [1, 2, 3];
@@ -10,12 +11,7 @@ const MesaSelection: React.FC = () => {
     history.push('/vote');
   };
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Mesas</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent>
         <IonList>
           {mesas.map(id => (
@@ -25,7 +21,7 @@ const MesaSelection: React.FC = () => {
           ))}
         </IonList>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

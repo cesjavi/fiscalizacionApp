@@ -1,4 +1,5 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
+import { IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -17,12 +18,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Register</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleRegister}>
           <IonItem>
@@ -43,7 +39,7 @@ const Register: React.FC = () => {
           Login
         </IonButton>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

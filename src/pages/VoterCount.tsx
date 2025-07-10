@@ -1,14 +1,11 @@
 import {
   IonButton,
   IonContent,
-  IonHeader,
   IonInput,
   IonItem,
   IonLabel,
-  IonPage,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 
 const VoterCount: React.FC = () => {
@@ -23,12 +20,7 @@ const VoterCount: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Voter Count</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Session</IonLabel>
@@ -71,7 +63,7 @@ const VoterCount: React.FC = () => {
           Save
         </IonButton>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

@@ -1,21 +1,12 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton } from '@ionic/react';
+import { IonContent, IonButton } from '@ionic/react';
+import Layout from '../components/Layout';
 import ExploreContainer from '../components/ExploreContainer';
 import './Home.css';
 
 const Home: React.FC = () => {
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Blank</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Blank</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <ExploreContainer />
         <IonButton routerLink="/escrutinio" expand="block" className="ion-margin-top">
           Ir a Escrutinio
@@ -24,7 +15,7 @@ const Home: React.FC = () => {
           Go to Voter Count
         </IonButton>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 
