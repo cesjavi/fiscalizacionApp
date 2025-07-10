@@ -1,4 +1,5 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton } from '@ionic/react';
+import { IonContent, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -13,12 +14,7 @@ const VoteSubmission: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Vote</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
@@ -31,7 +27,7 @@ const VoteSubmission: React.FC = () => {
           <IonButton expand="block" type="submit" className="ion-margin-top">Submit Vote</IonButton>
         </form>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

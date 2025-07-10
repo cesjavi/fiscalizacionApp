@@ -1,8 +1,4 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel,
@@ -10,6 +6,7 @@ import {
   IonButton,
   IonList
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
@@ -36,12 +33,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Login</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleLogin}>
           <IonList>
@@ -76,7 +68,7 @@ const Login: React.FC = () => {
           REGISTER
         </IonButton>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 
