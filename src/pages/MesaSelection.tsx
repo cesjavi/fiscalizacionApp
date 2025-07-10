@@ -67,7 +67,7 @@ const MesaSelection: React.FC = () => {
           ))}
         </div>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

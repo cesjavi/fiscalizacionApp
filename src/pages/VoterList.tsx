@@ -1,6 +1,4 @@
 import {
-  IonPage,
-  IonHeader,
   IonToolbar,
   IonTitle,
   IonContent,
@@ -12,10 +10,10 @@ import {
   IonFooter,
   IonIcon
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { useAuth } from '../AuthContext';
 
 interface Voter {
   establecimiento?: {
@@ -39,7 +37,6 @@ interface Voter {
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const history = useHistory();
-  const { logout } = useAuth();
 
   const handleEndVoting = () => {
     history.push('/escrutinio');
@@ -49,11 +46,6 @@ const VoterList: React.FC = () => {
     history.push('/select-mesa');
   };
 
-  const handleLogout = () => {
-    logout();
-    history.push('/login');
-  };
-
   useEffect(() => {
     fetch('/api/voters')
       .then((res) => res.json())
@@ -61,19 +53,23 @@ const VoterList: React.FC = () => {
   }, []);
 
   return (
-    <IonPage>
-      <IonHeader>
+    <Layout
+      footer={
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={handleEndVoting}>Terminar Votación</IonButton>
-          </IonButtons>
-          <IonTitle>Listado de Votantes</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={handleConfig}>Configurar</IonButton>
-            <IonButton onClick={handleLogout}>Cerrar Sesión</IonButton>
+          <IonButtons>
+            <IonButton routerLink="/add-voter">
+              <IonIcon icon={add} />
+            </IonButton>
+            <IonButton>
+              <IonIcon icon={remove} />
+            </IonButton>
+            <IonButton>
+              <IonIcon icon={create} />
+            </IonButton>
           </IonButtons>
         </IonToolbar>
-      </IonHeader>
+      }
+    >
       <IonContent>
         <IonList>
           {voters.map((voter, index) => (
@@ -91,22 +87,7 @@ const VoterList: React.FC = () => {
           ))}
         </IonList>
       </IonContent>
-      <IonFooter>
-        <IonToolbar>
-          <IonButtons>
-            <IonButton routerLink="/add-voter">
-              <IonIcon icon={add} />
-            </IonButton>
-            <IonButton>
-              <IonIcon icon={remove} />
-            </IonButton>
-            <IonButton>
-              <IonIcon icon={create} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonFooter>
-    </IonPage>
+    </Layout>
   );
 };
 
