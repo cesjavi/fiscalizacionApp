@@ -164,4 +164,13 @@ const VoterList: React.FC = () => {
   );
 };
 
+function logout() {
+  // Remove authentication token and user data from localStorage/sessionStorage
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('user');
+}
+
 export default VoterList;
+
