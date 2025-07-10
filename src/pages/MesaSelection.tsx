@@ -1,10 +1,10 @@
 import {
-  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonContent
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useHistory } from 'react-router-dom';
 
 interface Mesa {
@@ -30,7 +30,7 @@ const MesaSelection: React.FC = () => {
     history.push('/select-mesa');
   };
   return (
-    <IonPage>
+    <Layout>
       <IonHeader>
         <IonToolbar>
           <IonTitle>Mesas</IonTitle>
