@@ -22,15 +22,32 @@ const Escrutinio: React.FC = () => {
   const [recurrido, setRecurrido] = useState('');
   const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
 
-  const handleSubmit = () => {
-    const data: ResultadoEscrutinio = {
+  const handleSubmit = async () => {
+    const datos: ResultadoEscrutinio = {
       lista100: parseInt(lista100, 10) || 0,
       votoEnBlanco: parseInt(votoEnBlanco, 10) || 0,
       nulo: parseInt(nulo, 10) || 0,
       recurrido: parseInt(recurrido, 10) || 0
     };
-    setResultado(data);
-    console.log('Resultado enviado', data);
+    setResultado(datos);
+    const mesaId = Number(localStorage.getItem('mesaId'));
+    try {
+      const res = await fetch('/api/escrutinio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mesa_id: mesaId,
+          datos: JSON.stringify(datos)
+        })
+      });
+      if (res.ok) {
+        alert('Escrutinio enviado correctamente');
+      } else {
+        alert(res.statusText || 'Error al enviar escrutinio');
+      }
+    } catch {
+      alert('Error al enviar escrutinio');
+    }
   };
 
   return (
