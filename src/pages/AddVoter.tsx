@@ -7,6 +7,7 @@ import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { API_BASE_URL } from '../config';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
@@ -29,7 +30,7 @@ const AddVoter: React.FC = () => {
       ],
       fechaEnviado: new Date().toISOString()
     };
-    await fetch('/api/voters', {
+    await fetch(`${API_BASE_URL}/api/voters`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
