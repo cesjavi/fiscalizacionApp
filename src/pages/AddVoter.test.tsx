@@ -4,6 +4,7 @@ import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
 import AddVoter from './AddVoter';
 import { AuthProvider } from '../AuthContext';
+import { vi } from 'vitest';
 
 describe('AddVoter', () => {
   afterEach(() => {
