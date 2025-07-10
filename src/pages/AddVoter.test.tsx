@@ -4,16 +4,17 @@ import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
 import AddVoter from './AddVoter';
 import { AuthProvider } from '../AuthContext';
+import { voterDB } from '../db/voters';
 import { vi } from 'vitest';
 
 describe('AddVoter', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    return voterDB.delete();
   });
 
   test('redirects to /voters on successful submit', async () => {
     const history = createMemoryHistory({ initialEntries: ['/add-voter'] });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     const { container } = render(
       <AuthProvider>
@@ -25,14 +26,14 @@ describe('AddVoter', () => {
 
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
-    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    await waitFor(async () => expect(await voterDB.voters.count()).toBe(1));
     expect(history.location.pathname).toBe('/voters');
   });
 
   test('shows alert on failure and stays on page', async () => {
     const history = createMemoryHistory({ initialEntries: ['/add-voter'] });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, statusText: 'Bad' }));
     vi.spyOn(window, 'alert').mockImplementation(() => {});
+    vi.spyOn(voterDB.voters, 'add').mockRejectedValue(new Error('Bad'));
 
     const { container } = render(
       <AuthProvider>
@@ -44,7 +45,7 @@ describe('AddVoter', () => {
 
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
-    await waitFor(() => expect(window.alert).toHaveBeenCalledWith('Bad'));
+    await waitFor(() => expect(window.alert).toHaveBeenCalledWith('Error al guardar votante'));
     expect(history.location.pathname).toBe('/add-voter');
   });
 });

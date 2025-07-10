@@ -7,6 +7,7 @@ import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { voterDB } from '../db/voters';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
@@ -30,15 +31,7 @@ const AddVoter: React.FC = () => {
       fechaEnviado: new Date().toISOString(),
     };
     try {
-      const res = await fetch('/api/voters', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) {
-        alert(res.statusText || 'Error al guardar votante');
-        return;
-      }
+      await voterDB.voters.add(data);
       history.push('/voters');
     } catch {
       alert('Error al guardar votante');
