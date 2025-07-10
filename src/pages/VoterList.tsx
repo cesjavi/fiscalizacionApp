@@ -7,11 +7,11 @@ import {
   IonList,
   IonItem,
   IonLabel,
-  IonButton,
   IonButtons,
   IonFooter,
   IonIcon
 } from '@ionic/react';
+import { Button } from '../components';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -65,12 +65,12 @@ const VoterList: React.FC = () => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={handleEndVoting}>Terminar Votación</IonButton>
+            <Button onClick={handleEndVoting}>Terminar Votación</Button>
           </IonButtons>
           <IonTitle>Listado de Votantes</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleConfig}>Configurar</IonButton>
-            <IonButton onClick={handleLogout}>Cerrar Sesión</IonButton>
+            <Button onClick={handleConfig}>Configurar</Button>
+            <Button onClick={handleLogout}>Cerrar Sesión</Button>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -94,15 +94,15 @@ const VoterList: React.FC = () => {
       <IonFooter>
         <IonToolbar>
           <IonButtons>
-            <IonButton routerLink="/add-voter">
+            <Button routerLink="/add-voter">
               <IonIcon icon={add} />
-            </IonButton>
-            <IonButton>
+            </Button>
+            <Button>
               <IonIcon icon={remove} />
-            </IonButton>
-            <IonButton>
+            </Button>
+            <Button>
               <IonIcon icon={create} />
-            </IonButton>
+            </Button>
           </IonButtons>
         </IonToolbar>
       </IonFooter>

@@ -1,14 +1,13 @@
 import {
-  IonButton,
   IonContent,
   IonHeader,
-  IonInput,
   IonItem,
   IonLabel,
   IonPage,
   IonTitle,
   IonToolbar,
 } from '@ionic/react';
+import { Button, Input } from '../components';
 import { useState } from 'react';
 
 const VoterCount: React.FC = () => {
@@ -32,28 +31,28 @@ const VoterCount: React.FC = () => {
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Session</IonLabel>
-          <IonInput
+          <Input
             value={session}
             onIonChange={(e) => setSession(e.detail.value ?? '')}
           />
         </IonItem>
         <IonItem>
           <IonLabel position="stacked">Circuit</IonLabel>
-          <IonInput
+          <Input
             value={circuit}
             onIonChange={(e) => setCircuit(e.detail.value ?? '')}
           />
         </IonItem>
         <IonItem>
           <IonLabel position="stacked">Mesa</IonLabel>
-          <IonInput
+          <Input
             value={mesa}
             onIonChange={(e) => setMesa(e.detail.value ?? '')}
           />
         </IonItem>
         <IonItem>
           <IonLabel position="stacked">Count</IonLabel>
-          <IonInput
+          <Input
             type="number"
             min="0"
             max="500"
@@ -67,9 +66,9 @@ const VoterCount: React.FC = () => {
             }}
           />
         </IonItem>
-        <IonButton expand="block" onClick={saveData} className="ion-margin-top">
+        <Button expand="block" onClick={saveData} className="ion-margin-top">
           Save
-        </IonButton>
+        </Button>
       </IonContent>
     </IonPage>
   );

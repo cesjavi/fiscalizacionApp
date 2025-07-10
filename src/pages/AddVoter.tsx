@@ -5,10 +5,9 @@ import {
   IonTitle,
   IonContent,
   IonItem,
-  IonLabel,
-  IonInput,
-  IonButton
+  IonLabel
 } from '@ionic/react';
+import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -52,15 +51,15 @@ const AddVoter: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <IonItem>
             <IonLabel position="stacked">Nombre</IonLabel>
-            <IonInput value={nombre} onIonChange={e => setNombre(e.detail.value ?? '')} />
+            <Input value={nombre} onIonChange={e => setNombre(e.detail.value ?? '')} />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Apellido</IonLabel>
-            <IonInput value={apellido} onIonChange={e => setApellido(e.detail.value ?? '')} />
+            <Input value={apellido} onIonChange={e => setApellido(e.detail.value ?? '')} />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Número de Orden</IonLabel>
-            <IonInput
+            <Input
               value={orden}
               onIonChange={e => setOrden(e.detail.value ?? '')}
               required
@@ -68,7 +67,7 @@ const AddVoter: React.FC = () => {
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">DNI Votante</IonLabel>
-            <IonInput
+            <Input
               value={votanteDni}
               onIonChange={e => setVotanteDni(e.detail.value ?? '')}
               required
@@ -76,11 +75,11 @@ const AddVoter: React.FC = () => {
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Género</IonLabel>
-            <IonInput value={genero} onIonChange={e => setGenero(e.detail.value ?? '')} />
+            <Input value={genero} onIonChange={e => setGenero(e.detail.value ?? '')} />
           </IonItem>
-          <IonButton expand="block" type="submit" className="ion-margin-top">
+          <Button expand="block" type="submit" className="ion-margin-top">
             Guardar
-          </IonButton>
+          </Button>
         </form>
       </IonContent>
     </IonPage>

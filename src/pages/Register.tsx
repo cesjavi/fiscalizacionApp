@@ -1,4 +1,5 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel } from '@ionic/react';
+import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -27,21 +28,21 @@ const Register: React.FC = () => {
         <form onSubmit={handleRegister}>
           <IonItem>
             <IonLabel position="stacked">Username</IonLabel>
-            <IonInput value={username} onIonChange={e => setUsername(e.detail.value!)} required />
+            <Input value={username} onIonChange={e => setUsername(e.detail.value!)} required />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">DNI</IonLabel>
-            <IonInput value={dni} onIonChange={e => setDni(e.detail.value!)} required />
+            <Input value={dni} onIonChange={e => setDni(e.detail.value!)} required />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Password</IonLabel>
-            <IonInput type="password" value={password} onIonChange={e => setPassword(e.detail.value!)} required />
+            <Input type="password" value={password} onIonChange={e => setPassword(e.detail.value!)} required />
           </IonItem>
-          <IonButton expand="block" type="submit" className="ion-margin-top">Register</IonButton>
+          <Button expand="block" type="submit" className="ion-margin-top">Register</Button>
         </form>
-        <IonButton expand="block" routerLink="/login" className="ion-margin-top">
+        <Button expand="block" routerLink="/login" className="ion-margin-top">
           Login
-        </IonButton>
+        </Button>
       </IonContent>
     </IonPage>
   );
