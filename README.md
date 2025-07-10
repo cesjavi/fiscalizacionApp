@@ -96,3 +96,23 @@ npm run start:server
 ```
 
 This will initialize the database tables and serve the API on port `3000`.
+
+## Local database
+
+The app now stores its offline data using **IndexedDB** through the
+[Dexie](https://dexie.org) library. Most desktop browsers allow sites to use
+roughly 50% of the available disk space for IndexedDB. Mobile browsers often set
+stricter limits in the range of 50–100 MB.
+
+### Clearing the database
+
+During development or testing you may need to remove the local database. Open
+your browser's developer tools and locate **Application › IndexedDB**. From
+there you can delete the `fiscalizacionApp` database. You can also run the
+following snippet in the console:
+
+```javascript
+indexedDB.deleteDatabase('fiscalizacionApp');
+```
+
+Reload the app to recreate an empty database.
