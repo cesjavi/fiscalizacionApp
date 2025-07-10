@@ -13,12 +13,7 @@ const VoterDetails: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Voter Details</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
@@ -32,7 +27,7 @@ const VoterDetails: React.FC = () => {
           <Button expand="block" type="submit" className="ion-margin-top">Save Details</Button>
         </form>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

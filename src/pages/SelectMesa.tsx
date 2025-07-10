@@ -1,8 +1,4 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel,
@@ -10,6 +6,7 @@ import {
 import { Button, Input } from '../components';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
+import Layout from '../components/Layout';
 
 const SelectMesa: React.FC = () => {
   const history = useHistory();
@@ -43,12 +40,7 @@ const SelectMesa: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Configurar Mesa</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Sección</IonLabel>
@@ -100,7 +92,7 @@ const SelectMesa: React.FC = () => {
           Siguiente
         </Button>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

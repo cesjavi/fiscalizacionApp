@@ -1,5 +1,4 @@
 import {
-  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -35,7 +34,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <IonPage>
+    <Layout>
       <IonHeader>
         <IonToolbar>
           <IonTitle>Login</IonTitle>
@@ -75,7 +74,7 @@ const Login: React.FC = () => {
           REGISTER
         </Button>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

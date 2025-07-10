@@ -18,12 +18,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Register</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleRegister}>
           <IonItem>
@@ -44,7 +39,7 @@ const Register: React.FC = () => {
           Login
         </Button>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

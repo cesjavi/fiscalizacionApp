@@ -1,8 +1,4 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel
@@ -10,6 +6,7 @@ import {
 import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import Layout from '../components/Layout';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
@@ -32,21 +29,24 @@ const AddVoter: React.FC = () => {
       ],
       fechaEnviado: new Date().toISOString()
     };
-    await fetch('/api/voters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    history.push('/voters');
+    try {
+      const res = await fetch('/api/voters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        alert(res.statusText || 'Error al guardar votante');
+        return;
+      }
+      history.push('/voters');
+    } catch {
+      alert('Error al guardar votante');
+    }
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Agregar Votante</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
@@ -82,7 +82,7 @@ const AddVoter: React.FC = () => {
           </Button>
         </form>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

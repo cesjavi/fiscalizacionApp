@@ -1,5 +1,4 @@
 import {
-  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -9,13 +8,13 @@ import {
   IonLabel,
   IonButtons,
   IonFooter,
-  IonIcon
+  IonIcon,
+  useIonViewWillEnter
 } from '@ionic/react';
 import { Button } from '../components';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { useAuth } from '../AuthContext';
 
 interface Voter {
   establecimiento?: {
@@ -34,12 +33,18 @@ interface Voter {
     genero: string;
   }[];
   fechaEnviado: string;
+  voted?: boolean;
 }
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const history = useHistory();
-  const { logout } = useAuth();
+
+  const loadVoters = () => {
+    fetch('/api/voters')
+      .then((res) => res.json())
+      .then((data) => setVoters(data));
+  };
 
   const handleEndVoting = () => {
     history.push('/escrutinio');
@@ -54,14 +59,19 @@ const VoterList: React.FC = () => {
     history.push('/login');
   };
 
+  const markAsVoted = (index: number) => {
+    setVoters(voters.map((voter, i) => i === index ? { ...voter, voted: true } : voter));
+  };
+
+
+  useIonViewWillEnter(loadVoters);
+
   useEffect(() => {
-    fetch('/api/voters')
-      .then((res) => res.json())
-      .then((data) => setVoters(data));
+    loadVoters();
   }, []);
 
   return (
-    <IonPage>
+    <Layout>
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
@@ -106,8 +116,60 @@ const VoterList: React.FC = () => {
           </IonButtons>
         </IonToolbar>
       </IonFooter>
-    </IonPage>
+      <IonContent className="p-4">
+        <div className="grid gap-4">
+          {voters.map((voter, index) => (
+            <div
+              key={index}
+              className="bg-white rounded shadow p-4 flex flex-col md:grid md:grid-cols-5 md:items-center gap-2"
+            >
+              <div>
+                <div className="font-medium">
+                  {voter.persona.nombre} {voter.persona.apellido}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {voter.personasVotantes[0]?.dni || '-'}
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                {voter.personasVotantes[0]?.numero_de_orden ?? '-'}
+              </div>
+              <div>
+                <span
+                  className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded ${voter.voted ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                >
+                  {voter.voted ? 'Votó' : 'No votó'}
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
+                  onClick={() => markAsVoted(index)}
+                >
+                  Marcar como votó
+                </button>
+                <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
+                  Editar
+                </button>
+                <button className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </IonContent>
+    </Layout>
   );
 };
 
+function logout() {
+  // Remove authentication token and user data from localStorage/sessionStorage
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('user');
+}
+
 export default VoterList;
+
