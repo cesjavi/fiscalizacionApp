@@ -19,15 +19,15 @@ const AddVoter: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = {
-      persona: { nombre, apellido },
-      personasVotantes: [
-        {
-          numero_de_orden: parseInt(orden, 10) || 0,
-          dni: votanteDni,
-          genero
-        }
-      ],
-      fechaEnviado: new Date().toISOString()
+      seccion: localStorage.getItem('seccion'),
+      circuito: localStorage.getItem('circuito'),
+      mesa: localStorage.getItem('mesa'),
+      dni: votanteDni,
+      nombre,
+      apellido,
+      numero_de_orden: parseInt(orden, 10) || 0,
+      genero,
+      fechaEnviado: new Date().toISOString(),
     };
     try {
       const res = await fetch('/api/voters', {
