@@ -75,7 +75,7 @@ const Login: React.FC = () => {
           REGISTER
         </Button>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

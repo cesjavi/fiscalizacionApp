@@ -5,18 +5,8 @@ import './Home.css';
 
 const Home: React.FC = () => {
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Blank</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Blank</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <ExploreContainer />
         <Button routerLink="/escrutinio" expand="block" className="ion-margin-top">
           Ir a Escrutinio
@@ -25,7 +15,7 @@ const Home: React.FC = () => {
           Go to Voter Count
         </Button>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

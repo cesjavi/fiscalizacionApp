@@ -1,8 +1,4 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel,
@@ -43,12 +39,7 @@ const SelectMesa: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Configurar Mesa</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Sección</IonLabel>
@@ -100,7 +91,7 @@ const SelectMesa: React.FC = () => {
           Siguiente
         </Button>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 
