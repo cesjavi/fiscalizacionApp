@@ -8,7 +8,8 @@ import {
   IonLabel,
   IonButtons,
   IonFooter,
-  IonIcon
+  IonIcon,
+  useIonViewWillEnter
 } from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button } from '../components';
@@ -40,6 +41,12 @@ const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const history = useHistory();
 
+  const loadVoters = () => {
+    fetch('/api/voters')
+      .then((res) => res.json())
+      .then((data) => setVoters(data));
+  };
+
   const handleEndVoting = () => {
     history.push('/escrutinio');
   };
@@ -58,10 +65,10 @@ const VoterList: React.FC = () => {
   };
 
 
+  useIonViewWillEnter(loadVoters);
+
   useEffect(() => {
-    fetch('/api/voters')
-      .then((res) => res.json())
-      .then((data) => setVoters(data));
+    loadVoters();
   }, []);
 
   return (
