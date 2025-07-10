@@ -17,6 +17,7 @@ import Layout from '../components/Layout';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { voterDB } from '../voterDB';
 
 interface Voter {
   establecimiento?: {
@@ -43,9 +44,7 @@ const VoterList: React.FC = () => {
   const history = useHistory();
 
   const loadVoters = () => {
-    fetch('/api/voters')
-      .then((res) => res.json())
-      .then((data) => setVoters(data));
+    voterDB.voters.toArray().then((data) => setVoters(data));
   };
 
   const handleEndVoting = () => {
