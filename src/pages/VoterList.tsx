@@ -18,13 +18,13 @@ import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 
 interface Voter {
-  establecimiento: {
-    seccion: string;
-    circuito: string;
-    mesa: string;
+  establecimiento?: {
+    seccion?: string;
+    circuito?: string;
+    mesa?: string;
   };
   persona: {
-    dni: string;
+    dni?: string;
     nombre: string;
     apellido: string;
   };
@@ -79,7 +79,8 @@ const VoterList: React.FC = () => {
           {voters.map((voter, index) => (
             <IonItem key={index} lines="full">
               <IonLabel>
-                {voter.persona.nombre} {voter.persona.apellido} - {voter.persona.dni}
+                {voter.persona.nombre} {voter.persona.apellido}
+                {voter.personasVotantes[0]?.dni && ` - ${voter.personasVotantes[0].dni}`}
               </IonLabel>
               {voter.personasVotantes[0] && (
                 <IonLabel slot="end">

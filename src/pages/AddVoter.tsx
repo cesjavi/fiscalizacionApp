@@ -14,10 +14,6 @@ import { useHistory } from 'react-router-dom';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
-  const [seccion, setSeccion] = useState('');
-  const [circuito, setCircuito] = useState('');
-  const [mesa, setMesa] = useState('');
-  const [dni, setDni] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [orden, setOrden] = useState('');
@@ -27,8 +23,7 @@ const AddVoter: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = {
-      establecimiento: { seccion, circuito, mesa },
-      persona: { dni, nombre, apellido },
+      persona: { nombre, apellido },
       personasVotantes: [
         {
           numero_de_orden: parseInt(orden, 10) || 0,
@@ -56,22 +51,6 @@ const AddVoter: React.FC = () => {
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
-            <IonLabel position="stacked">Sección</IonLabel>
-            <IonInput value={seccion} onIonChange={e => setSeccion(e.detail.value ?? '')} />
-          </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Circuito</IonLabel>
-            <IonInput value={circuito} onIonChange={e => setCircuito(e.detail.value ?? '')} />
-          </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Mesa</IonLabel>
-            <IonInput value={mesa} onIonChange={e => setMesa(e.detail.value ?? '')} />
-          </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">DNI</IonLabel>
-            <IonInput value={dni} onIonChange={e => setDni(e.detail.value ?? '')} />
-          </IonItem>
-          <IonItem>
             <IonLabel position="stacked">Nombre</IonLabel>
             <IonInput value={nombre} onIonChange={e => setNombre(e.detail.value ?? '')} />
           </IonItem>
@@ -81,11 +60,19 @@ const AddVoter: React.FC = () => {
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Número de Orden</IonLabel>
-            <IonInput value={orden} onIonChange={e => setOrden(e.detail.value ?? '')} />
+            <IonInput
+              value={orden}
+              onIonChange={e => setOrden(e.detail.value ?? '')}
+              required
+            />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">DNI Votante</IonLabel>
-            <IonInput value={votanteDni} onIonChange={e => setVotanteDni(e.detail.value ?? '')} />
+            <IonInput
+              value={votanteDni}
+              onIonChange={e => setVotanteDni(e.detail.value ?? '')}
+              required
+            />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">Género</IonLabel>
