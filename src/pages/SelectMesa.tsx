@@ -2,10 +2,8 @@ import {
   IonContent,
   IonItem,
   IonLabel,
-  IonInput,
-  IonButton,
 } from '@ionic/react';
-import Layout from '../components/Layout';
+import { Button, Input } from '../components';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -45,7 +43,7 @@ const SelectMesa: React.FC = () => {
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Sección</IonLabel>
-          <IonInput
+          <Input
             value={seccion}
             inputmode="numeric"
             maxlength={3}
@@ -55,7 +53,7 @@ const SelectMesa: React.FC = () => {
         </IonItem>
         <IonItem>
           <IonLabel position="stacked">Circuito</IonLabel>
-          <IonInput
+          <Input
             value={circuito}
             inputmode="numeric"
             maxlength={3}
@@ -65,7 +63,7 @@ const SelectMesa: React.FC = () => {
         </IonItem>
         <IonItem>
           <IonLabel position="stacked">Mesa</IonLabel>
-          <IonInput
+          <Input
             value={mesa}
             inputmode="numeric"
             maxlength={4}
@@ -75,11 +73,11 @@ const SelectMesa: React.FC = () => {
         </IonItem>
 
         {!editing && (
-          <IonButton expand="block" onClick={handleModify}>
+          <Button expand="block" onClick={handleModify}>
             Modificar
-          </IonButton>
+          </Button>
         )}
-        <IonButton
+        <Button
           expand="block"
           onClick={handleNext}
           disabled={
@@ -91,7 +89,7 @@ const SelectMesa: React.FC = () => {
           }
         >
           Siguiente
-        </IonButton>
+        </Button>
       </IonContent>
     </Layout>
   );

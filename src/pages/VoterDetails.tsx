@@ -1,5 +1,5 @@
-import { IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/react';
-import Layout from '../components/Layout';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel } from '@ionic/react';
+import { Button, Input } from '../components';
 import { useState } from 'react';
 
 const VoterDetails: React.FC = () => {
@@ -18,13 +18,13 @@ const VoterDetails: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <IonItem>
             <IonLabel position="stacked">Name</IonLabel>
-            <IonInput value={name} onIonChange={e => setName(e.detail.value!)} required />
+            <Input value={name} onIonChange={e => setName(e.detail.value!)} required />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">ID</IonLabel>
-            <IonInput value={id} onIonChange={e => setId(e.detail.value!)} required />
+            <Input value={id} onIonChange={e => setId(e.detail.value!)} required />
           </IonItem>
-          <IonButton expand="block" type="submit" className="ion-margin-top">Save Details</IonButton>
+          <Button expand="block" type="submit" className="ion-margin-top">Save Details</Button>
         </form>
       </IonContent>
     </Layout>
