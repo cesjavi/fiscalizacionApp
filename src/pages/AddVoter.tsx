@@ -1,14 +1,11 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel,
   IonInput,
   IonButton
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -42,12 +39,7 @@ const AddVoter: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Agregar Votante</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
@@ -83,7 +75,7 @@ const AddVoter: React.FC = () => {
           </IonButton>
         </form>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

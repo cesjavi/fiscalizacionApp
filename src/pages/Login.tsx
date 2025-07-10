@@ -3,13 +3,9 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonButton,
-  IonList
+  IonContent
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
@@ -42,41 +38,41 @@ const Login: React.FC = () => {
           <IonTitle>Login</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
-        <form onSubmit={handleLogin}>
-          <IonList>
-            <IonItem>
-              <IonLabel position="floating">Username</IonLabel>
-              <IonInput
-                value={username}
-                onIonChange={(e) => setUsername(e.detail.value!)}
-                required
-              />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="floating">Password</IonLabel>
-              <IonInput
-                type="password"
-                value={password}
-                onIonChange={(e) => setPassword(e.detail.value!)}
-                required
-              />
-            </IonItem>
-          </IonList>
-          <IonButton expand="block" type="submit" className="ion-margin-top">
-            LOGIN
-          </IonButton>
-        </form>
-        <IonButton
-          expand="block"
-          routerLink="/register"
-          color="secondary"
-          className="ion-margin-top"
-        >
-          REGISTER
-        </IonButton>
+      <IonContent className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200">
+        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+          <form onSubmit={handleLogin}>
+            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+            <label className="block text-sm font-medium text-gray-700 mt-4">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+            <button
+              type="submit"
+              className="mt-6 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700"
+            >
+              LOGIN
+            </button>
+          </form>
+          <button
+            className="mt-4 w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300"
+            onClick={() => history.push('/register')}
+          >
+            REGISTER
+          </button>
+        </div>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

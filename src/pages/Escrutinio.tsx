@@ -1,8 +1,4 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel,
@@ -10,6 +6,7 @@ import {
   IonButton,
   IonText
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState } from 'react';
 
 interface ResultadoEscrutinio {
@@ -38,12 +35,7 @@ const Escrutinio: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Escrutinio</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Lista 100</IonLabel>
@@ -86,7 +78,7 @@ const Escrutinio: React.FC = () => {
           </IonText>
         )}
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 

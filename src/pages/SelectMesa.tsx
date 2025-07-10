@@ -1,14 +1,11 @@
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonLabel,
   IonInput,
   IonButton,
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -44,12 +41,7 @@ const SelectMesa: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Configurar Mesa</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <Layout>
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Sección</IonLabel>
@@ -101,7 +93,7 @@ const SelectMesa: React.FC = () => {
           Siguiente
         </IonButton>
       </IonContent>
-    </IonPage>
+    </Layout>
   );
 };
 
