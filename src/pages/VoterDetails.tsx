@@ -1,6 +1,7 @@
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel } from '@ionic/react';
+import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import { Button, Input } from '../components';
 import { useState } from 'react';
+import Layout from '../components/Layout';
 
 const VoterDetails: React.FC = () => {
   const [name, setName] = useState('');

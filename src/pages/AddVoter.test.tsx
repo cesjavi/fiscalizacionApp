@@ -4,7 +4,7 @@ import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
 import AddVoter from './AddVoter';
 import { AuthProvider } from '../AuthContext';
-import { voterDB } from '../db/voters';
+import { voterDB } from '../voterDB';
 import { vi } from 'vitest';
 
 describe('AddVoter', () => {

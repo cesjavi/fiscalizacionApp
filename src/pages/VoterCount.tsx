@@ -1,11 +1,7 @@
-import {
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonLabel,
-} from '@ionic/react';
+import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import { Button, Input } from '../components';
 import { useState } from 'react';
+import Layout from '../components/Layout';
 
 const VoterCount: React.FC = () => {
   const [session, setSession] = useState('');
