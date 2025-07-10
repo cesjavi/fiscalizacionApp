@@ -7,7 +7,7 @@ import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { voterDB } from '../db/voters';
+import { voterDB } from '../voterDB';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
@@ -20,14 +20,23 @@ const AddVoter: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = {
-      seccion: localStorage.getItem('seccion'),
-      circuito: localStorage.getItem('circuito'),
-      mesa: localStorage.getItem('mesa'),
-      dni: votanteDni,
-      nombre,
-      apellido,
-      numero_de_orden: parseInt(orden, 10) || 0,
-      genero,
+      establecimiento: {
+        seccion: localStorage.getItem('seccion') || undefined,
+        circuito: localStorage.getItem('circuito') || undefined,
+        mesa: localStorage.getItem('mesa') || undefined,
+      },
+      persona: {
+        dni: votanteDni,
+        nombre,
+        apellido,
+      },
+      personasVotantes: [
+        {
+          numero_de_orden: parseInt(orden, 10) || 0,
+          dni: votanteDni,
+          genero,
+        },
+      ],
       fechaEnviado: new Date().toISOString(),
     };
     try {
