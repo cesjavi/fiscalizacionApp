@@ -7,31 +7,36 @@ import {
   IonList,
   IonItem,
   IonLabel,
+  IonButton
 } from '@ionic/react';
 import { useEffect, useState } from 'react';
 
 interface Voter {
-  numero_de_orden: string;
-  dni: string;
-  genero: string;
+  establecimiento: {
+    seccion: string;
+    circuito: string;
+    mesa: string;
+  };
+  persona: {
+    dni: string;
+    nombre: string;
+    apellido: string;
+  };
+  personasVotantes: {
+    numero_de_orden: number;
+    dni: string;
+    genero: string;
+  }[];
+  fechaEnviado: string;
 }
-
-const SAMPLE_VOTERS: Voter[] = [
-  { numero_de_orden: '001', dni: '11111111', genero: 'M' },
-  { numero_de_orden: '002', dni: '22222222', genero: 'F' },
-];
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('voters');
-    if (stored) {
-      setVoters(JSON.parse(stored));
-    } else {
-      setVoters(SAMPLE_VOTERS);
-      localStorage.setItem('voters', JSON.stringify(SAMPLE_VOTERS));
-    }
+    fetch('/api/voters')
+      .then((res) => res.json())
+      .then((data) => setVoters(data));
   }, []);
 
   return (
@@ -42,12 +47,20 @@ const VoterList: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
+        <IonButton routerLink="/add-voter" expand="block" className="ion-margin-bottom">
+          Agregar Votante
+        </IonButton>
         <IonList>
           {voters.map((voter, index) => (
             <IonItem key={index} lines="full">
-              <IonLabel>{voter.numero_de_orden}</IonLabel>
-              <IonLabel>{voter.dni}</IonLabel>
-              <IonLabel>{voter.genero}</IonLabel>
+              <IonLabel>
+                {voter.persona.nombre} {voter.persona.apellido} - {voter.persona.dni}
+              </IonLabel>
+              {voter.personasVotantes[0] && (
+                <IonLabel slot="end">
+                  {voter.personasVotantes[0].numero_de_orden}
+                </IonLabel>
+              )}
             </IonItem>
           ))}
         </IonList>

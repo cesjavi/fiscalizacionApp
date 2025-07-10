@@ -12,7 +12,8 @@
     "lint": "eslint",
     "sync": "cap sync",
     "build.android": "npm run build && cap sync android",
-    "open.android": "cap open android"
+    "open.android": "cap open android",
+    "start:server": "node server/index.js"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.1",
