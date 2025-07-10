@@ -8,6 +8,7 @@ import MesaSelection from './pages/MesaSelection';
 import VoteSubmission from './pages/VoteSubmission';
 import VoterDetails from './pages/VoterDetails';
 import VoterList from './pages/VoterList';
+import AddVoter from './pages/AddVoter';
 import Escrutinio from './pages/Escrutinio';
 import VoterCount from './pages/VoterCount';
 import SelectMesa from './pages/SelectMesa';
@@ -71,6 +72,7 @@ const App: React.FC = () => (
           </Route>
           <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
           <PrivateRoute exact path="/voters" component={VoterList} />
+          <PrivateRoute exact path="/add-voter" component={AddVoter} />
           <Route exact path="/escrutinio">
             <Escrutinio />
           </Route>
