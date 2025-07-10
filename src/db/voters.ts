@@ -1,10 +1,9 @@
 import Dexie, { Table } from 'dexie';
 
 export interface VoterRecord {
-  id?: number;
-  seccion: string;
-  circuito: string;
-  mesa: string;
+  seccion: string | null;
+  circuito: string | null;
+  mesa: string | null;
   dni: string;
   nombre: string;
   apellido: string;
@@ -13,14 +12,15 @@ export interface VoterRecord {
   fechaEnviado: string;
 }
 
-class VoterDB extends Dexie {
+class VoterDatabase extends Dexie {
   voters!: Table<VoterRecord, number>;
+
   constructor() {
-    super('VoterDB');
+    super('voterDB');
     this.version(1).stores({
-      voters: '++id,dni,seccion,circuito,mesa'
+      voters: '++id,dni'
     });
   }
 }
 
-export const voterDB = new VoterDB();
+export const voterDB = new VoterDatabase();
