@@ -1,4 +1,5 @@
 import {
+  IonHeader,
   IonToolbar,
   IonTitle,
   IonContent,
@@ -9,6 +10,7 @@ import {
   IonFooter,
   IonIcon
 } from '@ionic/react';
+import Layout from '../components/Layout';
 import { Button } from '../components';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
@@ -63,7 +65,7 @@ const VoterList: React.FC = () => {
   }, []);
 
   return (
-    <IonPage>
+    <Layout>
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
@@ -107,7 +109,7 @@ const VoterList: React.FC = () => {
             </Button>
           </IonButtons>
         </IonToolbar>
-      </IonHeader>
+      </IonFooter>
       <IonContent className="p-4">
         <div className="grid gap-4">
           {voters.map((voter, index) => (
