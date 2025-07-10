@@ -80,3 +80,19 @@ import { Button, Input, Card } from './src/components';
 ```
 
 Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look.
+
+## Backend API
+
+The Express API now uses **SQLite** for data persistence. The database file
+`server/data.db` is created automatically when starting the server.
+
+Install the backend dependencies and run the server:
+
+```bash
+cd server
+npm install
+cd ..
+npm run start:server
+```
+
+This will initialize the database tables and serve the API on port `3000`.
