@@ -29,12 +29,20 @@ const AddVoter: React.FC = () => {
       ],
       fechaEnviado: new Date().toISOString()
     };
-    await fetch('/api/voters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    history.push('/voters');
+    try {
+      const res = await fetch('/api/voters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        alert(res.statusText || 'Error al guardar votante');
+        return;
+      }
+      history.push('/voters');
+    } catch {
+      alert('Error al guardar votante');
+    }
   };
 
   return (
