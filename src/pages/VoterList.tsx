@@ -90,7 +90,7 @@ const VoterList: React.FC = () => {
           {voters.map((voter, index) => (
             <IonItem key={index} lines="full">
               <IonLabel>
-                {voter.persona.nombre} {voter.persona.apellido}
+                {voter.persona?.nombre ?? ''} {voter.persona?.apellido ?? ''}
                 {voter.personasVotantes[0]?.dni && ` - ${voter.personasVotantes[0].dni}`}
               </IonLabel>
               {voter.personasVotantes[0] && (
@@ -126,7 +126,7 @@ const VoterList: React.FC = () => {
             >
               <div>
                 <div className="font-medium">
-                  {voter.persona.nombre} {voter.persona.apellido}
+                  {voter.persona?.nombre ?? ''} {voter.persona?.apellido ?? ''}
                 </div>
                 <div className="text-sm text-gray-500">
                   {voter.personasVotantes[0]?.dni || '-'}
