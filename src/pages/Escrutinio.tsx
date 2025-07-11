@@ -51,7 +51,7 @@ const Escrutinio: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout backHref="/voters">
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Lista 100</IonLabel>

@@ -14,7 +14,7 @@ const VoterDetails: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout backHref="/vote">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>

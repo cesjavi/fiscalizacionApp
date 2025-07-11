@@ -8,20 +8,30 @@ import {
   IonButton,
   IonFooter
 } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
+  backHref?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
+const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();
+  const history = useHistory();
 
   return (
     <IonPage className="flex flex-col min-h-screen">
       <IonHeader className="bg-primary-500 text-white">
         <IonToolbar className="flex justify-between items-center px-4">
+          {backHref && (
+            <IonButtons slot="start">
+              <IonButton color="light" onClick={() => history.push(backHref)}>
+                Back
+              </IonButton>
+            </IonButtons>
+          )}
           <IonTitle className="font-bold text-lg">Fiscalizacion App</IonTitle>
           <IonButtons slot="end">
             <IonButton color="light" onClick={logout}>Logout</IonButton>

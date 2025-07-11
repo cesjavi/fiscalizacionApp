@@ -19,7 +19,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout backHref="/login">
       <IonContent className="ion-padding">
         <form onSubmit={handleRegister}>
           <IonItem>

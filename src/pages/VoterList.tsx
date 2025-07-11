@@ -95,7 +95,7 @@ const VoterList: React.FC = () => {
   }, []);
 
   return (
-    <Layout>
+    <Layout backHref="/select-mesa">
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
