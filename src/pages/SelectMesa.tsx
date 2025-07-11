@@ -40,7 +40,7 @@ const SelectMesa: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout backHref="/login">
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Sección</IonLabel>

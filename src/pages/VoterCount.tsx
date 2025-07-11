@@ -15,7 +15,7 @@ const VoterCount: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout backHref="/home">
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Session</IonLabel>
