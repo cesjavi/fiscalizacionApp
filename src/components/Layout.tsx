@@ -6,8 +6,10 @@ import {
   IonTitle,
   IonButtons,
   IonButton,
-  IonFooter
+  IonFooter,
+  IonIcon
 } from '@ionic/react';
+import { chevronBackOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 
@@ -27,7 +29,12 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
         <IonToolbar className="flex justify-between items-center px-4">
           {backHref && (
             <IonButtons slot="start">
-              <IonButton color="light" onClick={() => history.push(backHref)}>
+              <IonButton
+                color="light"
+                className="font-semibold"
+                onClick={() => history.push(backHref)}
+              >
+                <IonIcon icon={chevronBackOutline} slot="start" />
                 Back
               </IonButton>
             </IonButtons>
