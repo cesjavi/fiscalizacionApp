@@ -35,5 +35,6 @@ export const voterDB = new VoterDexie();
 
 if (typeof window !== 'undefined') {
   // expose for tests
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).voterDB = voterDB;
 }

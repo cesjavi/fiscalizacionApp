@@ -3,9 +3,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonList,
-  IonItem,
-  IonLabel,
   IonButtons,
   IonFooter,
   IonIcon,
@@ -17,6 +14,7 @@ import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { voterDB } from '../voterDB';
+import { useAuth } from '../AuthContext';
 
 interface Voter {
   establecimiento?: {
@@ -52,6 +50,7 @@ const VoterList: React.FC = () => {
   };
   const deleteVoter = async (index: number) => {
   const voterToDelete = voters[index];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const id = (voterToDelete as any).id; // asumiendo que `id` está incluido
 
   if (!id) return;
@@ -75,8 +74,10 @@ const VoterList: React.FC = () => {
     history.push('/select-mesa');
   };
 
-  const handleLogout = () => {
-    logout();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
     history.push('/login');
   };
 
@@ -133,11 +134,14 @@ const VoterList: React.FC = () => {
       <div className="text-gray-500 text-center">No hay votantes cargados.</div>
     ) : (
       voters.map((voter, index) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const persona = { nombre: (voter as any).nombre ?? '-', apellido: (voter as any).apellido ?? '-' };
-const votante = {
-  dni: (voter as any).dni ?? '-',
-  numero_de_orden: (voter as any).numero_de_orden ?? '-'
-};
+        const votante = {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          dni: (voter as any).dni ?? '-',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          numero_de_orden: (voter as any).numero_de_orden ?? '-'
+        };
 
 
         return (
@@ -200,11 +204,5 @@ const votante = {
   );
 };
 
-function logout() {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
-  sessionStorage.removeItem('authToken');
-  sessionStorage.removeItem('user');
-}
 
 export default VoterList;

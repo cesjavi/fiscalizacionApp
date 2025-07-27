@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
           {backHref && (
             <IonButtons slot="start">
               <IonButton
-                color="light"
+                color="primary"
                 className="font-semibold"
                 onClick={() => history.push(backHref)}
               >

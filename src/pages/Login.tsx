@@ -16,20 +16,16 @@ import Layout from '../components/Layout';
 const Login: React.FC = () => {
   const history = useHistory();
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const users: { username: string; dni: string; password: string }[] =
-      JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find(
-      (u) => u.username === username && u.password === password
-    );
-    if (user) {
-      login();
+    try {
+      await login(email, password);
       history.push('/select-mesa');
-    } else {
+    } catch (err) {
+      console.error(err);
       alert('Usuario o contraseña incorrectos');
     }
   };
@@ -45,10 +41,10 @@ const Login: React.FC = () => {
         <form onSubmit={handleLogin}>
           <IonList>
             <IonItem>
-              <IonLabel position="floating">Username</IonLabel>
+              <IonLabel position="floating">Email</IonLabel>
               <Input
-                value={username}
-                onIonChange={(e) => setUsername(e.detail.value!)}
+                value={email}
+                onIonChange={(e) => setEmail(e.detail.value!)}
                 required
               />
             </IonItem>
