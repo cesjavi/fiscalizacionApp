@@ -17,9 +17,15 @@ const Register: React.FC = () => {
     try {
       await register(email, password);
       history.push('/login');
-    } catch (err) {
-      console.error(err);
-      alert('Error al registrarse');
+    } catch (err: unknown) {
+      console.error('Error al registrarse:', err);
+      let message = '';
+      if (err instanceof Error) {
+        message = err.message;
+      } else {
+        message = JSON.stringify(err);
+      }
+      alert('Error al registrarse: ' + message);
     }
   };
 

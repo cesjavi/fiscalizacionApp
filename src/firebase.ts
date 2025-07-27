@@ -2,12 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID'
+  apiKey: "AIzaSyB2selCzWWLxGltObAjz_KSo4ewurc5Y2Y",
+  authDomain: "fiscalizacion-4dcfc.firebaseapp.com",
+  projectId: "fiscalizacion-4dcfc",
+  storageBucket: "fiscalizacion-4dcfc.firebasestorage.app",
+  messagingSenderId: "970755478089",
+  appId: "1:970755478089:web:2b775c9de9c902c5c1e598",
+  measurementId: "G-SYBBGJ86Q7"
 };
 
 const app = initializeApp(firebaseConfig);
