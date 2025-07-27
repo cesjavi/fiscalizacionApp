@@ -6,7 +6,8 @@ describe('Voter list from Dexie', () => {
       },
     });
 
-    cy.window().then((win: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cy.window().then((win: any) => {
       return win.voterDB.voters.clear().then(() =>
         win.voterDB.voters.bulkAdd([
           {

@@ -2,20 +2,25 @@ import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import { Button, Input } from '../components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 import Layout from '../components/Layout';
 
 const Register: React.FC = () => {
   const history = useHistory();
-  const [username, setUsername] = useState('');
+  const { register } = useAuth();
+  const [email, setEmail] = useState('');
   const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    users.push({ username, dni, password });
-    localStorage.setItem('users', JSON.stringify(users));
-    history.push('/login');
+    try {
+      await register(email, password);
+      history.push('/login');
+    } catch (err) {
+      console.error(err);
+      alert('Error al registrarse');
+    }
   };
 
   return (
@@ -23,8 +28,8 @@ const Register: React.FC = () => {
       <IonContent className="ion-padding">
         <form onSubmit={handleRegister}>
           <IonItem>
-            <IonLabel position="stacked">Username</IonLabel>
-            <Input value={username} onIonChange={e => setUsername(e.detail.value!)} required />
+            <IonLabel position="stacked">Email</IonLabel>
+            <Input value={email} onIonChange={e => setEmail(e.detail.value!)} required />
           </IonItem>
           <IonItem>
             <IonLabel position="stacked">DNI</IonLabel>

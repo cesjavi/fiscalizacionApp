@@ -1,27 +1,49 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User,
+} from 'firebase/auth';
+import { auth } from './firebase';
 
 export interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
-  login: () => void;
-  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(localStorage.getItem('loggedIn') === 'true');
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const login = () => {
-    localStorage.setItem('loggedIn', 'true');
-    setIsAuthenticated(true);
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, current => {
+      setUser(current);
+      setIsAuthenticated(!!current);
+    });
+    return unsub;
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
   };
-  const logout = () => {
-    localStorage.removeItem('loggedIn');
-    setIsAuthenticated(false);
+
+  const register = async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
+  };
+
+  const logout = async () => {
+    await signOut(auth);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
