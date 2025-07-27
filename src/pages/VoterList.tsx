@@ -81,11 +81,6 @@ const VoterList: React.FC = () => {
     history.push('/login');
   };
 
-  const markAsVoted = (index: number) => {
-    setVoters((prev) =>
-      prev.map((voter, i) => (i === index ? { ...voter, voted: true } : voter))
-    );
-  };
 
   useIonViewWillEnter(() => {
     loadVoters();
@@ -110,25 +105,8 @@ const VoterList: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>        
-      </IonContent>
 
-      <IonFooter>
-        <IonToolbar>
-          <IonButtons>
-            <Button routerLink="/add-voter">
-              <IonIcon icon={add} />
-            </Button>
-            <Button>
-              <IonIcon icon={remove} />
-            </Button>
-            <Button>
-              <IonIcon icon={create} />
-            </Button>
-          </IonButtons>
-        </IonToolbar>
-      </IonFooter>
-<IonContent className="p-4">
+<IonContent fullscreen className="p-4">
   <div className="grid gap-4">
     {voters.length === 0 ? (
       <div className="text-gray-500 text-center">No hay votantes cargados.</div>
@@ -166,25 +144,15 @@ const VoterList: React.FC = () => {
 
             {/* Columna 4: Estado */}
             <div>
-              <span
-                className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded ${
-                  voter.voted
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {voter.voted ? 'Votó' : 'No votó'}
-              </span>
+              {voter.voted && (
+                <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
+                  Votó
+                </span>
+              )}
             </div>
 
             {/* Columna 5: Acciones */}
             <div className="flex space-x-2">
-              <button
-                className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
-                onClick={() => markAsVoted(index)}
-              >
-                Marcar como votó
-              </button>
               <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
                 Editar
               </button>
@@ -199,6 +167,22 @@ const VoterList: React.FC = () => {
     )}
   </div>
 </IonContent>
+
+      <IonFooter>
+        <IonToolbar>
+          <IonButtons>
+            <Button routerLink="/add-voter">
+              <IonIcon icon={add} />
+            </Button>
+            <Button>
+              <IonIcon icon={remove} />
+            </Button>
+            <Button>
+              <IonIcon icon={create} />
+            </Button>
+          </IonButtons>
+        </IonToolbar>
+      </IonFooter>
 
     </Layout>
   );
