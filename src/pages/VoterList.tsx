@@ -12,6 +12,7 @@ import {
 } from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
+import { Camera, CameraResultType } from '@capacitor/camera';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -70,7 +71,18 @@ const VoterList: React.FC = () => {
 };
 
 
-  const handleEndVoting = () => {
+  const handleEndVoting = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        quality: 80,
+      });
+      if (photo?.dataUrl) {
+        localStorage.setItem('endVotingPhoto', photo.dataUrl);
+      }
+    } catch (err) {
+      console.error('Error taking photo', err);
+    }
     history.push('/escrutinio');
   };
 
