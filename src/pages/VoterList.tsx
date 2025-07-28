@@ -6,10 +6,13 @@ import {
   IonButtons,
   IonFooter,
   IonIcon,
+  IonItem,
+  IonLabel,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { Button } from '../components';
+import { Button, Input } from '../components';
 import Layout from '../components/Layout';
+import { Camera, CameraResultType } from '@capacitor/camera';
 import { add, remove, create } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -38,6 +41,8 @@ interface Voter {
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
+  const [searchDni, setSearchDni] = useState('');
+  const [searchOrden, setSearchOrden] = useState('');
   const history = useHistory();
 
   const loadVoters = async () => {
@@ -66,7 +71,18 @@ const VoterList: React.FC = () => {
 };
 
 
-  const handleEndVoting = () => {
+  const handleEndVoting = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        quality: 80,
+      });
+      if (photo?.dataUrl) {
+        localStorage.setItem('endVotingPhoto', photo.dataUrl);
+      }
+    } catch (err) {
+      console.error('Error taking photo', err);
+    }
     history.push('/escrutinio');
   };
 
@@ -90,6 +106,20 @@ const VoterList: React.FC = () => {
     loadVoters();
   }, []);
 
+  const filteredVoters = voters.filter(voter => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dni = ((voter as any).dni || '').toString().toLowerCase();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orden = ((voter as any).numero_de_orden || '').toString();
+
+    const matchesDni =
+      searchDni.trim() === '' || dni.includes(searchDni.toLowerCase());
+    const matchesOrden =
+      searchOrden.trim() === '' || orden.includes(searchOrden);
+
+    return matchesDni && matchesOrden;
+  });
+
   return (
     <Layout backHref="/select-mesa">
       <IonHeader>
@@ -107,11 +137,29 @@ const VoterList: React.FC = () => {
 
 
 <IonContent fullscreen className="p-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <IonItem>
+      <IonLabel position="stacked">Buscar por DNI</IonLabel>
+      <Input
+        value={searchDni}
+        onIonChange={e => setSearchDni(e.detail.value ?? '')}
+        placeholder="DNI"
+      />
+    </IonItem>
+    <IonItem>
+      <IonLabel position="stacked">Buscar por Orden</IonLabel>
+      <Input
+        value={searchOrden}
+        onIonChange={e => setSearchOrden(e.detail.value ?? '')}
+        placeholder="Orden"
+      />
+    </IonItem>
+  </div>
   <div className="grid gap-4">
-    {voters.length === 0 ? (
+    {filteredVoters.length === 0 ? (
       <div className="text-gray-500 text-center">No hay votantes cargados.</div>
     ) : (
-      voters.map((voter, index) => {
+      filteredVoters.map((voter, index) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const persona = { nombre: (voter as any).nombre ?? '-', apellido: (voter as any).apellido ?? '-' };
         const votante = {
@@ -125,7 +173,7 @@ const VoterList: React.FC = () => {
         return (
           <div
             key={index}
-            className="bg-white rounded shadow p-4 flex flex-col md:grid md:grid-cols-5 md:items-center gap-2"
+            className="bg-white rounded shadow p-4 grid grid-cols-5 items-center gap-2"
           >
             {/* Columna 1: Nombre y Apellido */}
             <div className="font-medium">
