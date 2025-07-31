@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB2selCzWWLxGltObAjz_KSo4ewurc5Y2Y",
-  authDomain: "fiscalizacion-4dcfc.firebaseapp.com",
-  projectId: "fiscalizacion-4dcfc",
-  storageBucket: "fiscalizacion-4dcfc.firebasestorage.app",
-  messagingSenderId: "970755478089",
-  appId: "1:970755478089:web:2b775c9de9c902c5c1e598",
-  measurementId: "G-SYBBGJ86Q7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
