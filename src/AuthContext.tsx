@@ -31,7 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (dni: string, password: string) => {
-    await signInWithEmailAndPassword(auth, dni, password);
+    const email = `${dni}@fake.com`;
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const register = async (email: string, password: string) => {

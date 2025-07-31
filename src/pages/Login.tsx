@@ -26,7 +26,7 @@ const Login: React.FC = () => {
       history.push('/select-mesa');
     } catch (err) {
       console.error(err);
-      alert('Usuario o contraseña incorrectos');
+      alert('Usuario o clave incorrectos');
     }
   };
 
