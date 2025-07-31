@@ -16,13 +16,13 @@ import Layout from '../components/Layout';
 const Login: React.FC = () => {
   const history = useHistory();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(dni, password);
       history.push('/select-mesa');
     } catch (err) {
       console.error(err);
@@ -41,10 +41,10 @@ const Login: React.FC = () => {
         <form onSubmit={handleLogin}>
           <IonList>
             <IonItem>
-              <IonLabel position="floating">Email</IonLabel>
+              <IonLabel position="floating">DNI</IonLabel>
               <Input
-                value={email}
-                onIonChange={(e) => setEmail(e.detail.value!)}
+                value={dni}
+                onIonChange={(e) => setDni(e.detail.value!)}
                 required
               />
             </IonItem>
