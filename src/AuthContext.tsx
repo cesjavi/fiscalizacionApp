@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   User,
@@ -8,9 +9,9 @@ import {
 import { auth } from './firebase';
 
 export interface AuthContextType {
-  user: UserInfo | null;
+  user: User | null;
   login: (dni: string, password: string) => Promise<void>;
-  register: (dni: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -18,50 +19,28 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      setUser(JSON.parse(stored));
-      setIsAuthenticated(true);
-    }
+    const unsub = onAuthStateChanged(auth, current => {
+      setUser(current);
+      setIsAuthenticated(!!current);
+    });
+    return unsub;
   }, []);
 
   const login = async (dni: string, password: string) => {
-    const res = await fetch('/api/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: dni, password }),
-    });
-    if (!res.ok) {
-      throw new Error('Login failed');
-    }
-    const data = await res.json();
-    const info = { dni: data.username } as UserInfo;
-    setUser(info);
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(info));
+    const email = `${dni}@fake.com`;
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (dni: string, password: string) => {
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username: dni, password }),
-    });
-    if (!res.ok) {
-      throw new Error('Failed to register');
-    }
+  const register = async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const logout = async () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('user');
+    await signOut(auth);
   };
 
   return (
