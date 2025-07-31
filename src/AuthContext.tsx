@@ -1,17 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth';
-import { auth } from './firebase';
+import bcrypt from 'bcryptjs';
+
 
 export interface AuthContextType {
-  user: User | null;
+  user: UserInfo | null;
   login: (dni: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -19,28 +13,52 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, current => {
-      setUser(current);
-      setIsAuthenticated(!!current);
-    });
-    return unsub;
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      setUser(JSON.parse(stored));
+      setIsAuthenticated(true);
+    }
   }, []);
 
   const login = async (dni: string, password: string) => {
-    const email = `${dni}@fake.com`;
-    await signInWithEmailAndPassword(auth, email, password);
+    const hashed = bcrypt.hashSync(password, 10);
+    const res = await fetch('/api/users/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: dni, password: hashed }),
+    });
+    if (!res.ok) {
+      throw new Error('Login failed');
+    }
+    const data = await res.json();
+    const info = { dni: data.username } as UserInfo;
+    setUser(info);
+    setIsAuthenticated(true);
+    localStorage.setItem('user', JSON.stringify(info));
   };
 
-  const register = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+  const register = async (dni: string, password: string) => {
+    const hashed = bcrypt.hashSync(password, 10);
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: dni, password: hashed }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to register');
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
   };
 
   return (
