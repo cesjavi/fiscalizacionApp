@@ -9,7 +9,6 @@ router.get('/', async (req, res) => {
   res.json(users);
 });
 
-
 router.post('/', (req, res) => {
   const { username, password } = req.body; // password already hashed
   const info = db
