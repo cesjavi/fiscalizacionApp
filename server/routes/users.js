@@ -3,8 +3,9 @@ import db from '../db.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  const users = db.prepare('SELECT * FROM users').all();
+router.get('/', async (req, res) => {
+  const snapshot = await db.collection('users').get();
+  const users = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   res.json(users);
 });
 
@@ -25,7 +26,7 @@ router.post('/login', (req, res) => {
   if (!user || user.password !== password) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  res.json({ id: user.id, username: user.username });
+  res.json({ id: username, username });
 });
 
 export default router;

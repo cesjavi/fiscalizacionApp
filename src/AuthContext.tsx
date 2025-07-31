@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 export interface AuthContextType {
   user: UserInfo | null;
   login: (dni: string, password: string) => Promise<void>;
-  register: (dni: string, password: string) => Promise<void>;
+  register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
