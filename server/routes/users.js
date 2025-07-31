@@ -1,47 +1,37 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import db from '../db.js';
+import { db } from '../firebase/index.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  const users = db.prepare('SELECT * FROM users').all();
+router.get('/', async (req, res) => {
+  const snapshot = await db.collection('users').get();
+  const users = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   res.json(users);
 });
 
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  const user = db
-    .prepare('SELECT * FROM users WHERE username = ? AND password = ?')
-    .get(username, password);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+router.post('/', async (req, res) => {
+  const { email, dni, password } = req.body;
+  if (!email || !dni || !password) {
+    return res.status(400).json({ error: 'Missing fields' });
   }
-  res.json({ id: user.id, username: user.username });
-});
-
-router.post('/', (req, res) => {
-  const { username, password } = req.body;
   const hashed = bcrypt.hashSync(password, 10);
-  const info = db
-    .prepare('INSERT INTO users (username, password) VALUES (?, ?)')
-    .run(username, hashed);
-  res.status(201).json({ id: info.lastInsertRowid });
+  await db.collection('users').doc(dni).set({ email, password: hashed });
+  res.status(201).json({ id: dni });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = db
-    .prepare('SELECT * FROM users WHERE username = ?')
-    .get(username);
-  if (!user) {
+  const doc = await db.collection('users').doc(username).get();
+  if (!doc.exists) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+  const user = doc.data();
   const valid = bcrypt.compareSync(password, user.password);
   if (!valid) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  res.json({ id: user.id, username: user.username });
+  res.json({ id: username, username });
 });
 
 export default router;
