@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest run",
-    "lint": "eslint"
+    "lint": "eslint",
+    "fix-gradle": "node fixAllBuildFiles.cjs",
+  "postcap:update": "npm run fix-gradle"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
@@ -60,4 +62,5 @@
     "Safari >= 14",
     "iOS >= 14"
   ]
+  
 }
