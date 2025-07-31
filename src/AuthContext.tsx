@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth';
-import { auth } from './firebase';
+import bcrypt from 'bcryptjs';
+
 
 export interface AuthContextType {
   user: UserInfo | null;
@@ -30,10 +25,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (dni: string, password: string) => {
+    const hashed = bcrypt.hashSync(password, 10);
     const res = await fetch('/api/users/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: dni, password }),
+      body: JSON.stringify({ username: dni, password: hashed }),
     });
     if (!res.ok) {
       throw new Error('Login failed');
@@ -46,12 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (dni: string, password: string) => {
+    const hashed = bcrypt.hashSync(password, 10);
     const res = await fetch('/api/users', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username: dni, password }),
+      body: JSON.stringify({ username: dni, password: hashed }),
     });
     if (!res.ok) {
       throw new Error('Failed to register');
