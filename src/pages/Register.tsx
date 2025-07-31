@@ -42,10 +42,10 @@ const Register: React.FC = () => {
             <Input value={dni} onIonChange={e => setDni(e.detail.value!)} required />
           </IonItem>
           <IonItem>
-            <IonLabel position="stacked">Password</IonLabel>
+            <IonLabel position="stacked">Clave</IonLabel>
             <Input type="password" value={password} onIonChange={e => setPassword(e.detail.value!)} required />
           </IonItem>
-          <Button expand="block" type="submit" className="ion-margin-top">Register</Button>
+          <Button expand="block" type="submit" className="ion-margin-top">Registrarse</Button>
         </form>
         <Button expand="block" routerLink="/login" className="ion-margin-top">
           Login

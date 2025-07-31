@@ -35,13 +35,13 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
                 onClick={() => history.push(backHref)}
               >
                 <IonIcon icon={chevronBackOutline} slot="start" />
-                Back
+                Volver
               </IonButton>
             </IonButtons>
           )}
           <IonTitle className="font-bold text-lg">Fiscalizacion App</IonTitle>
           <IonButtons slot="end">
-            <IonButton color="light" onClick={logout}>Logout</IonButton>
+            <IonButton color="light" onClick={logout}>Desloguearse</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>

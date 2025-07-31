@@ -34,7 +34,7 @@ const Login: React.FC = () => {
     <Layout>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Login</IonTitle>
+          <IonTitle>Ingresar (Login)</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
@@ -49,7 +49,7 @@ const Login: React.FC = () => {
               />
             </IonItem>
             <IonItem>
-              <IonLabel position="floating">Password</IonLabel>
+              <IonLabel position="floating">Clave</IonLabel>
               <Input
                 type="password"
                 value={password}
@@ -59,7 +59,7 @@ const Login: React.FC = () => {
             </IonItem>
           </IonList>
           <Button expand="block" type="submit" className="ion-margin-top">
-            LOGIN
+            INGRESAR
           </Button>
         </form>
         <Button
@@ -68,7 +68,7 @@ const Login: React.FC = () => {
           color="secondary"
           className="ion-margin-top"
         >
-          REGISTER
+          REGISTRARSE
         </Button>
       </IonContent>
     </Layout>
