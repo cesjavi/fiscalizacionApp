@@ -110,6 +110,10 @@ curl -X POST http://localhost:3000/api/users \
 After registering, log in on the `/login` page of the app using the same
 DNI and password.
 
+Passwords for users are now hashed using **bcryptjs**. Any existing entries in
+the `users` table that stored plaintext passwords will no longer work for
+authentication. Delete those rows or recreate the database after updating.
+
 ## Local database
 
 The app now stores its offline data using **IndexedDB** through the
