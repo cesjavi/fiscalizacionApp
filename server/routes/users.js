@@ -9,6 +9,17 @@ router.get('/', (req, res) => {
   res.json(users);
 });
 
+router.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = db
+    .prepare('SELECT * FROM users WHERE username = ? AND password = ?')
+    .get(username, password);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  res.json({ id: user.id, username: user.username });
+});
+
 router.post('/', (req, res) => {
   const { username, password } = req.body;
   const hashed = bcrypt.hashSync(password, 10);
