@@ -15,7 +15,7 @@ const Register: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await register(email, password);
+      await register(dni, password);
       history.push('/login');
     } catch (err: unknown) {
       console.error('Error al registrarse:', err);
