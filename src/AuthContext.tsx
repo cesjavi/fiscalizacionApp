@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   User,
@@ -11,7 +10,7 @@ import { auth } from './firebase';
 export interface AuthContextType {
   user: User | null;
   login: (dni: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -35,8 +34,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+  const register = async (dni: string, password: string) => {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: dni, password }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to register');
+    }
   };
 
   const logout = async () => {
