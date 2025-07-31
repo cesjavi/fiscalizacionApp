@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-export interface UserInfo {
-  dni: string;
-}
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User,
+} from 'firebase/auth';
+import { auth } from './firebase';
 
 export interface AuthContextType {
   user: UserInfo | null;
@@ -45,16 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (dni: string, password: string) => {
     const res = await fetch('/api/users', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ username: dni, password }),
     });
     if (!res.ok) {
-      throw new Error('Register failed');
+      throw new Error('Failed to register');
     }
-    const info = { dni } as UserInfo;
-    setUser(info);
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(info));
   };
 
   const logout = async () => {
