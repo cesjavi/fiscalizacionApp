@@ -1,36 +1,31 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
 import db from '../db.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  const users = db.prepare('SELECT * FROM users').all();
+router.get('/', async (req, res) => {
+  const snapshot = await db.collection('users').get();
+  const users = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   res.json(users);
 });
 
 router.post('/', (req, res) => {
-  const { username, password } = req.body;
-  const hashed = bcrypt.hashSync(password, 10);
+  const { username, password } = req.body; // password already hashed
   const info = db
     .prepare('INSERT INTO users (username, password) VALUES (?, ?)')
-    .run(username, hashed);
+    .run(username, password);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
 router.post('/login', (req, res) => {
-  const { username, password } = req.body;
+  const { username, password } = req.body; // password is already hashed
   const user = db
     .prepare('SELECT * FROM users WHERE username = ?')
     .get(username);
-  if (!user) {
+  if (!user || user.password !== password) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  const valid = bcrypt.compareSync(password, user.password);
-  if (!valid) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  res.json({ id: user.id, username: user.username });
+  res.json({ id: username, username });
 });
 
 export default router;

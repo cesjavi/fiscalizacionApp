@@ -11,7 +11,7 @@
     "test.unit": "vitest run",
     "lint": "eslint",
     "fix-gradle": "node fixAllBuildFiles.cjs",
-  "postcap:update": "npm run fix-gradle"
+    "postcap:update": "npm run fix-gradle"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
@@ -20,6 +20,7 @@
     "@ionic/react-router": "^8.5.0",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
+    "bcryptjs": "^2.4.3",
     "dexie": "^4.0.11",
     "firebase": "^12.0.0",
     "ionicons": "^7.4.0",
@@ -62,5 +63,4 @@
     "Safari >= 14",
     "iOS >= 14"
   ]
-  
 }
