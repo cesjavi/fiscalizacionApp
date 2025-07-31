@@ -16,4 +16,16 @@ router.post('/', (req, res) => {
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
+router.post('/login', (req, res) => {
+  const { dni, password } = req.body;
+  const user = db
+    .prepare('SELECT * FROM users WHERE dni = ? AND password = ?')
+    .get(dni, password);
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
 export default router;
