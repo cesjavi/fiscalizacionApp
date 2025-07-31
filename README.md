@@ -86,16 +86,29 @@ Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look
 The Express API now uses **SQLite** for data persistence. The database file
 `server/data.db` is created automatically when starting the server.
 
-Install the backend dependencies and run the server:
+Install the backend dependencies and start the server:
 
 ```bash
 cd server
 npm install
-cd ..
-npm run start:server
+node index.js
 ```
 
-This will initialize the database tables and serve the API on port `3000`.
+This initializes the database tables and serves the API on port `3000`.
+
+### User registration and login
+
+New users register by sending their **DNI** and a password to the `/api/users`
+endpoint:
+
+```bash
+curl -X POST http://localhost:3000/api/users \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"12345678","password":"secret"}'
+```
+
+After registering, log in on the `/login` page of the app using the same
+DNI and password.
 
 ## Local database
 
