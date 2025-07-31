@@ -97,6 +97,10 @@ npm run start:server
 
 This will initialize the database tables and serve the API on port `3000`.
 
+Passwords for users are now hashed using **bcryptjs**. Any existing entries in
+the `users` table that stored plaintext passwords will no longer work for
+authentication. Delete those rows or recreate the database after updating.
+
 ## Local database
 
 The app now stores its offline data using **IndexedDB** through the
