@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import bcrypt from 'bcryptjs';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from './firebase'; // Asegurate de tener este archivo correctamente configurado
 
+export interface UserInfo {
+  dni: string;
+}
 
 export interface AuthContextType {
   user: UserInfo | null;
   login: (dni: string, password: string) => Promise<void>;
-  register: (email: string, dni: string, password: string) => Promise<void>;
+  register: (dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -25,37 +29,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (dni: string, password: string) => {
-    const hashed = bcrypt.hashSync(password, 10);
-    const res = await fetch('/api/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: dni, password: hashed }),
-    });
-    if (!res.ok) {
-      throw new Error('Login failed');
+    const email = `${dni}@fake.com`;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      const info = { dni };
+      setUser(info);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(info));
+    } catch (error) {
+      console.error('Error en login:', error);
+      throw new Error('Usuario o clave incorrectos');
     }
-    const data = await res.json();
-    const info = { dni: data.username } as UserInfo;
+  };
+
+  const register = async (email: string, dni: string, password: string) => {
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    // Podés guardar el dni aparte si lo necesitás en localStorage:
+    const info = { dni };
     setUser(info);
     setIsAuthenticated(true);
     localStorage.setItem('user', JSON.stringify(info));
-  };
+  } catch (error) {
+    console.error('Error en registro:', error);
+    throw new Error('No se pudo registrar');
+  }
+};
 
-  const register = async (dni: string, password: string) => {
-    const hashed = bcrypt.hashSync(password, 10);
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username: dni, password: hashed }),
-    });
-    if (!res.ok) {
-      throw new Error('Failed to register');
-    }
-  };
 
   const logout = async () => {
+    await signOut(auth);
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('user');
@@ -68,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
