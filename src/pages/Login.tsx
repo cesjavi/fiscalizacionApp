@@ -15,7 +15,7 @@ import Layout from '../components/Layout';
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
 
@@ -60,6 +60,14 @@ const Login: React.FC = () => {
           </IonList>
           <Button expand="block" type="submit" className="ion-margin-top">
             INGRESAR
+          </Button>
+          <Button
+            expand="block"
+            type="button"
+            onClick={loginWithGoogle}
+            className="ion-margin-top"
+          >
+            INGRESAR CON GOOGLE
           </Button>
         </form>
         <Button
