@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import bcrypt from 'bcryptjs';
+import { signInWithPopup, GoogleAuthProvider, UserInfo } from 'firebase/auth';
+import { auth } from './firebase';
 
 
 export interface AuthContextType {
@@ -7,6 +9,7 @@ export interface AuthContextType {
   login: (dni: string, password: string) => Promise<void>;
   register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -41,6 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('user', JSON.stringify(info));
   };
 
+  const loginWithGoogle = async () => {
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    const info = result.user as UserInfo;
+    setUser(info);
+    setIsAuthenticated(true);
+    localStorage.setItem('user', JSON.stringify(info));
+  };
+
   const register = async (dni: string, password: string) => {
     const hashed = bcrypt.hashSync(password, 10);
     const res = await fetch('/api/users', {
@@ -62,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loginWithGoogle, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

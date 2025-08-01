@@ -13,3 +13,16 @@ window.matchMedia = window.matchMedia || function() {
       removeListener: function() {}
   };
 };
+
+// Prevent Firebase from initializing during tests
+import { vi } from 'vitest';
+
+vi.mock('firebase/app', () => ({
+  initializeApp: () => ({}),
+}));
+
+vi.mock('firebase/auth', () => ({
+  getAuth: () => ({}) ,
+  signInWithPopup: vi.fn(),
+  GoogleAuthProvider: class {},
+}));
