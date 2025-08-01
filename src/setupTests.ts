@@ -22,7 +22,5 @@ vi.mock('firebase/app', () => ({
 }));
 
 vi.mock('firebase/auth', () => ({
-  getAuth: () => ({}) ,
-  signInWithPopup: vi.fn(),
-  GoogleAuthProvider: class {},
+  getAuth: () => ({})
 }));
