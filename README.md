@@ -23,6 +23,18 @@ npm run dev
 
 The app will be available at [http://localhost:5173](http://localhost:5173).
 
+## Firebase configuration
+
+Copy `.env.example` to `.env` and add your Firebase project keys:
+
+```bash
+cp .env.example .env
+# edit .env
+```
+
+Enable the **Google** sign-in provider in the Firebase console under
+**Authentication › Sign-in method**.
+
 ## Linting
 
 Run ESLint to analyze the project:
