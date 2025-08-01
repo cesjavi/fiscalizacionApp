@@ -11,11 +11,15 @@ describe('VoterList', () => {
     await voterDB.voters.clear();
     await voterDB.voters.bulkAdd([
       {
-        nombre: 'John',
-        apellido: 'Doe',
-        dni: '123',
-        numero_de_orden: 1,
-        genero: 'M',
+        establecimiento: { seccion: '', circuito: '', mesa: '' },
+        persona: { nombre: 'John', apellido: 'Doe', dni: '123' },
+        personasVotantes: [
+          {
+            numero_de_orden: 1,
+            dni: '123',
+            genero: 'M'
+          }
+        ],
         fechaEnviado: new Date().toISOString(),
       },
     ]);
