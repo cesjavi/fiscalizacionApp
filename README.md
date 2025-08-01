@@ -31,10 +31,6 @@ Copy `.env.example` to `.env` and add your Firebase project keys:
 cp .env.example .env
 # edit .env
 ```
-
-Enable the **Google** sign-in provider in the Firebase console under
-**Authentication › Sign-in method**.
-
 ## Linting
 
 Run ESLint to analyze the project:
