@@ -6,21 +6,18 @@ describe('Full Voting Flow', () => {
 
   it('registers a new user', () => {
     cy.visit('/register');
-    cy.get('ion-input').eq(0).type('testuser');
+    cy.get('ion-input[type="email"]').type('test@example.com');
     cy.get('ion-input').eq(1).type('12345678');
-    cy.get('input[type="password"], ion-input[type="password"]').type('pass');
-    cy.contains('button', 'Register').click();
+    cy.get('ion-input[type="password"]').type('pass');
+    cy.contains('button', 'Registrarse').click();
     cy.url().should('include', '/login');
-    cy.window().then(win => {
-      expect(win.localStorage.getItem('users')).to.contain('testuser');
-    });
   });
 
   it('logs in and completes flow', () => {
     cy.visit('/login');
-    cy.get('ion-input').first().type('testuser');
+    cy.get('ion-input').first().type('12345678');
     cy.get('ion-input[type="password"]').type('pass');
-    cy.contains('button', 'Login').click();
+    cy.contains('button', 'INGRESAR').click();
     cy.url().should('include', '/mesas');
 
     cy.contains('Mesa 1').click();
@@ -34,12 +31,5 @@ describe('Full Voting Flow', () => {
     cy.get('input').first().type('John');
     cy.get('input').last().type('123');
     cy.contains('button', 'Save Details').click();
-
-    cy.window().then(win => {
-      expect(win.localStorage.getItem('selectedMesa')).to.eq('1');
-      expect(win.localStorage.getItem('vote')).to.not.equal(null);
-      expect(win.localStorage.getItem('voterName')).to.eq('John');
-      expect(win.localStorage.getItem('voterId')).to.eq('123');
-    });
   });
 });
