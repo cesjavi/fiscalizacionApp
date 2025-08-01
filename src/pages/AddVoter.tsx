@@ -31,14 +31,23 @@ const AddVoter: React.FC = () => {
     }
 
     const data = {
-      seccion: localStorage.getItem('seccion') ?? '',
-      circuito: localStorage.getItem('circuito') ?? '',
-      mesa: localStorage.getItem('mesa') ?? '',
-      dni: votanteDni,
-      nombre,
-      apellido,
-      numero_de_orden: parseInt(orden, 10) || 0,
-      genero,
+      establecimiento: {
+        seccion: localStorage.getItem('seccion') ?? '',
+        circuito: localStorage.getItem('circuito') ?? '',
+        mesa: localStorage.getItem('mesa') ?? ''
+      },
+      persona: {
+        dni: votanteDni,
+        nombre,
+        apellido
+      },
+      personasVotantes: [
+        {
+          numero_de_orden: parseInt(orden, 10) || 0,
+          dni: votanteDni,
+          genero
+        }
+      ],
       fechaEnviado: new Date().toISOString(),
       voted: false
     };

@@ -107,10 +107,9 @@ const VoterList: React.FC = () => {
   }, []);
 
   const filteredVoters = voters.filter(voter => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dni = ((voter as any).dni || '').toString().toLowerCase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orden = ((voter as any).numero_de_orden || '').toString();
+    const dni = (voter.persona?.dni || '').toString().toLowerCase();
+    const orden =
+      (voter.personasVotantes?.[0]?.numero_de_orden || '').toString();
 
     const matchesDni =
       searchDni.trim() === '' || dni.includes(searchDni.toLowerCase());
@@ -160,13 +159,13 @@ const VoterList: React.FC = () => {
       <div className="text-gray-500 text-center">No hay votantes cargados.</div>
     ) : (
       filteredVoters.map((voter, index) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const persona = { nombre: (voter as any).nombre ?? '-', apellido: (voter as any).apellido ?? '-' };
+        const persona = {
+          nombre: voter.persona?.nombre ?? '-',
+          apellido: voter.persona?.apellido ?? '-'
+        };
         const votante = {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          dni: (voter as any).dni ?? '-',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          numero_de_orden: (voter as any).numero_de_orden ?? '-'
+          dni: voter.personasVotantes?.[0]?.dni ?? '-',
+          numero_de_orden: voter.personasVotantes?.[0]?.numero_de_orden ?? '-'
         };
 
 
