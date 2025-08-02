@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 export interface UserInfo {
@@ -46,6 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         uid: userCredential.user.uid,
         email: userCredential.user.email,
       };
+      try {
+        await setDoc(doc(db, 'users', info.uid), info, { merge: true });
+      } catch (error) {
+        console.error('Error guardando usuario en Firestore:', error);
+      }
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));

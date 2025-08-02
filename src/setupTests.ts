@@ -26,5 +26,7 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  getFirestore: () => ({})
+  getFirestore: () => ({}),
+  doc: () => ({}),
+  setDoc: async () => undefined,
 }));
