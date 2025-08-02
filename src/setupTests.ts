@@ -24,3 +24,7 @@ vi.mock('firebase/app', () => ({
 vi.mock('firebase/auth', () => ({
   getAuth: () => ({})
 }));
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: () => ({})
+}));
