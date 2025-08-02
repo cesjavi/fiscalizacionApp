@@ -10,11 +10,6 @@ export default defineConfig({
     react(),
     legacy()
   ],
-  server: {
-    proxy: {
-      '/api': 'http://localhost:3000',
-    },
-  },
   test: {
     globals: true,
     environment: 'jsdom',
