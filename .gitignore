@@ -32,3 +32,4 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+/subir_csv_firestore/node_modules
