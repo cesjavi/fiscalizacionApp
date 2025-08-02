@@ -99,6 +99,14 @@ Install the backend dependencies and start the server:
 ```bash
 cd server
 npm install
+```
+
+The API stores user accounts in Firestore using Firebase Admin. Set the
+`GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your
+service account JSON file before starting the server:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 node index.js
 ```
 
