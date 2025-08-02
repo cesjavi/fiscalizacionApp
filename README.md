@@ -2,6 +2,16 @@
 
 This is an Ionic React project using Vite.
 
+## Descripción de la aplicación
+
+- Autenticación con Firebase Authentication para registro e inicio de sesión.
+- Flujo de selección de mesa (`SelectMesa`) que guarda la mesa elegida en `localStorage`.
+- Gestión de votantes offline con Dexie en las páginas `AddVoter` y `VoterList`.
+- Carga de resultados de escrutinio desde `Escrutinio`, incluyendo el almacenamiento de la foto final.
+- Páginas de ejemplo adicionales como `VoterCount` y otras.
+
+**Nota**: el directorio `server/` contiene un backend Express opcional que no se utiliza por defecto.
+
 ## Prerequisites
 
 - **Node.js** 18 or later
