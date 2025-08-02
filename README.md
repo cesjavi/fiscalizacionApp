@@ -89,48 +89,16 @@ import { Button, Input, Card } from './src/components';
 
 Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look.
 
-## Backend API
+## User authentication
 
-The Express API now uses **SQLite** for data persistence. The database file
-`server/data.db` is created automatically when starting the server.
+User accounts are now handled directly through **Firebase Authentication**. The
+old Express backend is no longer required.
 
-Install the backend dependencies and start the server:
+### Registering and logging in
 
-```bash
-cd server
-npm install
-```
-
-The API stores user accounts in Firestore using Firebase Admin. Set the
-`GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your
-service account JSON file before starting the server:
-
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-node index.js
-```
-
-This initializes the database tables and serves the API on port `3000`.
-
-### User registration and login
-
-New users register by sending their **DNI** and a password to the `/api/users`
-endpoint:
-
-```bash
-curl -X POST http://localhost:3000/api/users \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"12345678","password":"secret"}'
-```
-
-After registering, log in on the `/login` page of the app using the same
-DNI and password. The login and register pages send credentials to the
-Express API (`/api/users/login` and `/api/users`) instead of using Firebase
-authentication.
-
-Passwords for users are now hashed using **bcryptjs**. Any existing entries in
-the `users` table that stored plaintext passwords will no longer work for
-authentication. Delete those rows or recreate the database after updating.
+Create an account on the **Register** page using your email, DNI and password.
+Then sign in on the **Login** page with the same email and password. The app
+communicates only with Firebase for these operations.
 
 ## Local database
 

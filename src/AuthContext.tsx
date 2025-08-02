@@ -1,13 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  UserCredential,
+} from 'firebase/auth';
+import { auth } from './firebase';
 
 
 export interface UserInfo {
-  dni: string;
+  uid: string;
+  email: string | null;
+  dni?: string;
 }
 
 export interface AuthContextType {
   user: UserInfo | null;
-  login: (dni: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -27,20 +35,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (dni: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      const res = await fetch('/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dni, password })
-      });
-      if (!res.ok) {
-        throw new Error('Usuario o clave incorrectos');
-      }
-      const info = await res.json();
-      setUser({ dni: info.dni });
+      const userCredential: UserCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const info: UserInfo = {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+      };
+      setUser(info);
       setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify({ dni: info.dni }));
+      localStorage.setItem('user', JSON.stringify(info));
     } catch (error) {
       console.error('Error en login:', error);
       throw new Error('Usuario o clave incorrectos');
@@ -49,16 +57,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, dni: string, password: string) => {
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, dni, password })
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'No se pudo registrar');
-      }
-      const info = { dni };
+      const userCredential: UserCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const info: UserInfo = {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        dni,
+      };
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
