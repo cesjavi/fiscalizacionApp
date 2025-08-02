@@ -116,7 +116,9 @@ curl -X POST http://localhost:3000/api/users \
 ```
 
 After registering, log in on the `/login` page of the app using the same
-DNI and password.
+DNI and password. The login and register pages send credentials to the
+Express API (`/api/users/login` and `/api/users`) instead of using Firebase
+authentication.
 
 Passwords for users are now hashed using **bcryptjs**. Any existing entries in
 the `users` table that stored plaintext passwords will no longer work for
