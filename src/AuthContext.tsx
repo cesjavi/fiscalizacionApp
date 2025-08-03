@@ -104,18 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('Error guardando usuario en Firestore:', error);
       }
-      try {
-        await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, dni, password }),
-        });
-      } catch (error) {
-        console.error('Error sincronizando usuario en backend:', error);
-      }
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
+      return;
     } catch (error) {
       console.error('Error en registro:', error);
       if (error instanceof Error) {
