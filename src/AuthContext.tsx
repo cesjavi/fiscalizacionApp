@@ -100,17 +100,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dni,
       };
       try {
-        const res = await fetch('/api/users', {
+        await setDoc(doc(db, 'users', info.uid), info);
+      } catch (error) {
+        console.error('Error guardando usuario en Firestore:', error);
+      }
+      try {
+        await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, dni, password }),
         });
-        if (!res.ok) {
-          throw new Error('No se pudo registrar en backend');
-        }
       } catch (error) {
-        console.error('Error guardando usuario en backend:', error);
-        throw error;
+        console.error('Error sincronizando usuario en backend:', error);
       }
       setUser(info);
       setIsAuthenticated(true);
