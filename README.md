@@ -5,14 +5,15 @@ This is an Ionic React project using Vite.
 ## Descripción de la aplicación
 
 - Autenticación con Firebase Authentication para registro e inicio de sesión. El
-  registro guarda el DNI en Firestore y lo sincroniza con el backend para
-  permitir un login alternativo por DNI.
+  registro guarda el DNI directamente en Firestore, lo que permite habilitar
+  un login alternativo por DNI sin necesidad de un backend.
 - Flujo de selección de mesa (`SelectMesa`) que guarda la mesa elegida en `localStorage`.
 - Gestión de votantes offline con Dexie en las páginas `AddVoter` y `VoterList`.
 - Carga de resultados de escrutinio desde `Escrutinio`, incluyendo el almacenamiento de la foto final.
 - Páginas de ejemplo adicionales como `VoterCount` y otras.
 
-**Nota**: el directorio `server/` contiene un backend Express opcional que no se utiliza por defecto.
+**Nota**: la aplicación no requiere un servidor backend; el directorio `server/`
+corresponde a una implementación previa y puede ignorarse.
 
 ## Prerequisites
 
@@ -103,17 +104,16 @@ Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look
 
 ## User authentication
 
-User accounts are now handled directly through **Firebase Authentication**. Al
-registrarse se guarda el DNI en Firestore y se envía también al backend
-Express (`POST /api/users`) para habilitar un login alternativo por DNI. El
-backend sigue siendo opcional pero se mantiene sincronizado.
+User accounts are handled directly through **Firebase Authentication**. Al
+registrarse se guarda el DNI en Firestore, lo que permite implementar un
+login alternativo por DNI sin necesidad de un backend.
 
 ### Registering and logging in
 
 Create an account on the **Register** page using your email, DNI and password.
-Then sign in on the **Login** page with the same email and password. Durante el
-registro, el DNI se almacena tanto en Firestore como en el backend para
-permitir un futuro inicio de sesión con DNI.
+Then sign in on the **Login** page with the same email and password. During
+registration, the DNI is stored in Firestore and can be used later for an
+optional DNI-based login without any backend.
 
 ## Local database
 
