@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Authentication context for handling user login via email or DNI
 
@@ -44,14 +45,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
       );
-      const info: UserInfo = {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-      };
-      // Store user data in state and localStorage
-      setUser(info);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(info));
+      let dni: string | undefined;
+      try {
+        const q = query(collection(db, 'users'), where('uid', '==', userCredential.user.uid));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          dni = snapshot.docs[0].id;
+          const info: UserInfo = {
+            uid: userCredential.user.uid,
+            email: userCredential.user.email,
+            dni,
+          };
+          await setDoc(doc(db, 'users', dni), info, { merge: true });
+          setUser(info);
+          setIsAuthenticated(true);
+          localStorage.setItem('user', JSON.stringify(info));
+          return;
+        }
+        console.warn('DNI no encontrado para el usuario autenticado');
+        const info: UserInfo = {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+        };
+        setUser(info);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(info));
+      } catch (error) {
+        console.error('Error guardando usuario en Firestore:', error);
+        const info: UserInfo = {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+        };
+        setUser(info);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(info));
+      }
     } catch (error) {
       console.error('Error en login:', error);
       throw new Error('Usuario o clave incorrectos');
@@ -99,14 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Save user in the server so it can store hashed password and DNI
       try {
-        const res = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, dni, password }),
-        });
-        if (!res.ok) {
-          throw new Error('Error al guardar usuario en el servidor');
-        }
+        await setDoc(doc(db, 'users', dni), info);
       } catch (error) {
         console.error('Error guardando usuario en el servidor:', error);
       }

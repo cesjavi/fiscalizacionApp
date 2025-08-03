@@ -17,13 +17,15 @@ router.get('/', async (req, res) => {
 
 // Register a new user. The password is hashed before storing to Firestore.
 router.post('/', async (req, res) => {
-  const { email, dni, password } = req.body;
+  const { email, dni, password, uid } = req.body;
   if (!email || !dni || !password) {
     return res.status(400).json({ error: 'Missing fields' });
   }
   try {
     const passwordHash = await bcrypt.hash(password, 10);
-    await usersCollection.doc(dni).set({ email, dni, passwordHash });
+    const data = { email, dni, passwordHash };
+    if (uid) data.uid = uid;
+    await usersCollection.doc(dni).set(data);
     res.status(201).json({ id: dni });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create user' });
@@ -46,7 +48,7 @@ router.post('/login', async (req, res) => {
     if (!valid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    res.json({ email: user.email, dni });
+    res.json({ email: user.email, dni, uid: user.uid });
   } catch (err) {
     res.status(500).json({ error: 'Login failed' });
   }
