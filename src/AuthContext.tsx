@@ -124,11 +124,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userCredential.user.email,
         dni,
       };
+
+      // Save user in the server so it can store hashed password and DNI
       try {
         await setDoc(doc(db, 'users', dni), info);
       } catch (error) {
-        console.error('Error guardando usuario en Firestore:', error);
+        console.error('Error guardando usuario en el servidor:', error);
       }
+
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
