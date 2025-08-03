@@ -7,6 +7,7 @@ import {
 import { auth, db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
+// Authentication context for handling user login via email or DNI
 
 export interface UserInfo {
   uid: string;
@@ -53,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('Error guardando usuario en Firestore:', error);
       }
+      // Store user data in state and localStorage
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
@@ -78,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: data.email,
         dni,
       };
+        // Store user data in state and localStorage
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
