@@ -17,12 +17,13 @@ export interface UserInfo {
 export interface AuthContextType {
   user: UserInfo | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithDni: (dni: string, password: string) => Promise<void>;
   register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -57,6 +58,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(info));
     } catch (error) {
       console.error('Error en login:', error);
+      throw new Error('Usuario o clave incorrectos');
+    }
+  };
+
+  const loginWithDni = async (dni: string, password: string) => {
+    try {
+      const res = await fetch('/api/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dni, password }),
+      });
+      if (!res.ok) {
+        throw new Error('Usuario o clave incorrectos');
+      }
+      const data = await res.json();
+      const info: UserInfo = {
+        uid: dni,
+        email: data.email,
+        dni,
+      };
+      setUser(info);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(info));
+    } catch (error) {
+      console.error('Error en login con DNI:', error);
       throw new Error('Usuario o clave incorrectos');
     }
   };
@@ -108,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, loginWithDni, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
