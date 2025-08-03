@@ -73,6 +73,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userCredential.user.email,
         dni,
       };
+      try {
+        await setDoc(doc(db, 'users', info.uid), info);
+      } catch (error) {
+        console.error('Error guardando usuario en Firestore:', error);
+      }
+      try {
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, dni, password }),
+        });
+      } catch (error) {
+        console.error('Error sincronizando usuario en backend:', error);
+      }
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));

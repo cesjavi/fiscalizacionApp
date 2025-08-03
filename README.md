@@ -4,7 +4,9 @@ This is an Ionic React project using Vite.
 
 ## Descripción de la aplicación
 
-- Autenticación con Firebase Authentication para registro e inicio de sesión.
+- Autenticación con Firebase Authentication para registro e inicio de sesión. El
+  registro guarda el DNI en Firestore y lo sincroniza con el backend para
+  permitir un login alternativo por DNI.
 - Flujo de selección de mesa (`SelectMesa`) que guarda la mesa elegida en `localStorage`.
 - Gestión de votantes offline con Dexie en las páginas `AddVoter` y `VoterList`.
 - Carga de resultados de escrutinio desde `Escrutinio`, incluyendo el almacenamiento de la foto final.
@@ -101,14 +103,17 @@ Use them in pages instead of raw `IonButton` or `IonInput` for a consistent look
 
 ## User authentication
 
-User accounts are now handled directly through **Firebase Authentication**. The
-old Express backend is no longer required.
+User accounts are now handled directly through **Firebase Authentication**. Al
+registrarse se guarda el DNI en Firestore y se envía también al backend
+Express (`POST /api/users`) para habilitar un login alternativo por DNI. El
+backend sigue siendo opcional pero se mantiene sincronizado.
 
 ### Registering and logging in
 
 Create an account on the **Register** page using your email, DNI and password.
-Then sign in on the **Login** page with the same email and password. The app
-communicates only with Firebase for these operations.
+Then sign in on the **Login** page with the same email and password. Durante el
+registro, el DNI se almacena tanto en Firestore como en el backend para
+permitir un futuro inicio de sesión con DNI.
 
 ## Local database
 
