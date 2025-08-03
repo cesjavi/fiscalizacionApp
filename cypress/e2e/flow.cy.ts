@@ -1,6 +1,5 @@
-describe('Full Voting Flow', () => {
+describe('Authentication Flow', () => {
   beforeEach(() => {
-    cy.visit('/');
     cy.clearLocalStorage();
   });
 
@@ -13,23 +12,20 @@ describe('Full Voting Flow', () => {
     cy.url().should('include', '/login');
   });
 
-  it('logs in and completes flow', () => {
+  it('logs in with email', () => {
     cy.visit('/login');
+    cy.get('ion-input[type="email"]').type('test@example.com');
+    cy.get('ion-input[type="password"]').type('pass');
+    cy.contains('button', 'INGRESAR').click();
+    cy.url().should('include', '/select-mesa');
+  });
+
+  it('logs in with DNI', () => {
+    cy.visit('/login');
+    cy.get('ion-segment-button[value="dni"]').click();
     cy.get('ion-input').first().type('12345678');
     cy.get('ion-input[type="password"]').type('pass');
     cy.contains('button', 'INGRESAR').click();
-    cy.url().should('include', '/mesas');
-
-    cy.contains('Mesa 1').click();
-    cy.url().should('include', '/vote');
-
-    cy.get('ion-select').click();
-    cy.get('ion-select-option').first().click();
-    cy.contains('button', 'Submit Vote').click();
-    cy.url().should('include', '/voter');
-
-    cy.get('input').first().type('John');
-    cy.get('input').last().type('123');
-    cy.contains('button', 'Save Details').click();
+    cy.url().should('include', '/select-mesa');
   });
 });

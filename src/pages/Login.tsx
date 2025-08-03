@@ -5,7 +5,9 @@ import {
   IonContent,
   IonItem,
   IonLabel,
-  IonList
+  IonList,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/react';
 import { Button, Input } from '../components';
 import { useState } from 'react';
@@ -15,14 +17,28 @@ import Layout from '../components/Layout';
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const { login } = useAuth();
+  const { login, loginWithDni } = useAuth();
+  const [mode, setMode] = useState<'email' | 'dni'>('email');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [dni, setDni] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [dniPassword, setDniPassword] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(email, emailPassword);
+      history.push('/select-mesa');
+    } catch (err) {
+      console.error(err);
+      alert('Usuario o clave incorrectos');
+    }
+  };
+
+  const handleDniLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await loginWithDni(dni, dniPassword);
       history.push('/select-mesa');
     } catch (err) {
       console.error(err);
@@ -38,31 +54,66 @@ const Login: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <form onSubmit={handleLogin}>
-          <IonList>
-            <IonItem>
-              <IonLabel position="floating">Email</IonLabel>
-              <Input
-                type="email"
-                value={email}
-                onIonChange={(e) => setEmail(e.detail.value!)}
-                required
-              />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="floating">Clave</IonLabel>
-              <Input
-                type="password"
-                value={password}
-                onIonChange={(e) => setPassword(e.detail.value!)}
-                required
-              />
-            </IonItem>
-          </IonList>
-          <Button expand="block" type="submit" className="ion-margin-top">
-            INGRESAR
-          </Button>
-        </form>
+        <IonSegment value={mode} onIonChange={(e) => setMode(e.detail.value as 'email' | 'dni')}>
+          <IonSegmentButton value="email">
+            <IonLabel>Email</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="dni">
+            <IonLabel>DNI</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+        {mode === 'email' ? (
+          <form onSubmit={handleEmailLogin}>
+            <IonList>
+              <IonItem>
+                <IonLabel position="floating">Email</IonLabel>
+                <Input
+                  type="email"
+                  value={email}
+                  onIonChange={(e) => setEmail(e.detail.value!)}
+                  required
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel position="floating">Clave</IonLabel>
+                <Input
+                  type="password"
+                  value={emailPassword}
+                  onIonChange={(e) => setEmailPassword(e.detail.value!)}
+                  required
+                />
+              </IonItem>
+            </IonList>
+            <Button expand="block" type="submit" className="ion-margin-top">
+              INGRESAR
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleDniLogin}>
+            <IonList>
+              <IonItem>
+                <IonLabel position="floating">DNI</IonLabel>
+                <Input
+                  value={dni}
+                  onIonChange={(e) => setDni(e.detail.value!)}
+                  required
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel position="floating">Clave</IonLabel>
+                <Input
+                  type="password"
+                  value={dniPassword}
+                  onIonChange={(e) => setDniPassword(e.detail.value!)}
+                  required
+                />
+              </IonItem>
+            </IonList>
+            <Button expand="block" type="submit" className="ion-margin-top">
+              INGRESAR
+            </Button>
+          </form>
+        )}
         <Button
           expand="block"
           routerLink="/register"
