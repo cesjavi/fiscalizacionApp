@@ -42,8 +42,31 @@ const SelectMesa: React.FC = () => {
       await voterDB.voters.clear();
       const snapshot = await getDocs(q);
       for (const doc of snapshot.docs) {
-        await voterDB.voters.add(doc.data() as VoterRecord);
+  const d = doc.data();
+  // Adaptar los campos planos a la estructura esperada
+  const record: VoterRecord = {
+    persona: {
+      dni: d['DNI Votante'],
+      nombre: d['Nombre'],
+      apellido: d['Apellido'],
+    },
+    personasVotantes: [
+      {
+        numero_de_orden: Number(d['Número de Orden']),
+        dni: d['DNI Votante'],
+        genero: d['Género'],
       }
+    ],
+    establecimiento: {
+      mesa: d['mesa'] || ''
+      // seccion, circuito: podrías agregarlos si tenés esos datos
+    },
+    fechaEnviado: '', // si tenés campo de fecha lo ponés acá
+    voted: false // si no hay info de esto, lo dejás en false o null
+  };
+  await voterDB.voters.add(record);
+}
+
       history.push('/voters');
     } catch (error) {
       alert('Error al cargar votantes');
