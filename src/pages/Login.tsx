@@ -31,19 +31,23 @@ const Login: React.FC = () => {
       history.push('/select-mesa');
     } catch (err) {
       console.error(err);
-      alert('Usuario o clave incorrectos');
+
+      alert('Usuario o clave incorrectos'); // Show error message if login fails.
     }
   };
 
   const handleDniLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log(dni, dniPassword);
+
+      console.log(dni, dniPassword); // Log DNI and password values.
       await loginWithDni(dni, dniPassword);
-      history.push('/select-mesa');
+
+      history.push('/select-mesa'); // Navigate to select-mesa page after successful login.
     } catch (err) {
       console.error(err);
-      alert('Usuario o clave incorrectos');
+
+      alert('Usuario o clave incorrectos'); // Show error message if login fails.
     }
   };
 
@@ -115,6 +119,17 @@ const Login: React.FC = () => {
             </Button>
           </form>
         )}
+
+
+
+
+
+
+
+
+        {/**
+         * Button to navigate to register page.
+         */}
         <Button
           expand="block"
           routerLink="/register"
