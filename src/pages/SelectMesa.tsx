@@ -7,6 +7,9 @@ import { Button, Input } from '../components';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+import { voterDB, VoterRecord } from '../voterDB';
 
 const SelectMesa: React.FC = () => {
   const history = useHistory();
@@ -14,6 +17,7 @@ const SelectMesa: React.FC = () => {
   const [circuito, setCircuito] = useState('');
   const [mesa, setMesa] = useState('');
   const [editing, setEditing] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const savedSeccion = localStorage.getItem('seccion');
@@ -27,12 +31,26 @@ const SelectMesa: React.FC = () => {
     }
   }, []);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     localStorage.setItem('seccion', seccion);
     localStorage.setItem('circuito', circuito);
     localStorage.setItem('mesa', mesa);
     setEditing(false);
-    history.push('/voters');
+    setLoading(true);
+    try {
+      const q = query(collection(db, 'votantes'), where('mesa', '==', mesa));
+      await voterDB.voters.clear();
+      const snapshot = await getDocs(q);
+      for (const doc of snapshot.docs) {
+        await voterDB.voters.add(doc.data() as VoterRecord);
+      }
+      history.push('/voters');
+    } catch (error) {
+      alert('Error al cargar votantes');
+      console.error('Error fetching voters:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleModify = () => {
@@ -82,6 +100,7 @@ const SelectMesa: React.FC = () => {
           expand="block"
           onClick={handleNext}
           disabled={
+            loading ||
             !(
               seccion.length === 3 &&
               circuito.length === 3 &&
@@ -89,7 +108,7 @@ const SelectMesa: React.FC = () => {
             )
           }
         >
-          Siguiente
+          {loading ? 'Cargando...' : 'Siguiente'}
         </Button>
       </IonContent>
     </Layout>

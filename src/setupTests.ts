@@ -30,3 +30,7 @@ vi.mock('firebase/firestore', () => ({
   doc: () => ({}),
   setDoc: async () => undefined,
 }));
+
+vi.mock('firebase/database', () => ({
+  getDatabase: () => ({})
+}));
