@@ -38,6 +38,7 @@ const Login: React.FC = () => {
   const handleDniLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log(dni, dniPassword);
       await loginWithDni(dni, dniPassword);
       history.push('/select-mesa');
     } catch (err) {
