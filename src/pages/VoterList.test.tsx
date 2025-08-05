@@ -5,6 +5,7 @@ import { createMemoryHistory } from 'history';
 import VoterList from './VoterList';
 import { AuthProvider } from '../AuthContext';
 import { voterDB } from '../voterDB';
+import { vi } from 'vitest';
 
 describe('VoterList', () => {
   beforeEach(async () => {
@@ -78,5 +79,36 @@ describe('VoterList', () => {
     expect(getByTestId('toggle-vote')).toBeDisabled();
     expect(getByText('Editar')).toBeDisabled();
     expect(getByText('Eliminar')).toBeDisabled();
+  });
+
+  it('unfreezes voting and re-enables actions', async () => {
+    localStorage.setItem('votingFrozen', 'true');
+    const history = createMemoryHistory({ initialEntries: ['/voters'] });
+    window.confirm = vi.fn(() => true);
+    const { getByTestId, getByText, queryByTestId, getAllByText } = render(
+      <AuthProvider>
+        <Router history={history}>
+          <VoterList />
+        </Router>
+      </AuthProvider>
+    );
+
+    await waitFor(() => getByTestId('voter-row-0'));
+    const toggleBtn = getByTestId('toggle-vote');
+    const deleteBtn = getByText('Eliminar');
+    expect(toggleBtn).toBeDisabled();
+    expect(deleteBtn).toBeDisabled();
+
+    const unfreezeBtn = getByText('Descongelar Votación');
+    fireEvent.click(unfreezeBtn);
+
+    await waitFor(() => expect(toggleBtn).not.toBeDisabled());
+    await waitFor(() => expect(deleteBtn).not.toBeDisabled());
+
+    fireEvent.click(toggleBtn);
+    await waitFor(() => expect(getAllByText('Votó').length).toBeGreaterThan(0));
+
+    fireEvent.click(deleteBtn);
+    await waitFor(() => expect(queryByTestId('voter-row-0')).toBeNull());
   });
 });

@@ -111,6 +111,10 @@ const toggleVoto = async (id: number) => {
     history.push('/escrutinio');
   };
 
+  const handleUnfreezeVoting = () => {
+    setVotingFrozen(false);
+  };
+
   const handleConfig = () => {
     history.push('/select-mesa');
   };
@@ -164,6 +168,9 @@ const toggleVoto = async (id: number) => {
   {votingFrozen && (
     <div className="text-center text-red-500 mb-4">
       La lista está congelada.
+      <div className="mt-2">
+        <Button onClick={handleUnfreezeVoting}>Descongelar Votación</Button>
+      </div>
     </div>
   )}
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
