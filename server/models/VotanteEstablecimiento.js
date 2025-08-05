@@ -21,6 +21,7 @@ const votanteEstablecimientoSchema = new mongoose.Schema({
   persona: personaSchema,
   personasVotantes: [personasVotantesSchema],
   fechaEnviado: String,
+  voto: Boolean,
 });
 
 export default mongoose.model('VotanteEstablecimiento', votanteEstablecimientoSchema);

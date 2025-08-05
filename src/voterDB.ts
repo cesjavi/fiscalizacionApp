@@ -17,7 +17,7 @@ export interface VoterRecord {
     genero: string;
   }[];
   fechaEnviado: string;
-  voto: boolean;
+  voto?: boolean;
 }
 
 class VoterDexie extends Dexie {
