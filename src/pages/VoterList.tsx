@@ -20,6 +20,7 @@ import { voterDB } from '../voterDB';
 import { useAuth } from '../AuthContext';
 
 interface Voter {
+  id?: number;
   establecimiento?: {
     seccion?: string;
     circuito?: string;
@@ -53,36 +54,30 @@ const VoterList: React.FC = () => {
       console.error('Error al cargar votantes:', error);
     }
   };
-  const deleteVoter = async (index: number) => {
-    const voterToDelete = voters[index];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const id = (voterToDelete as any).id; // asumiendo que `id` está incluido
-
+const deleteVoter = async (id: number) => {
   if (!id) return;
 
   try {
     if (window.confirm('¿Estás seguro de que querés eliminar este votante?')) {
       await voterDB.voters.delete(id);
-      setVoters((prev) => prev.filter((_, i) => i !== index));
+      setVoters(prev => prev.filter(v => v.id !== id));
     }
   } catch (error) {
     console.error('Error al eliminar votante:', error);
   }
 };
 
-  const toggleVoted = async (index: number) => {
-    const voterToToggle = voters[index];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const id = (voterToToggle as any).id;
-    if (!id) return;
 
-    const newValue = !voterToToggle.voted;
-    await voterDB.voters.update(id, { voted: newValue });
-    setVoters(prev =>
-      prev.map((v, i) => (i === index ? { ...v, voted: newValue } : v))
-    );
-  };
+const toggleVoted = async (id: number) => {
+  const voterToToggle = voters.find(v => v.id === id);
+  if (!voterToToggle) return;
 
+  const newValue = !voterToToggle.voto;
+  await voterDB.voters.update(id, { voto: newValue });
+  setVoters(prev =>
+    prev.map(v => (v.id === id ? { ...v, voto: newValue } : v))
+  );
+};
 
   const handleEndVoting = async () => {
     try {
@@ -217,7 +212,7 @@ const VoterList: React.FC = () => {
                 <button
                   data-testid="toggle-vote"
                   className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
-                  onClick={() => toggleVoted(index)}
+                 onClick={() => toggleVoted(id)}
                 >
                   Marcar voto
                 </button>
@@ -243,7 +238,7 @@ const VoterList: React.FC = () => {
               </button>
               <button
                 className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
-                onClick={() => deleteVoter(index)}
+                onClick={() => deleteVoter(id)}
               >
                 Eliminar
               </button>
