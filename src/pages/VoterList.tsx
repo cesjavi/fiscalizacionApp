@@ -4,6 +4,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonModal,
   IonFooter,
   IonIcon,
   IonItem,
@@ -18,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { voterDB } from '../voterDB';
 import { useAuth } from '../AuthContext';
+import EscrutinioModal from './EscrutinioModal';
 
 interface Voter {
   id?: number;
@@ -44,7 +46,15 @@ const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [searchDni, setSearchDni] = useState('');
   const [searchOrden, setSearchOrden] = useState('');
+  const [votingFrozen, setVotingFrozen] = useState(() => {
+    const stored = localStorage.getItem('votingFrozen');
+    return stored ? JSON.parse(stored) : false;
+  });
   const history = useHistory();
+
+  useEffect(() => {
+    localStorage.setItem('votingFrozen', JSON.stringify(votingFrozen));
+  }, [votingFrozen]);
 
   const loadVoters = async () => {
     try {
@@ -60,7 +70,7 @@ const VoterList: React.FC = () => {
     }
   };
 const deleteVoter = async (id: number) => {
-  if (!id) return;
+  if (votingFrozen || !id) return;
 
   try {
     if (window.confirm('¿Estás seguro de que querés eliminar este votante?')) {
@@ -74,6 +84,7 @@ const deleteVoter = async (id: number) => {
 
 
 const toggleVoto = async (id: number) => {
+  if (votingFrozen) return;
   const voterToToggle = voters.find(v => v.id === id);
   if (!voterToToggle) return;
 
@@ -96,6 +107,7 @@ const toggleVoto = async (id: number) => {
     } catch (err) {
       console.error('Error taking photo', err);
     }
+    setVotingFrozen(true);
     history.push('/escrutinio');
   };
 
@@ -149,6 +161,11 @@ const toggleVoto = async (id: number) => {
 
 
 <IonContent fullscreen className="p-4">
+  {votingFrozen && (
+    <div className="text-center text-red-500 mb-4">
+      La lista está congelada.
+    </div>
+  )}
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
     <IonItem>
       <IonLabel position="stacked">Buscar por DNI</IonLabel>
@@ -216,8 +233,13 @@ const toggleVoto = async (id: number) => {
               ) : (
                 <button
                   data-testid="toggle-vote"
-                  className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
-                 onClick={() => toggleVoto(id)}
+                  disabled={votingFrozen}
+                  className={`px-2 py-1 text-xs font-medium text-white rounded ${
+                    votingFrozen
+                      ? 'bg-blue-300 cursor-not-allowed'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                  onClick={() => toggleVoto(id)}
                 >
                   Marcar voto
                 </button>
@@ -227,9 +249,10 @@ const toggleVoto = async (id: number) => {
             {/* Columna 5: Botón */}
             <div>
               <button
+                disabled={votingFrozen}
                 className={`w-32 px-2 py-1 text-xs font-medium text-white rounded ${
                   voto ? 'bg-green-500' : 'bg-blue-500'
-                }`}
+                } ${votingFrozen ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={() => toggleVoto(id)}
               >
                 {voto ? 'Votó' : 'Votar'}
@@ -238,11 +261,15 @@ const toggleVoto = async (id: number) => {
 
             {/* Columna 6: Acciones */}
             <div className="flex space-x-2">
-              <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
+              <button
+                disabled={votingFrozen}
+                className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Editar
               </button>
               <button
-                className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
+                disabled={votingFrozen}
+                className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => deleteVoter(id)}
               >
                 Eliminar
@@ -254,6 +281,13 @@ const toggleVoto = async (id: number) => {
     )}
   </div>
 </IonContent>
+
+      <IonModal
+        isOpen={showEscrutinioModal}
+        onDidDismiss={() => setShowEscrutinioModal(false)}
+      >
+        <EscrutinioModal onClose={() => setShowEscrutinioModal(false)} />
+      </IonModal>
 
       <IonFooter>
         <IonToolbar>

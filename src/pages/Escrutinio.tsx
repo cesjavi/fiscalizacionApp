@@ -5,14 +5,16 @@ import {
   IonText
 } from '@ionic/react';
 import { Button, Input } from '../components';
-import { useState } from 'react';
+import { useRef, useState, ChangeEvent } from 'react';
 import Layout from '../components/Layout';
+import { Camera, CameraResultType } from '@capacitor/camera';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import app, { getStorage } from '../firebase';
 
-interface ResultadoEscrutinio {
-  lista100: number;
-  votoEnBlanco: number;
-  nulo: number;
-  recurrido: number;
+interface Lista {
+  lista: string;
+  nro_lista?: string;
+  id: string;
 }
 
 const Escrutinio: React.FC = () => {
@@ -22,16 +24,70 @@ const Escrutinio: React.FC = () => {
   const [recurrido, setRecurrido] = useState('');
   const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
+  const [foto, setFoto] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFoto = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        quality: 80
+      });
+      if (photo.dataUrl) {
+        setFoto(photo.dataUrl);
+      }
+    } catch {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFoto(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  useEffect(() => {
+    const fetchListas = async () => {
+      const snapshot = await getDocs(collection(db, 'listas'));
+      const data: Lista[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Lista, 'id'>)
+      }));
+      setListas(data);
+    };
+    fetchListas();
+  }, []);
+
+  const handleChange = (id: string, value: string) => {
+    setValores((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async () => {
-    const datos: ResultadoEscrutinio = {
-      lista100: parseInt(lista100, 10) || 0,
-      votoEnBlanco: parseInt(votoEnBlanco, 10) || 0,
-      nulo: parseInt(nulo, 10) || 0,
-      recurrido: parseInt(recurrido, 10) || 0
-    };
+    const datos = listas.reduce((acc, l) => {
+      acc[l.lista] = parseInt(valores[l.id], 10) || 0;
+      return acc;
+    }, {} as Record<string, number>);
     setResultado(datos);
     const mesaId = Number(localStorage.getItem('mesaId'));
+    let fotoUrl = foto;
+    if (foto) {
+      try {
+        const storage = getStorage(app);
+        const storageRef = ref(
+          storage,
+          `escrutinio/${mesaId}-${Date.now()}.jpg`
+        );
+        await uploadString(storageRef, foto, 'data_url');
+        fotoUrl = await getDownloadURL(storageRef);
+      } catch (err) {
+        console.error('Error uploading photo', err);
+      }
+    }
     try {
       const res = await fetch('/api/escrutinio', {
         method: 'POST',
