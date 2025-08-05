@@ -21,7 +21,7 @@ describe('VoterList', () => {
           }
         ],
         fechaEnviado: new Date().toISOString(),
-        voted: false,
+        voto: false,
       },
     ]);
   });
@@ -39,7 +39,7 @@ describe('VoterList', () => {
     await waitFor(() => expect(getAllByText(/John/).length).toBeGreaterThan(0));
   });
 
-  it('marks voter as voted when button is clicked', async () => {
+  it('marks voter as voto when button is clicked', async () => {
     const history = createMemoryHistory({ initialEntries: ['/voters'] });
     const { getByTestId, getAllByText, queryAllByText } = render(
       <AuthProvider>
