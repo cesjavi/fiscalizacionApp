@@ -142,7 +142,7 @@ console.log(payload)
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            style={{ display: 'none' }}
+            className="hidden"
             onChange={handleFileChange}
              title="Subir foto de acta"
           />
