@@ -40,7 +40,15 @@ db.prepare(`CREATE TABLE IF NOT EXISTS escrutinio (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   mesa_id INTEGER,
   datos TEXT,
+  foto TEXT,
   FOREIGN KEY(mesa_id) REFERENCES mesas(id)
 )`).run();
+
+// Ensure "foto" column exists for existing databases
+const escrutinioColumns = db.prepare("PRAGMA table_info(escrutinio)").all();
+const hasFoto = escrutinioColumns.some(column => column.name === 'foto');
+if (!hasFoto) {
+  db.prepare('ALTER TABLE escrutinio ADD COLUMN foto TEXT').run();
+}
 
 export default db;

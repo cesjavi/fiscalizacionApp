@@ -20,6 +20,7 @@ const Escrutinio: React.FC = () => {
   const [votoEnBlanco, setVotoEnBlanco] = useState('');
   const [nulo, setNulo] = useState('');
   const [recurrido, setRecurrido] = useState('');
+  const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
 
   const handleSubmit = async () => {
@@ -37,7 +38,8 @@ const Escrutinio: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mesa_id: mesaId,
-          datos: JSON.stringify(datos)
+          datos: JSON.stringify(datos),
+          foto
         })
       });
       if (res.ok) {
@@ -83,6 +85,14 @@ const Escrutinio: React.FC = () => {
             type="number"
             value={recurrido}
             onIonChange={(e) => setRecurrido(e.detail.value ?? '')}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel position="stacked">Foto (URL o base64)</IonLabel>
+          <Input
+            type="text"
+            value={foto}
+            onIonChange={(e) => setFoto(e.detail.value ?? '')}
           />
         </IonItem>
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
