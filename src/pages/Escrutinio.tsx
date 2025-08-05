@@ -22,7 +22,6 @@ interface Lista {
 const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'];
 
 const Escrutinio: React.FC = () => {
-  const [listas, setListas] = useState<Lista[]>([]);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
@@ -167,3 +166,7 @@ console.log(payload)
 };
 
 export default Escrutinio;
+function setListas(data: Lista[]) {
+  throw new Error('Function not implemented.');
+}
+
