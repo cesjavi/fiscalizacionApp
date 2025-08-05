@@ -37,8 +37,9 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   }, [showStats]);
 
   const handleStats = async () => {
-    const total = await voterDB.voters.count();
-    const voted = await voterDB.voters.where('voto').equals(true).count();
+    const all = await voterDB.voters.toArray();
+    const total = all.length;
+    const voted = all.filter(v => v.voto).length;
     setTotalVoters(total);
     setVotedCount(voted);
     setShowStats(true);
@@ -62,8 +63,8 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
           )}
           <IonTitle className="font-bold text-lg">Fiscalizacion App</IonTitle>
           <IonButtons slot="end">
-            <IonButton color="light" onClick={handleStats}>Estadísticas</IonButton>
-            <IonButton color="light" onClick={logout}>Desloguearse</IonButton>
+            <IonButton color="blue" onClick={handleStats}>Estadísticas</IonButton>
+            <IonButton color="blue" onClick={logout}>Desloguearse</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
