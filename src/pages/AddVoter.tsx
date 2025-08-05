@@ -49,7 +49,7 @@ const AddVoter: React.FC = () => {
         }
       ],
       fechaEnviado: new Date().toISOString(),
-      voted: false
+      voto: false
     };
 
     try {
