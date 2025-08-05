@@ -5,30 +5,43 @@ import {
   IonText
 } from '@ionic/react';
 import { Button, Input } from '../components';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 import Layout from '../components/Layout';
 
-interface ResultadoEscrutinio {
-  lista100: number;
-  votoEnBlanco: number;
-  nulo: number;
-  recurrido: number;
+interface Lista {
+  lista: string;
+  nro_lista?: string;
+  id: string;
 }
 
 const Escrutinio: React.FC = () => {
-  const [lista100, setLista100] = useState('');
-  const [votoEnBlanco, setVotoEnBlanco] = useState('');
-  const [nulo, setNulo] = useState('');
-  const [recurrido, setRecurrido] = useState('');
-  const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
+  const [listas, setListas] = useState<Lista[]>([]);
+  const [valores, setValores] = useState<Record<string, string>>({});
+  const [resultado, setResultado] = useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    const fetchListas = async () => {
+      const snapshot = await getDocs(collection(db, 'listas'));
+      const data: Lista[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Lista, 'id'>)
+      }));
+      setListas(data);
+    };
+    fetchListas();
+  }, []);
+
+  const handleChange = (id: string, value: string) => {
+    setValores((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async () => {
-    const datos: ResultadoEscrutinio = {
-      lista100: parseInt(lista100, 10) || 0,
-      votoEnBlanco: parseInt(votoEnBlanco, 10) || 0,
-      nulo: parseInt(nulo, 10) || 0,
-      recurrido: parseInt(recurrido, 10) || 0
-    };
+    const datos = listas.reduce((acc, l) => {
+      acc[l.lista] = parseInt(valores[l.id], 10) || 0;
+      return acc;
+    }, {} as Record<string, number>);
     setResultado(datos);
     const mesaId = Number(localStorage.getItem('mesaId'));
     try {
@@ -53,38 +66,18 @@ const Escrutinio: React.FC = () => {
   return (
     <Layout backHref="/voters">
       <IonContent className="ion-padding">
-        <IonItem>
-          <IonLabel position="stacked">Lista 100</IonLabel>
-          <Input
-            type="number"
-            value={lista100}
-            onIonChange={(e) => setLista100(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Voto en blanco</IonLabel>
-          <Input
-            type="number"
-            value={votoEnBlanco}
-            onIonChange={(e) => setVotoEnBlanco(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Nulo</IonLabel>
-          <Input
-            type="number"
-            value={nulo}
-            onIonChange={(e) => setNulo(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Recurrido</IonLabel>
-          <Input
-            type="number"
-            value={recurrido}
-            onIonChange={(e) => setRecurrido(e.detail.value ?? '')}
-          />
-        </IonItem>
+        {listas.map((l) => (
+          <IonItem key={l.id}>
+            <IonLabel position="stacked">
+              {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
+            </IonLabel>
+            <Input
+              type="number"
+              value={valores[l.id] || ''}
+              onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
+            />
+          </IonItem>
+        ))}
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
           Enviar
         </Button>
