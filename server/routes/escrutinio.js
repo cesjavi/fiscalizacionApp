@@ -9,10 +9,10 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { mesa_id, datos } = req.body;
+  const { mesa_id, datos, foto } = req.body;
   const info = db
-    .prepare('INSERT INTO escrutinio (mesa_id, datos) VALUES (?, ?)')
-    .run(mesa_id, datos);
+    .prepare('INSERT INTO escrutinio (mesa_id, datos, foto) VALUES (?, ?, ?)')
+    .run(mesa_id, datos, foto);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 

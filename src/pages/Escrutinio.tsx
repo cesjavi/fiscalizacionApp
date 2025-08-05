@@ -22,6 +22,7 @@ const Escrutinio: React.FC = () => {
   const [votoEnBlanco, setVotoEnBlanco] = useState('');
   const [nulo, setNulo] = useState('');
   const [recurrido, setRecurrido] = useState('');
+  const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +95,7 @@ const Escrutinio: React.FC = () => {
         body: JSON.stringify({
           mesa_id: mesaId,
           datos: JSON.stringify(datos),
-          foto: fotoUrl
+          foto
         })
       });
       if (res.ok) {
@@ -142,14 +143,12 @@ const Escrutinio: React.FC = () => {
             onIonChange={(e) => setRecurrido(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem className="ion-margin-top">
-          <Button onClick={handleFoto}>Cargar Foto</Button>
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            ref={fileInputRef}
-            onChange={handleFileChange}
+        <IonItem>
+          <IonLabel position="stacked">Foto (URL o base64)</IonLabel>
+          <Input
+            type="text"
+            value={foto}
+            onIonChange={(e) => setFoto(e.detail.value ?? '')}
           />
         </IonItem>
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
