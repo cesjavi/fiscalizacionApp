@@ -54,9 +54,9 @@ const VoterList: React.FC = () => {
     }
   };
   const deleteVoter = async (index: number) => {
-  const voterToDelete = voters[index];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const id = (voterToDelete as any).id; // asumiendo que `id` está incluido
+    const voterToDelete = voters[index];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const id = (voterToDelete as any).id; // asumiendo que `id` está incluido
 
   if (!id) return;
 
@@ -69,6 +69,19 @@ const VoterList: React.FC = () => {
     console.error('Error al eliminar votante:', error);
   }
 };
+
+  const toggleVoted = async (index: number) => {
+    const voterToToggle = voters[index];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const id = (voterToToggle as any).id;
+    if (!id) return;
+
+    const newValue = !voterToToggle.voted;
+    await voterDB.voters.update(id, { voted: newValue });
+    setVoters(prev =>
+      prev.map((v, i) => (i === index ? { ...v, voted: newValue } : v))
+    );
+  };
 
 
   const handleEndVoting = async () => {
@@ -167,12 +180,17 @@ const VoterList: React.FC = () => {
           dni: voter.personasVotantes?.[0]?.dni ?? '-',
           numero_de_orden: voter.personasVotantes?.[0]?.numero_de_orden ?? '-'
         };
-
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const id = (voter as any).id as number;
+        const voto = voter.voto ?? false;
 
         return (
           <div
             key={index}
-            className="bg-white rounded shadow p-4 grid grid-cols-5 items-center gap-2"
+            data-testid={`voter-row-${index}`}
+            className={`rounded shadow p-4 grid grid-cols-5 items-center gap-2 ${
+              voter.voted ? 'bg-green-50' : 'bg-white'
+            }`}
           >
             {/* Columna 1: Nombre y Apellido */}
             <div className="font-medium">
@@ -195,16 +213,38 @@ const VoterList: React.FC = () => {
                 <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
                   Votó
                 </span>
+              ) : (
+                <button
+                  data-testid="toggle-vote"
+                  className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
+                  onClick={() => toggleVoted(index)}
+                >
+                  Marcar voto
+                </button>
               )}
             </div>
 
-            {/* Columna 5: Acciones */}
+            {/* Columna 5: Botón */}
+            <div>
+              <button
+                className={`w-32 px-2 py-1 text-xs font-medium text-white rounded ${
+                  voto ? 'bg-green-500' : 'bg-blue-500'
+                }`}
+                onClick={() => toggleVoto(id, voto)}
+              >
+                {voto ? 'Votó' : 'Votar'}
+              </button>
+            </div>
+
+            {/* Columna 6: Acciones */}
             <div className="flex space-x-2">
               <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
                 Editar
               </button>
-              <button className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
-              onClick={() => deleteVoter(index)}>
+              <button
+                className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
+                onClick={() => deleteVoter(index)}
+              >
                 Eliminar
               </button>
             </div>

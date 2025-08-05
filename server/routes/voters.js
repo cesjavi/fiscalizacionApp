@@ -39,4 +39,16 @@ router.post('/', (req, res) => {
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
+router.put('/:id/voto', (req, res) => {
+  const { id } = req.params;
+  const { voto } = req.body;
+  const stmt = db.prepare('UPDATE votantes SET voto = ? WHERE id = ?');
+  const info = stmt.run(voto, id);
+  if (info.changes === 0) {
+    res.status(404).json({ error: 'Votante no encontrado' });
+  } else {
+    res.json({ updated: info.changes });
+  }
+});
+
 export default router;
