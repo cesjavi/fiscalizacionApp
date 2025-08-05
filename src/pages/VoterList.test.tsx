@@ -21,7 +21,7 @@ describe('VoterList', () => {
           }
         ],
         fechaEnviado: new Date().toISOString(),
-        voted: false,
+        voto: false,
       },
     ]);
   });
@@ -39,7 +39,7 @@ describe('VoterList', () => {
     await waitFor(() => expect(getAllByText(/John/).length).toBeGreaterThan(0));
   });
 
-  it('marks voter as voted when button is clicked', async () => {
+  it('marks voter as voto when button is clicked', async () => {
     const history = createMemoryHistory({ initialEntries: ['/voters'] });
     const { getByTestId, queryByText, getAllByText } = render(
       <AuthProvider>
@@ -55,7 +55,7 @@ describe('VoterList', () => {
     const toggleBtn = getByTestId('toggle-vote');
     fireEvent.click(toggleBtn);
 
-    await waitFor(() => expect(queryByText('Votó')).toBeTruthy());
+    await waitFor(() => expect(getAllByText('Votó').length).toBeGreaterThan(0));
     const row = getByTestId('voter-row-0');
     expect(row.className).toContain('bg-green-50');
   });
