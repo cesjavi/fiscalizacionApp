@@ -50,6 +50,7 @@
     "globals": "^15.15.0",
     "jsdom": "^22.1.0",
     "postcss": "^8.5.6",
+    "supertest": "^7.1.4",
     "tailwindcss": "^4.1.11",
     "terser": "^5.4.0",
     "typescript": "^5.1.6",
