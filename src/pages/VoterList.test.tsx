@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
 import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
 import VoterList from './VoterList';
@@ -21,6 +21,7 @@ describe('VoterList', () => {
           }
         ],
         fechaEnviado: new Date().toISOString(),
+        voted: false,
       },
     ]);
   });
@@ -36,5 +37,26 @@ describe('VoterList', () => {
     );
 
     await waitFor(() => expect(getAllByText(/John/).length).toBeGreaterThan(0));
+  });
+
+  it('marks voter as voted when button is clicked', async () => {
+    const history = createMemoryHistory({ initialEntries: ['/voters'] });
+    const { getByTestId, queryByText, getAllByText } = render(
+      <AuthProvider>
+        <Router history={history}>
+          <VoterList />
+        </Router>
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(getAllByText(/John/).length).toBeGreaterThan(0));
+    expect(queryByText('Votó')).toBeNull();
+
+    const toggleBtn = getByTestId('toggle-vote');
+    fireEvent.click(toggleBtn);
+
+    await waitFor(() => expect(queryByText('Votó')).toBeTruthy());
+    const row = getByTestId('voter-row-0');
+    expect(row.className).toContain('bg-green-50');
   });
 });

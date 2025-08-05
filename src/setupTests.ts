@@ -5,14 +5,18 @@
 import '@testing-library/jest-dom/extend-expect';
 import 'fake-indexeddb/auto';
 
-// Mock matchmedia
-window.matchMedia = window.matchMedia || function() {
-  return {
-      matches: false,
-      addListener: function() {},
-      removeListener: function() {}
-  };
-};
+// Mock matchmedia when running in a browser-like environment
+if (typeof window !== 'undefined') {
+  window.matchMedia =
+    window.matchMedia ||
+    function () {
+      return {
+        matches: false,
+        addListener: function () {},
+        removeListener: function () {},
+      } as unknown as MediaQueryList;
+    };
+}
 
 // Prevent Firebase from initializing during tests
 import { vi } from 'vitest';
