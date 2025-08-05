@@ -36,8 +36,7 @@ interface Voter {
     genero: string;
   }[];
   fechaEnviado: string;
-  voted?: boolean;
-  voto?: boolean;
+  voto: boolean;
 }
 
 const VoterList: React.FC = () => {
@@ -203,7 +202,7 @@ const VoterList: React.FC = () => {
 
             {/* Columna 4: Estado */}
             <div>
-              {voto && (
+              {voter.voto && (
                 <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
                   Votó
                 </span>

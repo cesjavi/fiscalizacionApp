@@ -62,7 +62,7 @@ const SelectMesa: React.FC = () => {
       // seccion, circuito: podrías agregarlos si tenés esos datos
     },
     fechaEnviado: '', // si tenés campo de fecha lo ponés acá
-    voted: false // si no hay info de esto, lo dejás en false o null
+    voto: false // si no hay info de esto, lo dejás en false o null
   };
   await voterDB.voters.add(record);
 }
