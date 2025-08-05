@@ -8,6 +8,7 @@ import { voterDB } from '../voterDB';
 
 describe('VoterList', () => {
   beforeEach(async () => {
+    localStorage.removeItem('votingFrozen');
     await voterDB.voters.clear();
     await voterDB.voters.bulkAdd([
       {
@@ -60,5 +61,22 @@ describe('VoterList', () => {
     );
     const row = getByTestId('voter-row-0');
     expect(row.className).toContain('bg-green-50');
+  });
+
+  it('disables actions when voting is frozen', async () => {
+    localStorage.setItem('votingFrozen', 'true');
+    const history = createMemoryHistory({ initialEntries: ['/voters'] });
+    const { getByTestId, getByText } = render(
+      <AuthProvider>
+        <Router history={history}>
+          <VoterList />
+        </Router>
+      </AuthProvider>
+    );
+
+    await waitFor(() => getByTestId('voter-row-0'));
+    expect(getByTestId('toggle-vote')).toBeDisabled();
+    expect(getByText('Editar')).toBeDisabled();
+    expect(getByText('Eliminar')).toBeDisabled();
   });
 });
