@@ -70,6 +70,15 @@ const VoterList: React.FC = () => {
   }
 };
 
+  const toggleVoto = async (id: number, voto = false) => {
+    try {
+      await voterDB.voters.update(id, { voto: !voto });
+      await loadVoters();
+    } catch (error) {
+      console.error('Error al actualizar voto:', error);
+    }
+  };
+
 
   const handleEndVoting = async () => {
     try {
@@ -167,12 +176,14 @@ const VoterList: React.FC = () => {
           dni: voter.personasVotantes?.[0]?.dni ?? '-',
           numero_de_orden: voter.personasVotantes?.[0]?.numero_de_orden ?? '-'
         };
-
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const id = (voter as any).id as number;
+        const voto = voter.voto ?? false;
 
         return (
           <div
             key={index}
-            className="bg-white rounded shadow p-4 grid grid-cols-5 items-center gap-2"
+            className="bg-white rounded shadow p-4 grid grid-cols-6 items-center gap-2"
           >
             {/* Columna 1: Nombre y Apellido */}
             <div className="font-medium">
@@ -198,13 +209,27 @@ const VoterList: React.FC = () => {
               )}
             </div>
 
-            {/* Columna 5: Acciones */}
+            {/* Columna 5: Botón */}
+            <div>
+              <button
+                className={`w-32 px-2 py-1 text-xs font-medium text-white rounded ${
+                  voto ? 'bg-green-500' : 'bg-blue-500'
+                }`}
+                onClick={() => toggleVoto(id, voto)}
+              >
+                {voto ? 'Votó' : 'Votar'}
+              </button>
+            </div>
+
+            {/* Columna 6: Acciones */}
             <div className="flex space-x-2">
               <button className="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
                 Editar
               </button>
-              <button className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
-              onClick={() => deleteVoter(index)}>
+              <button
+                className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600"
+                onClick={() => deleteVoter(index)}
+              >
                 Eliminar
               </button>
             </div>
