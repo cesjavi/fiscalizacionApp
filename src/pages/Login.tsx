@@ -119,14 +119,6 @@ const Login: React.FC = () => {
             </Button>
           </form>
         )}
-
-
-
-
-
-
-
-
         {/**
          * Button to navigate to register page.
          */}

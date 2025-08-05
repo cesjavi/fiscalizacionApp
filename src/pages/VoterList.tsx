@@ -189,7 +189,7 @@ const VoterList: React.FC = () => {
             key={index}
             data-testid={`voter-row-${index}`}
             className={`rounded shadow p-4 grid grid-cols-5 items-center gap-2 ${
-              voter.voted ? 'bg-green-50' : 'bg-white'
+              voter.voto ? 'bg-green-50' : 'bg-white'
             }`}
           >
             {/* Columna 1: Nombre y Apellido */}
@@ -209,7 +209,7 @@ const VoterList: React.FC = () => {
 
             {/* Columna 4: Estado */}
             <div>
-              {voter.voto && (
+              {voter.voto ? (
                 <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
                   Votó
                 </span>
@@ -230,7 +230,7 @@ const VoterList: React.FC = () => {
                 className={`w-32 px-2 py-1 text-xs font-medium text-white rounded ${
                   voto ? 'bg-green-500' : 'bg-blue-500'
                 }`}
-                onClick={() => toggleVoto(id, voto)}
+                onClick={() => toggleVoted(id)}
               >
                 {voto ? 'Votó' : 'Votar'}
               </button>
