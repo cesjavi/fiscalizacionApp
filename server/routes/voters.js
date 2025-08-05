@@ -4,7 +4,9 @@ import db from '../db.js';
 const router = Router();
 
 router.get('/', (req, res) => {
-  const voters = db.prepare('SELECT * FROM votantes').all();
+  const voters = db
+    .prepare('SELECT * FROM votantes ORDER BY numero_de_orden')
+    .all();
   res.json(voters);
 });
 
