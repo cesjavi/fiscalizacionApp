@@ -49,6 +49,11 @@ const VoterList: React.FC = () => {
   const loadVoters = async () => {
     try {
       const data = await voterDB.voters.toArray();
+      data.sort(
+        (a, b) =>
+          (a.personasVotantes?.[0]?.numero_de_orden ?? 0) -
+          (b.personasVotantes?.[0]?.numero_de_orden ?? 0)
+      );
       setVoters(data);
     } catch (error) {
       console.error('Error al cargar votantes:', error);

@@ -41,7 +41,7 @@ describe('VoterList', () => {
 
   it('marks voter as voto when button is clicked', async () => {
     const history = createMemoryHistory({ initialEntries: ['/voters'] });
-    const { getByTestId, queryByText, getAllByText } = render(
+    const { getByTestId, getAllByText, queryAllByText } = render(
       <AuthProvider>
         <Router history={history}>
           <VoterList />
@@ -50,12 +50,14 @@ describe('VoterList', () => {
     );
 
     await waitFor(() => expect(getAllByText(/John/).length).toBeGreaterThan(0));
-    expect(queryByText('Votó')).toBeNull();
+    expect(queryAllByText('Votó').length).toBe(0);
 
     const toggleBtn = getByTestId('toggle-vote');
     fireEvent.click(toggleBtn);
 
-    await waitFor(() => expect(getAllByText('Votó').length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(getAllByText('Votó').length).toBeGreaterThan(0)
+    );
     const row = getByTestId('voter-row-0');
     expect(row.className).toContain('bg-green-50');
   });
