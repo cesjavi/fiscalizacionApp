@@ -283,7 +283,7 @@ const toggleVoto = async (id: number) => {
 </IonContent>
 
       <IonModal
-        isOpen={showEscrutinioModal}
+        isOpen={EscrutinioModal}
         onDidDismiss={() => setShowEscrutinioModal(false)}
       >
         <EscrutinioModal onClose={() => setShowEscrutinioModal(false)} />

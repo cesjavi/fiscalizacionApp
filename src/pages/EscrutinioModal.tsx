@@ -14,7 +14,7 @@ interface EscrutinioModalProps {
   onClose: () => void;
 }
 
-interface ResultadoEscrutinio {
+export interface ResultadoEscrutinio {
   lista100: number;
   votoEnBlanco: number;
   nulo: number;

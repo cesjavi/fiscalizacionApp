@@ -35,6 +35,7 @@ const SelectMesa: React.FC = () => {
     localStorage.setItem('seccion', seccion);
     localStorage.setItem('circuito', circuito);
     localStorage.setItem('mesa', mesa);
+    localStorage.setItem('mesaId', mesa); 
     setEditing(false);
     setLoading(true);
     try {

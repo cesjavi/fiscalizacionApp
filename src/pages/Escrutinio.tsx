@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import {
   IonContent,
   IonItem,
@@ -5,28 +6,47 @@ import {
   IonText
 } from '@ionic/react';
 import { Button, Input } from '../components';
-import { useRef, useState, ChangeEvent } from 'react';
 import Layout from '../components/Layout';
 import { Camera, CameraResultType } from '@capacitor/camera';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import app, { getStorage } from '../firebase';
+import { getDocs, collection } from 'firebase/firestore';
+import { db } from '../firebase';
+import { addDoc } from 'firebase/firestore';
+
 
 interface Lista {
-  lista: string;
-  nro_lista?: string;
   id: string;
+  lista: string;
+  nro_lista?: string;  
 }
 
+const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'];
+
 const Escrutinio: React.FC = () => {
-  const [lista100, setLista100] = useState('');
-  const [votoEnBlanco, setVotoEnBlanco] = useState('');
-  const [nulo, setNulo] = useState('');
-  const [recurrido, setRecurrido] = useState('');
+  const [listas, setListas] = useState<Lista[]>([]);
+  const [valores, setValores] = useState<Record<string, string>>({});
   const [foto, setFoto] = useState('');
-  const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
-  const [foto, setFoto] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Cargar las listas desde Firestore al iniciar
+  useEffect(() => {
+    const fetchListas = async () => {
+      const snapshot = await getDocs(collection(db, 'listas'));
+      const data: Lista[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Lista, 'id'>)
+      }));
+      setListas(data);
+    };
+    fetchListas();
+  }, []);
+
+  // Handler de inputs
+  const handleChange = (id: string, value: string) => {
+    setValores((prev) => ({ ...prev, [id]: value }));
+  };
+
+  // Capturar foto
   const handleFoto = async () => {
     try {
       const photo = await Camera.getPhoto({
@@ -41,6 +61,7 @@ const Escrutinio: React.FC = () => {
     }
   };
 
+  // Para subir foto manual
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -51,109 +72,90 @@ const Escrutinio: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  useEffect(() => {
-    const fetchListas = async () => {
-      const snapshot = await getDocs(collection(db, 'listas'));
-      const data: Lista[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Lista, 'id'>)
-      }));
-      setListas(data);
-    };
-    fetchListas();
-  }, []);
-
-  const handleChange = (id: string, value: string) => {
-    setValores((prev) => ({ ...prev, [id]: value }));
-  };
-
+  // Al enviar
   const handleSubmit = async () => {
-    const datos = listas.reduce((acc, l) => {
-      acc[l.lista] = parseInt(valores[l.id], 10) || 0;
-      return acc;
-    }, {} as Record<string, number>);
-    setResultado(datos);
-    const mesaId = Number(localStorage.getItem('mesaId'));
-    let fotoUrl = foto;
-    if (foto) {
-      try {
-        const storage = getStorage(app);
-        const storageRef = ref(
-          storage,
-          `escrutinio/${mesaId}-${Date.now()}.jpg`
-        );
-        await uploadString(storageRef, foto, 'data_url');
-        fotoUrl = await getDownloadURL(storageRef);
-      } catch (err) {
-        console.error('Error uploading photo', err);
-      }
-    }
-    try {
-      const res = await fetch('/api/escrutinio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mesa_id: mesaId,
-          datos: JSON.stringify(datos),
-          foto
-        })
-      });
-      if (res.ok) {
-        alert('Escrutinio enviado correctamente');
-      } else {
-        alert(res.statusText || 'Error al enviar escrutinio');
-      }
-    } catch {
-      alert('Error al enviar escrutinio');
-    }
+  const datos: Record<string, number> = {};
+
+  listas.forEach(l => {
+    datos[l.lista] = parseInt(valores[l.id], 10) || 0;
+  });
+  CAMPOS_ESPECIALES.forEach(key => {
+    datos[key] = parseInt(valores[key], 10) || 0;
+  });
+
+  setResultado(datos);
+
+  const mesaId = Number(localStorage.getItem('mesaId'));
+  const payload = {
+    mesa_id: mesaId,
+    datos,
+    fecha: new Date().toISOString(),
+    // podés sumar más campos si querés
   };
+console.log(payload)
+  try {
+    await addDoc(collection(db, 'escrutinio'), payload);
+    alert('Escrutinio enviado correctamente');
+  } catch (err) {
+    alert('Error al guardar en Firestore');
+    console.error(err);
+  }
+};
+
 
   return (
     <Layout backHref="/voters">
       <IonContent className="ion-padding">
+        {/* Inputs para todas las listas */}
+        {listas.map((l) => (
+          <IonItem key={l.id}>
+            <IonLabel position="stacked">
+              {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
+            </IonLabel>
+            <Input
+              type="number"
+              value={valores[l.id] || ''}
+              onIonChange={e => handleChange(l.id, e.detail.value ?? '')}
+              placeholder="Cantidad de votos"
+            />
+          </IonItem>
+        ))}
+
+        {/* Inputs para los campos especiales */}
+        {CAMPOS_ESPECIALES.map(key => (
+          <IonItem key={key}>
+            <IonLabel position="stacked">{key}</IonLabel>
+            <Input
+              type="number"
+              value={valores[key] || ''}
+              onIonChange={e => handleChange(key, e.detail.value ?? '')}
+              placeholder={`Cantidad de votos ${key.toLowerCase()}`}
+            />
+          </IonItem>
+        ))}
+
+        {/* Subir foto */}
         <IonItem>
-          <IonLabel position="stacked">Lista 100</IonLabel>
-          <Input
-            type="number"
-            value={lista100}
-            onIonChange={(e) => setLista100(e.detail.value ?? '')}
+          <IonLabel position="stacked">Foto (opcional)</IonLabel>
+          <Button onClick={handleFoto}>Tomar/Subir Foto</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+             title="Subir foto de acta"
           />
+          {foto && (
+            <img src={foto} alt="Foto de acta" className="max-w-xs mt-2 rounded shadow" />
+          )}
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Voto en blanco</IonLabel>
-          <Input
-            type="number"
-            value={votoEnBlanco}
-            onIonChange={(e) => setVotoEnBlanco(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Nulo</IonLabel>
-          <Input
-            type="number"
-            value={nulo}
-            onIonChange={(e) => setNulo(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Recurrido</IonLabel>
-          <Input
-            type="number"
-            value={recurrido}
-            onIonChange={(e) => setRecurrido(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Foto (URL o base64)</IonLabel>
-          <Input
-            type="text"
-            value={foto}
-            onIonChange={(e) => setFoto(e.detail.value ?? '')}
-          />
-        </IonItem>
+
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
           Enviar
         </Button>
+
+        {/* Mostrar el resultado si está seteado */}
         {resultado && (
           <IonText className="ion-margin-top">
             <pre>{JSON.stringify(resultado, null, 2)}</pre>
