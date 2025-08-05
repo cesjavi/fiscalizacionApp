@@ -11,11 +11,10 @@ import { Camera, CameraResultType } from '@capacitor/camera';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import app, { getStorage } from '../firebase';
 
-interface ResultadoEscrutinio {
-  lista100: number;
-  votoEnBlanco: number;
-  nulo: number;
-  recurrido: number;
+interface Lista {
+  lista: string;
+  nro_lista?: string;
+  id: string;
 }
 
 const Escrutinio: React.FC = () => {
@@ -51,13 +50,27 @@ const Escrutinio: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async () => {
-    const datos: ResultadoEscrutinio = {
-      lista100: parseInt(lista100, 10) || 0,
-      votoEnBlanco: parseInt(votoEnBlanco, 10) || 0,
-      nulo: parseInt(nulo, 10) || 0,
-      recurrido: parseInt(recurrido, 10) || 0
+  useEffect(() => {
+    const fetchListas = async () => {
+      const snapshot = await getDocs(collection(db, 'listas'));
+      const data: Lista[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Lista, 'id'>)
+      }));
+      setListas(data);
     };
+    fetchListas();
+  }, []);
+
+  const handleChange = (id: string, value: string) => {
+    setValores((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async () => {
+    const datos = listas.reduce((acc, l) => {
+      acc[l.lista] = parseInt(valores[l.id], 10) || 0;
+      return acc;
+    }, {} as Record<string, number>);
     setResultado(datos);
     const mesaId = Number(localStorage.getItem('mesaId'));
     let fotoUrl = foto;
