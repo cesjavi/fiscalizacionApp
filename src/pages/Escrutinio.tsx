@@ -19,6 +19,7 @@ interface Lista {
   nro_lista?: string;  
 }
 
+
 const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'];
 
 const Escrutinio: React.FC = () => {
@@ -26,7 +27,7 @@ const Escrutinio: React.FC = () => {
   const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [listas, setListas] = useState<Lista[]>([]);
   // Cargar las listas desde Firestore al iniciar
   useEffect(() => {
     const fetchListas = async () => {
@@ -78,10 +79,7 @@ const Escrutinio: React.FC = () => {
   listas.forEach(l => {
     datos[l.lista] = parseInt(valores[l.id], 10) || 0;
   });
-  CAMPOS_ESPECIALES.forEach(key => {
-    datos[key] = parseInt(valores[key], 10) || 0;
-  });
-
+  
   setResultado(datos);
 
   const mesaId = Number(localStorage.getItem('mesaId'));
@@ -166,7 +164,4 @@ console.log(payload)
 };
 
 export default Escrutinio;
-function setListas(data: Lista[]) {
-  throw new Error('Function not implemented.');
-}
 
