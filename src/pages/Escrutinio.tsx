@@ -5,10 +5,11 @@ import {
   IonText
 } from '@ionic/react';
 import { Button, Input } from '../components';
-import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { useRef, useState, ChangeEvent } from 'react';
 import Layout from '../components/Layout';
+import { Camera, CameraResultType } from '@capacitor/camera';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import app, { getStorage } from '../firebase';
 
 interface Lista {
   lista: string;
@@ -17,9 +18,37 @@ interface Lista {
 }
 
 const Escrutinio: React.FC = () => {
-  const [listas, setListas] = useState<Lista[]>([]);
-  const [valores, setValores] = useState<Record<string, string>>({});
-  const [resultado, setResultado] = useState<Record<string, number> | null>(null);
+  const [lista100, setLista100] = useState('');
+  const [votoEnBlanco, setVotoEnBlanco] = useState('');
+  const [nulo, setNulo] = useState('');
+  const [recurrido, setRecurrido] = useState('');
+  const [resultado, setResultado] = useState<ResultadoEscrutinio | null>(null);
+  const [foto, setFoto] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFoto = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        quality: 80
+      });
+      if (photo.dataUrl) {
+        setFoto(photo.dataUrl);
+      }
+    } catch {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFoto(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     const fetchListas = async () => {
@@ -44,13 +73,28 @@ const Escrutinio: React.FC = () => {
     }, {} as Record<string, number>);
     setResultado(datos);
     const mesaId = Number(localStorage.getItem('mesaId'));
+    let fotoUrl = foto;
+    if (foto) {
+      try {
+        const storage = getStorage(app);
+        const storageRef = ref(
+          storage,
+          `escrutinio/${mesaId}-${Date.now()}.jpg`
+        );
+        await uploadString(storageRef, foto, 'data_url');
+        fotoUrl = await getDownloadURL(storageRef);
+      } catch (err) {
+        console.error('Error uploading photo', err);
+      }
+    }
     try {
       const res = await fetch('/api/escrutinio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mesa_id: mesaId,
-          datos: JSON.stringify(datos)
+          datos: JSON.stringify(datos),
+          foto: fotoUrl
         })
       });
       if (res.ok) {
@@ -66,18 +110,48 @@ const Escrutinio: React.FC = () => {
   return (
     <Layout backHref="/voters">
       <IonContent className="ion-padding">
-        {listas.map((l) => (
-          <IonItem key={l.id}>
-            <IonLabel position="stacked">
-              {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
-            </IonLabel>
-            <Input
-              type="number"
-              value={valores[l.id] || ''}
-              onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
-            />
-          </IonItem>
-        ))}
+        <IonItem>
+          <IonLabel position="stacked">Lista 100</IonLabel>
+          <Input
+            type="number"
+            value={lista100}
+            onIonChange={(e) => setLista100(e.detail.value ?? '')}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel position="stacked">Voto en blanco</IonLabel>
+          <Input
+            type="number"
+            value={votoEnBlanco}
+            onIonChange={(e) => setVotoEnBlanco(e.detail.value ?? '')}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel position="stacked">Nulo</IonLabel>
+          <Input
+            type="number"
+            value={nulo}
+            onIonChange={(e) => setNulo(e.detail.value ?? '')}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel position="stacked">Recurrido</IonLabel>
+          <Input
+            type="number"
+            value={recurrido}
+            onIonChange={(e) => setRecurrido(e.detail.value ?? '')}
+          />
+        </IonItem>
+        <IonItem className="ion-margin-top">
+          <Button onClick={handleFoto}>Cargar Foto</Button>
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            ref={fileInputRef}
+            onChange={handleFileChange}
+          />
+        </IonItem>
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
           Enviar
         </Button>
