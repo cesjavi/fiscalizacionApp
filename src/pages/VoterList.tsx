@@ -68,7 +68,7 @@ const deleteVoter = async (id: number) => {
 };
 
 
-const toggleVoted = async (id: number) => {
+const toggleVoto = async (id: number) => {
   const voterToToggle = voters.find(v => v.id === id);
   if (!voterToToggle) return;
 
@@ -212,7 +212,7 @@ const toggleVoted = async (id: number) => {
                 <button
                   data-testid="toggle-vote"
                   className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600"
-                 onClick={() => toggleVoted(id)}
+                 onClick={() => toggleVoto(id)}
                 >
                   Marcar voto
                 </button>
@@ -225,7 +225,7 @@ const toggleVoted = async (id: number) => {
                 className={`w-32 px-2 py-1 text-xs font-medium text-white rounded ${
                   voto ? 'bg-green-500' : 'bg-blue-500'
                 }`}
-                onClick={() => toggleVoted(id)}
+                onClick={() => toggleVoto(id)}
               >
                 {voto ? 'Votó' : 'Votar'}
               </button>
