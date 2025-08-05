@@ -33,7 +33,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS votantes (
   numero_de_orden INTEGER,
   genero TEXT,
   fechaEnviado TEXT,
-  voto INTEGER DEFAULT 0
+  voto TEXT
 )`).run();
 
 db.prepare(`CREATE TABLE IF NOT EXISTS escrutinio (
