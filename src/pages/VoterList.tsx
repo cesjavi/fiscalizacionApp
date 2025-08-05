@@ -4,6 +4,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonModal,
   IonFooter,
   IonIcon,
   IonItem,
@@ -18,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { voterDB } from '../voterDB';
 import { useAuth } from '../AuthContext';
+import EscrutinioModal from './EscrutinioModal';
 
 interface Voter {
   id?: number;
@@ -44,6 +46,7 @@ const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [searchDni, setSearchDni] = useState('');
   const [searchOrden, setSearchOrden] = useState('');
+  const [showEscrutinioModal, setShowEscrutinioModal] = useState(false);
   const history = useHistory();
 
   const loadVoters = async () => {
@@ -96,7 +99,7 @@ const toggleVoto = async (id: number) => {
     } catch (err) {
       console.error('Error taking photo', err);
     }
-    history.push('/escrutinio');
+    setShowEscrutinioModal(true);
   };
 
   const handleConfig = () => {
@@ -254,6 +257,13 @@ const toggleVoto = async (id: number) => {
     )}
   </div>
 </IonContent>
+
+      <IonModal
+        isOpen={showEscrutinioModal}
+        onDidDismiss={() => setShowEscrutinioModal(false)}
+      >
+        <EscrutinioModal onClose={() => setShowEscrutinioModal(false)} />
+      </IonModal>
 
       <IonFooter>
         <IonToolbar>
