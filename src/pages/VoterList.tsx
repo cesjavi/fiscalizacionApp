@@ -4,6 +4,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonModal,
   IonFooter,
   IonIcon,
   IonItem,
@@ -18,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { voterDB } from '../voterDB';
 import { useAuth } from '../AuthContext';
+import EscrutinioModal from './EscrutinioModal';
 
 interface Voter {
   id?: number;
@@ -279,6 +281,13 @@ const toggleVoto = async (id: number) => {
     )}
   </div>
 </IonContent>
+
+      <IonModal
+        isOpen={showEscrutinioModal}
+        onDidDismiss={() => setShowEscrutinioModal(false)}
+      >
+        <EscrutinioModal onClose={() => setShowEscrutinioModal(false)} />
+      </IonModal>
 
       <IonFooter>
         <IonToolbar>
