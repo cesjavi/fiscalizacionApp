@@ -99,16 +99,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = snapshot.val();
 
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, password);
-      const uid = userCredential.user.uid;
+      let userCredential: UserCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          data.email,
+          password
+        );
+      } catch {
+        throw new Error('Usuario o clave incorrectos');
+      }
 
-      if (uid !== data.uid) {
-        throw new Error('No coincide el usuario autenticado');
+      if (userCredential.user.uid !== data.uid) {
+        throw new Error('El usuario autenticado no coincide con el DNI');
       }
 
       const info: UserInfo = {
-        uid,
-        email: data.email,
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
         dni,
       };
 
@@ -117,7 +125,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(info));
     } catch (error) {
       console.error('Error en login con DNI:', error);
-      throw new Error('Usuario o clave incorrectos');
+      throw error instanceof Error
+        ? error
+        : new Error('No se pudo iniciar sesión');
     }
   };
 
