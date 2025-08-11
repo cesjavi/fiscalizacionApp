@@ -91,36 +91,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithDni = async (dni: string, password: string) => {
-  try {
-    const userRef = ref(rtdb, 'users/' + dni);
-    const snapshot = await get(userRef);
+    try {
+      const userRef = ref(rtdb, 'users/' + dni);
+      const snapshot = await get(userRef);
 
-    if (!snapshot.exists()) throw new Error('DNI no encontrado');
+      if (!snapshot.exists()) throw new Error('DNI no encontrado');
 
-    const data = snapshot.val();
+      const data = snapshot.val();
 
-    if (data.password !== password) throw new Error('Contraseña incorrecta');
+      let userCredential: UserCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          data.email,
+          password
+        );
+      } catch {
+        throw new Error('Usuario o clave incorrectos');
+      }
 
-    // Opcional: verificar que uid coincida con el usuario autenticado
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid !== data.uid) {
-      throw new Error('No coincide el usuario autenticado');
+      if (userCredential.user.uid !== data.uid) {
+        throw new Error('El usuario autenticado no coincide con el DNI');
+      }
+
+      const info: UserInfo = {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        dni,
+      };
+
+      setUser(info);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(info));
+    } catch (error) {
+      console.error('Error en login con DNI:', error);
+      throw error instanceof Error
+        ? error
+        : new Error('No se pudo iniciar sesión');
     }
-
-    const info: UserInfo = {
-      uid: data.uid,
-      email: data.email,
-      dni,
-    };
-
-    setUser(info);
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(info));
-  } catch (error) {
-    console.error('Error en login con DNI:', error);
-    throw new Error('Usuario o clave incorrectos');
-  }
-};
+  };
 
   const register = async (email: string, dni: string, password: string) => {
   try {
