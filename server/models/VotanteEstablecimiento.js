@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import '../mongoose.js';
 
 const personaSchema = new mongoose.Schema({
   dni: String,
