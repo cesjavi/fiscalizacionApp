@@ -1,6 +1,3 @@
-+5
--3
-
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { usersCollection } from '../firebase/index.js';
