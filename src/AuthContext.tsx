@@ -132,31 +132,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, dni: string, password: string) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const uid = userCredential.user.uid;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
 
-    const userData = {
-      uid,
-      email,
-      dni,
-      password // ⚠️ solo para pruebas
-    };
+      const userData = {
+        uid,
+        email,
+        dni,
+      };
 
-    // Guardar en Firestore: ID del documento = DNI
-    await setDoc(doc(db, 'users', dni), userData);
+      // Guardar en Firestore: ID del documento = DNI
+      await setDoc(doc(db, 'users', dni), userData);
 
-    // Guardar en Realtime Database: nodo por DNI
-    await set(ref(rtdb, 'users/' + dni), userData);
+      // Guardar en Realtime Database: nodo por DNI
+      await set(ref(rtdb, 'users/' + dni), userData);
 
-    setUser({ uid, email, dni });
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify({ uid, email, dni }));
-  } catch (error) {
-    console.error('Error en registro:', error);
-    throw new Error('No se pudo registrar');
-  }
-};
+      setUser({ uid, email, dni });
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify({ uid, email, dni }));
+    } catch (error) {
+      console.error('Error en registro:', error);
+      throw new Error('No se pudo registrar');
+    }
+  };
 
 
 
