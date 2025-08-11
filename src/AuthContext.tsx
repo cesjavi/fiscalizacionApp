@@ -91,63 +91,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithDni = async (dni: string, password: string) => {
-  try {
-    const userRef = ref(rtdb, 'users/' + dni);
-    const snapshot = await get(userRef);
+    try {
+      const userRef = ref(rtdb, 'users/' + dni);
+      const snapshot = await get(userRef);
 
-    if (!snapshot.exists()) throw new Error('DNI no encontrado');
+      if (!snapshot.exists()) throw new Error('DNI no encontrado');
 
-    const data = snapshot.val();
+      const data = snapshot.val();
 
-    if (data.password !== password) throw new Error('Contraseña incorrecta');
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, password);
+      const uid = userCredential.user.uid;
 
-    // Opcional: verificar que uid coincida con el usuario autenticado
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid !== data.uid) {
-      throw new Error('No coincide el usuario autenticado');
+      if (uid !== data.uid) {
+        throw new Error('No coincide el usuario autenticado');
+      }
+
+      const info: UserInfo = {
+        uid,
+        email: data.email,
+        dni,
+      };
+
+      setUser(info);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(info));
+    } catch (error) {
+      console.error('Error en login con DNI:', error);
+      throw new Error('Usuario o clave incorrectos');
     }
-
-    const info: UserInfo = {
-      uid: data.uid,
-      email: data.email,
-      dni,
-    };
-
-    setUser(info);
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(info));
-  } catch (error) {
-    console.error('Error en login con DNI:', error);
-    throw new Error('Usuario o clave incorrectos');
-  }
-};
+  };
 
   const register = async (email: string, dni: string, password: string) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const uid = userCredential.user.uid;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
 
-    const userData = {
-      uid,
-      email,
-      dni,
-      password // ⚠️ solo para pruebas
-    };
+      const userData = {
+        uid,
+        email,
+        dni,
+      };
 
-    // Guardar en Firestore: ID del documento = DNI
-    await setDoc(doc(db, 'users', dni), userData);
+      // Guardar en Firestore: ID del documento = DNI
+      await setDoc(doc(db, 'users', dni), userData);
 
-    // Guardar en Realtime Database: nodo por DNI
-    await set(ref(rtdb, 'users/' + dni), userData);
+      // Guardar en Realtime Database: nodo por DNI
+      await set(ref(rtdb, 'users/' + dni), userData);
 
-    setUser({ uid, email, dni });
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify({ uid, email, dni }));
-  } catch (error) {
-    console.error('Error en registro:', error);
-    throw new Error('No se pudo registrar');
-  }
-};
+      setUser({ uid, email, dni });
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify({ uid, email, dni }));
+    } catch (error) {
+      console.error('Error en registro:', error);
+      throw new Error('No se pudo registrar');
+    }
+  };
 
 
 
