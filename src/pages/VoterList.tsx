@@ -211,7 +211,7 @@ const toggleVoto = async (id: number) => {
 
         return (
           <div
-            key={index}
+            key={voter.id}
             data-testid={`voter-row-${index}`}
             className={`rounded shadow p-4 grid grid-cols-5 items-center gap-2 ${
               voter.voto ? 'bg-green-50' : 'bg-white'
