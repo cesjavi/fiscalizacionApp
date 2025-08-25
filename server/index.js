@@ -6,6 +6,7 @@ import voterRoutes from './routes/voters.js';
 import mesaRoutes from './routes/mesas.js';
 import userRoutes from './routes/users.js';
 import escrutinioRoutes from './routes/escrutinio.js';
+import logger from './logger.js';
 
 const app = express();
 
@@ -54,7 +55,7 @@ app.use('/api/escrutinio', escrutinioRoutes);
 if (process.env.NODE_ENV !== 'test') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
   });
 }
 
