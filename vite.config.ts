@@ -10,6 +10,16 @@ export default defineConfig({
     react(),
     legacy()
   ],
+  server: {
+    port: 5173,
+    proxy: {      
+      '/api': {
+        target: 'https://api.lalibertadavanzacomuna7.com', // ⚠️ usa https
+        changeOrigin: true,
+        secure: true, // pon a false si tu certificado no es válido en dev
+      }
+    }
+  },
   test: {
     globals: true,
     environment: 'jsdom',
