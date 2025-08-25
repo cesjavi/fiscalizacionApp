@@ -36,6 +36,20 @@ npm run dev
 
 The app will be available at [http://localhost:5173](http://localhost:5173).
 
+## API configuration
+
+The authentication endpoint is built from the `API_URL` environment variable.
+Set it to the base URL of your backend (without a trailing slash) when running
+or building the app:
+
+```bash
+API_URL="https://api.example.com/api" npm run dev
+API_URL="https://api.example.com/api" npm run build
+```
+
+If `API_URL` is not provided, the app defaults to
+`http://api.lalibertadavanzacomuna7.com/api`.
+
 ## Firebase configuration
 
 Copy `.env.example` to `.env` and add your Firebase project keys:
