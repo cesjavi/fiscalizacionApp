@@ -26,7 +26,11 @@ const Login: React.FC = () => {
       history.push('/select-mesa');
     } catch (err) {
       console.error(err);
-      alert('Usuario o clave incorrectos');
+      if (err instanceof Error && err.message === 'NETWORK_ERROR') {
+        alert('Cannot reach server');
+      } else {
+        alert('Usuario o clave incorrectos');
+      }
     }
   };
 

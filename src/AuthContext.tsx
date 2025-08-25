@@ -41,18 +41,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (usuario: string, password: string) => {
+    const url = 'http://api.lalibertadavanzacomuna7.com/api/auth/login';
     try {
-      const response = await fetch(
-        'http://api.lalibertadavanzacomuna7.com/api/auth/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario, password }),
-        }
-      );
+      console.log(`Starting login request to ${url}`);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, password }),
+      });
 
       if (!response.ok) {
-        throw new Error('Usuario o clave incorrectos');
+        const bodyText = await response.text();
+        console.error(
+          `Login request to ${url} failed with status ${response.status}: ${bodyText}`
+        );
+        throw new Error('HTTP_ERROR');
       }
 
       const data: {
@@ -74,9 +77,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
+
+      console.log(`Login request to ${url} succeeded`);
     } catch (error) {
+      if (error instanceof TypeError) {
+        console.error(`Network failure during login request to ${url}:`, error);
+        throw new Error('NETWORK_ERROR');
+      }
+      if (error instanceof Error && error.message === 'HTTP_ERROR') {
+        throw new Error('Usuario o clave incorrectos');
+      }
       console.error('Error en login:', error);
-      throw new Error('Usuario o clave incorrectos');
+      throw error instanceof Error
+        ? error
+        : new Error('Usuario o clave incorrectos');
     }
   };
 
