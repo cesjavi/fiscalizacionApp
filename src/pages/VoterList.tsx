@@ -46,6 +46,7 @@ const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [searchDni, setSearchDni] = useState('');
   const [searchOrden, setSearchOrden] = useState('');
+  const [showEscrutinioModal, setShowEscrutinioModal] = useState(false);
   const [votingFrozen, setVotingFrozen] = useState(() => {
     const stored = localStorage.getItem('votingFrozen');
     return stored ? JSON.parse(stored) : false;
@@ -290,7 +291,7 @@ const toggleVoto = async (id: number) => {
 </IonContent>
 
       <IonModal
-        isOpen={EscrutinioModal}
+        isOpen={showEscrutinioModal}
         onDidDismiss={() => setShowEscrutinioModal(false)}
       >
         <EscrutinioModal onClose={() => setShowEscrutinioModal(false)} />
@@ -307,6 +308,9 @@ const toggleVoto = async (id: number) => {
             </Button>
             <Button>
               <IonIcon icon={create} />
+            </Button>
+            <Button onClick={() => setShowEscrutinioModal(true)}>
+              Escrutinio
             </Button>
           </IonButtons>
         </IonToolbar>
