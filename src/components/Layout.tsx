@@ -63,8 +63,8 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
           )}
           <IonTitle className="font-bold text-lg">Fiscalizacion App</IonTitle>
           <IonButtons slot="end">
-            <IonButton color="blue" onClick={handleStats}>Estadísticas</IonButton>
-            <IonButton color="blue" onClick={logout}>Desloguearse</IonButton>
+            <IonButton color="primary" onClick={handleStats}>Estadísticas</IonButton>
+            <IonButton color="primary" onClick={logout}>Desloguearse</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
