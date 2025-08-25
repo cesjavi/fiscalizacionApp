@@ -8,6 +8,7 @@
     "better-sqlite3": "^9.0.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "firebase-admin": "^11.10.0"
+    "firebase-admin": "^11.10.0",
+    "winston": "^3.17.0"
   }
 }
