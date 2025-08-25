@@ -4,14 +4,7 @@ import {
   createUserWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-import {
-  getDocs,
-  collection,
-  doc,
-  setDoc,
-  query,
-  where,
-} from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase'; // Asegurate de tener exportado auth y db correctamente
 import { rtdb } from './firebase';
 import { get, ref, set } from 'firebase/database';
@@ -24,7 +17,7 @@ export interface UserInfo {
 
 export interface AuthContextType {
   user: UserInfo | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (usuario: string, password: string) => Promise<void>;
   loginWithDni: (dni: string, password: string) => Promise<void>;
   register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -47,42 +40,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (usuario: string, password: string) => {
     try {
-      const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
-      const userEmail = userCredential.user.email;
-
-      try {
-        const q = query(collection(db, 'users'), where('uid', '==', uid));
-        const snapshot = await getDocs(q);
-        let dni: string | undefined;
-
-        if (!snapshot.empty) {
-          dni = snapshot.docs[0].id;
+      const response = await fetch(
+        'http://api.lalibertadavanzacomuna7.com/api/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario, password }),
         }
+      );
 
-        const info: UserInfo = {
-          uid,
-          email: userEmail,
-          dni,
-        };
+      if (!response.ok) {
+        throw new Error('Usuario o clave incorrectos');
+      }
 
-        await setDoc(doc(db, 'users', dni ?? uid), info, { merge: true });
+      const data: {
+        uid?: string;
+        email?: string;
+        dni?: string;
+        token?: string;
+      } = await response.json();
+      const info: UserInfo = {
+        uid: data.uid ?? '',
+        email: data.email ?? usuario,
+        dni: data.dni,
+      };
 
-        setUser(info);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(info));
-      } catch (error) {
-        console.error('Error guardando usuario en Firestore:', error);
+      setUser(info);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(info));
 
-        const fallbackInfo: UserInfo = {
-          uid,
-          email: userEmail,
-        };
-        setUser(fallbackInfo);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(fallbackInfo));
+      if (data.token) {
+        localStorage.setItem('token', data.token);
       }
     } catch (error) {
       console.error('Error en login:', error);

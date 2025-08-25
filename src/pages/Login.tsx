@@ -5,9 +5,7 @@ import {
   IonContent,
   IonItem,
   IonLabel,
-  IonList,
-  IonSegment,
-  IonSegmentButton
+  IonList
 } from '@ionic/react';
 import { Button, Input } from '../components';
 import { useState } from 'react';
@@ -17,37 +15,18 @@ import Layout from '../components/Layout';
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const { login, loginWithDni } = useAuth();
-  const [mode, setMode] = useState<'email' | 'dni'>('email');
-  const [email, setEmail] = useState('');
-  const [dni, setDni] = useState('');
-  const [emailPassword, setEmailPassword] = useState('');
-  const [dniPassword, setDniPassword] = useState('');
+  const { login } = useAuth();
+  const [usuario, setUsuario] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, emailPassword);
+      await login(usuario, password);
       history.push('/select-mesa');
     } catch (err) {
       console.error(err);
-
-      alert('Usuario o clave incorrectos'); // Show error message if login fails.
-    }
-  };
-
-  const handleDniLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-
-      console.log(dni, dniPassword); // Log DNI and password values.
-      await loginWithDni(dni, dniPassword);
-
-      history.push('/select-mesa'); // Navigate to select-mesa page after successful login.
-    } catch (err) {
-      console.error(err);
-
-      alert('Usuario o clave incorrectos'); // Show error message if login fails.
+      alert('Usuario o clave incorrectos');
     }
   };
 
@@ -59,66 +38,30 @@ const Login: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <IonSegment value={mode} onIonChange={(e) => setMode(e.detail.value as 'email' | 'dni')}>
-          <IonSegmentButton value="email">
-            <IonLabel>Email</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="dni">
-            <IonLabel>DNI</IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
-        {mode === 'email' ? (
-          <form onSubmit={handleEmailLogin}>
-            <IonList>
-              <IonItem>
-                <IonLabel position="floating">Email</IonLabel>
-                <Input
-                  type="email"
-                  value={email}
-                  onIonChange={(e) => setEmail(e.detail.value!)}
-                  required
-                />
-              </IonItem>
-              <IonItem>
-                <IonLabel position="floating">Clave</IonLabel>
-                <Input
-                  type="password"
-                  value={emailPassword}
-                  onIonChange={(e) => setEmailPassword(e.detail.value!)}
-                  required
-                />
-              </IonItem>
-            </IonList>
-            <Button expand="block" type="submit" className="ion-margin-top">
-              INGRESAR
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handleDniLogin}>
-            <IonList>
-              <IonItem>
-                <IonLabel position="floating">DNI</IonLabel>
-                <Input
-                  value={dni}
-                  onIonChange={(e) => setDni(e.detail.value!)}
-                  required
-                />
-              </IonItem>
-              <IonItem>
-                <IonLabel position="floating">Clave</IonLabel>
-                <Input
-                  type="password"
-                  value={dniPassword}
-                  onIonChange={(e) => setDniPassword(e.detail.value!)}
-                  required
-                />
-              </IonItem>
-            </IonList>
-            <Button expand="block" type="submit" className="ion-margin-top">
-              INGRESAR
-            </Button>
-          </form>
-        )}
+        <form onSubmit={handleLogin}>
+          <IonList>
+            <IonItem>
+              <IonLabel position="floating">Usuario</IonLabel>
+              <Input
+                value={usuario}
+                onIonChange={(e) => setUsuario(e.detail.value!)}
+                required
+              />
+            </IonItem>
+            <IonItem>
+              <IonLabel position="floating">Clave</IonLabel>
+              <Input
+                type="password"
+                value={password}
+                onIonChange={(e) => setPassword(e.detail.value!)}
+                required
+              />
+            </IonItem>
+          </IonList>
+          <Button expand="block" type="submit" className="ion-margin-top">
+            INGRESAR
+          </Button>
+        </form>
         {/**
          * Button to navigate to register page.
          */}

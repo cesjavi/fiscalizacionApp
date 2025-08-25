@@ -28,37 +28,19 @@ const renderWithAuth = (authValue: Partial<AuthContextType> = {}) => {
 };
 
 describe('Login', () => {
-  test('calls login with email and password', async () => {
+  test('calls login with usuario and password', async () => {
     const { container, auth } = renderWithAuth();
-    const emailInput = container.querySelector('ion-input[type="email"]');
-    const passwordInput = container.querySelector('ion-input[type="password"]');
-    const form = container.querySelector('form');
-
-    fireEvent(emailInput!, new CustomEvent('ionChange', { detail: { value: 'test@example.com' } }));
-    fireEvent(passwordInput!, new CustomEvent('ionChange', { detail: { value: 'pass' } }));
-    fireEvent.submit(form!);
-
-    await waitFor(() => {
-      expect(auth.login).toHaveBeenCalledWith('test@example.com', 'pass');
-    });
-  });
-
-  test('calls loginWithDni with dni and password', async () => {
-    const { container, auth } = renderWithAuth();
-    const segment = container.querySelector('ion-segment');
-    fireEvent(segment!, new CustomEvent('ionChange', { detail: { value: 'dni' } }));
-
     const inputs = container.querySelectorAll('ion-input');
-    const dniInput = inputs[0];
+    const usuarioInput = inputs[0];
     const passwordInput = inputs[1];
     const form = container.querySelector('form');
 
-    fireEvent(dniInput!, new CustomEvent('ionChange', { detail: { value: '12345678' } }));
+    fireEvent(usuarioInput!, new CustomEvent('ionChange', { detail: { value: 'testuser' } }));
     fireEvent(passwordInput!, new CustomEvent('ionChange', { detail: { value: 'pass' } }));
     fireEvent.submit(form!);
 
     await waitFor(() => {
-      expect(auth.loginWithDni).toHaveBeenCalledWith('12345678', 'pass');
+      expect(auth.login).toHaveBeenCalledWith('testuser', 'pass');
     });
   });
 });
