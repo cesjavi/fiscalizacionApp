@@ -42,14 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (usuario: string, password: string) => {
     try {
-      const response = await fetch(
-        'http://api.lalibertadavanzacomuna7.com/api/auth/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario, password }),
-        }
-      );
+      const baseUrl =
+        process.env.API_URL ?? 'http://api.lalibertadavanzacomuna7.com/api';
+      const response = await fetch(`${baseUrl}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, password }),
+      });
 
       if (!response.ok) {
         throw new Error('Usuario o clave incorrectos');

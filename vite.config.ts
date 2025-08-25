@@ -10,9 +10,12 @@ export default defineConfig({
     react(),
     legacy()
   ],
+  define: {
+    'process.env.API_URL': JSON.stringify(process.env.API_URL ?? ''),
+  },
   server: {
     port: 5173,
-    proxy: {      
+    proxy: {
       '/api': {
         target: 'https://api.lalibertadavanzacomuna7.com', // ⚠️ usa https
         changeOrigin: true,
