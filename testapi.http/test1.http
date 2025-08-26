@@ -1,0 +1,8 @@
+### Login
+POST http://api.lalibertadavanzacomuna7.com/api/auth/login
+Content-Type: application/json
+
+{
+  "usuario": "test",
+  "password": "Test123456"
+}
