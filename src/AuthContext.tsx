@@ -3,7 +3,12 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   UserCredential,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
+  signOut,
 } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase'; // Asegurate de tener exportado auth y db correctamente
 import { rtdb } from './firebase';
@@ -19,6 +24,7 @@ export interface AuthContextType {
   user: UserInfo | null;
   login: (usuario: string, password: string) => Promise<void>;
   loginWithDni: (dni: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (email: string, dni: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -146,16 +152,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // Native (Android/iOS) via Capacitor plugin
+        // Dynamic import to avoid breaking web builds if plugin is missing
+        // @ts-ignore – module is optional in web
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+
+        // Start native Google sign-in via plugin
+        const nativeSignIn = await FirebaseAuthentication.signInWithGoogle();
+        const idToken = nativeSignIn?.credential?.idToken;
+        if (!idToken) throw new Error('No se obtuvo idToken de Google');
+
+        const credential = GoogleAuthProvider.credential(idToken);
+        const firebaseResult = await signInWithCredential(auth, credential);
+        const u = firebaseResult.user;
+
+        const info: UserInfo = {
+          uid: u.uid,
+          email: u.email,
+        };
+
+        setUser(info);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(info));
+        return;
+      }
+
+      // Web: use Firebase popup
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const u = result.user;
+
+      const info: UserInfo = {
+        uid: u.uid,
+        email: u.email,
+      };
+
+      setUser(info);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(info));
+    } catch (error) {
+      console.error('Error en login con Google:', error);
+      throw new Error('No se pudo iniciar sesión con Google');
+    }
+  };
+
 
 
   const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      // noop – continue clearing local state
+    }
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithDni, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, loginWithDni, loginWithGoogle, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

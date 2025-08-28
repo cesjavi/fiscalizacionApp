@@ -15,7 +15,7 @@ import Layout from '../components/Layout';
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
 
@@ -27,6 +27,16 @@ const Login: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert('Usuario o clave incorrectos');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      history.push('/select-mesa');
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo iniciar sesión con Google');
     }
   };
 
@@ -62,6 +72,14 @@ const Login: React.FC = () => {
             INGRESAR
           </Button>
         </form>
+        <Button
+          expand="block"
+          color="tertiary"
+          className="ion-margin-top"
+          onClick={handleGoogleLogin}
+        >
+          Ingresar con Google
+        </Button>
         {/**
          * Button to navigate to register page.
          */}
