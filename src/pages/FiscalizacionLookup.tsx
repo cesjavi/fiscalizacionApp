@@ -10,55 +10,56 @@ const FiscalizacionLookup: React.FC = () => {
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setResult(null);
-    try {
-      const loginResp = await fetch(
-        '/api/users/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' ,'Accept': 'application/json'},
-          body: JSON.stringify({ dni: usuario, password }),
-        },
-      );
-      if (!loginResp.ok) {
-        const text = await loginResp.text();
-        throw new Error(text || 'Error al iniciar sesión');
-      }
-      const loginData = await loginResp.json();
-      const token = loginData.token;
-      if (!token) {
-        throw new Error('Token no encontrado');
-      }
-      localStorage.setItem('token', token);
+  const LOGIN_PATH  = '/api/auth/login';
+  const LISTAR_PATH = '/api/fiscalizacion/listar';
 
-      const response = await fetch(
-        '/api/fiscalizacion/listar',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ dni_miembro: dni }),
-        },
-      );
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || 'Error al obtener los datos');
-      }
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      let message = 'Error en la solicitud';
-      if (err instanceof Error) {
-        message = err.message;
-      }
-      setError(message);
-    }
-  };
+async function postJson(path: string, body: unknown, headers: Record<string,string>) {
+  const resp = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
+  const ct = resp.headers.get('content-type') || '';
+  const payload = ct.includes('application/json') ? await resp.json() : await resp.text();
+  return { ok: resp.ok, status: resp.status, payload };
+}
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  setResult(null);
+
+  // 1) LOGIN { usuario, password }
+  const login = await postJson(LOGIN_PATH, { usuario, password }, {});
+  if (!login.ok) {
+    const msg = typeof login.payload === 'string' ? login.payload : login.payload.message || 'Error al iniciar sesión';
+    setError(msg); return;
+  }
+  type LoginPayload = { token: string; [key: string]: unknown };
+  const loginPayload = login.payload as LoginPayload;
+  const token: string = loginPayload.token;
+  if (!token) { setError('Token no encontrado'); return; }
+  localStorage.setItem('token', token);
+  console.log('Token:', token);
+
+  // 2) LISTAR con retry:
+  //   2a) Authorization: Bearer <token>
+  let listar = await postJson(LISTAR_PATH, { dni_miembro: dni, asignado: true }, { Authorization: `Bearer ${token}` });
+  console.log('Listar (1):', listar);
+  console.log('Listar (1) payload:', listar.payload);
+  //   2b) Si 401, probamos Authorization: <token>
+  if (!listar.ok && listar.status === 401) {
+    console.warn('401 con Bearer; reintentando sin Bearer…');
+    listar = await postJson(LISTAR_PATH, { dni_miembro: dni, asignado: true }, { Authorization: token });
+  }
+
+  if (!listar.ok) {
+    const msg = typeof listar.payload === 'string' ? listar.payload : listar.payload.message || 'Error al obtener los datos';
+    setError(msg); return;
+  }
+
+  setResult(listar.payload);
+};
 
   return (
     <Layout backHref="/login">
@@ -102,7 +103,7 @@ const FiscalizacionLookup: React.FC = () => {
         {error && <p className="text-red-600 ion-margin-top">{error}</p>}
         {result && (
           <pre className="ion-margin-top whitespace-pre-wrap">
-            {JSON.stringify(result, null, 2)}
+            {JSON.stringify(result as object, null, 2)}
           </pre>
         )}
       </IonContent>
