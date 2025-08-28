@@ -16,7 +16,7 @@ const FiscalizacionLookup: React.FC = () => {
     setResult(null);
     try {
       const loginResp = await fetch(
-        'http://api.lalibertadavanzacomuna7.com/api/users/login',
+        '/api/users/login',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -35,7 +35,7 @@ const FiscalizacionLookup: React.FC = () => {
       localStorage.setItem('token', token);
 
       const response = await fetch(
-        'http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listar',
+        '/api/fiscalizacion/listar',
         {
           method: 'POST',
           headers: {
