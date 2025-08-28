@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { usersCollection } from '../firebase/index.js';
 import logger from '../logger.js';
 
@@ -60,7 +61,19 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     logger.info('Login successful', { dni, timestamp });
-    res.json({ email: user.email, dni, uid: user.uid });
+
+    if (!process.env.JWT_SECRET) {
+      logger.error('JWT secret not set', { dni, timestamp });
+      return res.status(500).json({ error: 'Server misconfigured' });
+    }
+
+    const token = jwt.sign(
+      { email: user.email, dni, uid: user.uid },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+    );
+
+    res.json({ email: user.email, dni, uid: user.uid, token });
   } catch (err) {
     logger.error('Login failed', { dni, timestamp, error: err.message });
     res.status(500).json({ error: 'Login failed' });
