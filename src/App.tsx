@@ -12,6 +12,7 @@ import AddVoter from './pages/AddVoter';
 import Escrutinio from './pages/Escrutinio';
 import VoterCount from './pages/VoterCount';
 import SelectMesa from './pages/SelectMesa';
+import FiscalizacionLookup from './pages/FiscalizacionLookup';
 import { AuthProvider } from './AuthContext';
 import PrivateRoute from './PrivateRoute';
 
@@ -73,6 +74,11 @@ const App: React.FC = () => (
           <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
           <PrivateRoute exact path="/voters" component={VoterList} />
           <PrivateRoute exact path="/add-voter" component={AddVoter} />
+          <PrivateRoute
+            exact
+            path="/fiscalizacion-lookup"
+            component={FiscalizacionLookup}
+          />
           <Route exact path="/escrutinio">
             <Escrutinio />
           </Route>
