@@ -23,7 +23,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       await login(usuario, password);
-      history.push('/select-mesa');
+      history.push('/fiscalizacion-lookup');
     } catch (err) {
       console.error(err);
       alert('Usuario o clave incorrectos');
