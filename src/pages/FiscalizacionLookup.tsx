@@ -46,7 +46,7 @@ const FiscalizacionLookup: React.FC = () => {
   };
 
   return (
-    <Layout backHref="/select-mesa">
+    <Layout backHref="/login">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
