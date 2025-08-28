@@ -55,7 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (usuario: string, password: string): Promise<string> => {
     try {
       const baseUrl =
-        process.env.API_URL ?? 'http://api.lalibertadavanzacomuna7.com/api';
+        import.meta.env.VITE_API_URL ??
+        'http://api.lalibertadavanzacomuna7.com/api';
       const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
