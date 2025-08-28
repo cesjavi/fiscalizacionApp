@@ -1,3 +1,4 @@
+@token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJub21icmVzIjoiQXBwIiwiYXBlbGxpZG9zIjoiQXBwIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInJvbCI6ImZpc2NhbCIsInVzdWFyaW8iOiJ0ZXN0IiwiaWF0IjoxNzU2MTYyOTI3LCJleHAiOjE3NTY3Njc3Mjd9.HKG9oyv7TJu144ChR1EMV_6z09bM2QCXv7Eol8InDN4'
 ### Login
 POST http://api.lalibertadavanzacomuna7.com/api/auth/login
 Content-Type: application/json
@@ -6,3 +7,23 @@ Content-Type: application/json
   "usuario": "test",
   "password": "Test123456"
 }
+
+### Listar fiscalizaciones #nombre apellido y zona
+POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listar
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "dni_miembro": "11386991",
+    "asignado": true
+}
+
+
+### Listar establecimientos con filtros por POST
+POST http://api.lalibertadavanzacomuna7.com/api/establecimiento/listar
+Authorization: {{token}}
+Content-Type: application/json
+
+{ 
+  
+ }
