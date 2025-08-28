@@ -17,7 +17,7 @@ describe('Authentication Flow', () => {
     cy.get('ion-input[type="email"]').type('test@example.com');
     cy.get('ion-input[type="password"]').type('pass');
     cy.contains('button', 'INGRESAR').click();
-    cy.url().should('include', '/select-mesa');
+    cy.url().should('include', '/fiscalizacion-lookup');
   });
 
   it('logs in with DNI', () => {
@@ -26,6 +26,6 @@ describe('Authentication Flow', () => {
     cy.get('ion-input').first().type('12345678');
     cy.get('ion-input[type="password"]').type('pass');
     cy.contains('button', 'INGRESAR').click();
-    cy.url().should('include', '/select-mesa');
+    cy.url().should('include', '/fiscalizacion-lookup');
   });
 });
