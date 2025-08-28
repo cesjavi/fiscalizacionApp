@@ -4,6 +4,8 @@ import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 
 const FiscalizacionLookup: React.FC = () => {
+  const [usuario, setUsuario] = useState('');
+  const [password, setPassword] = useState('');
   const [dni, setDni] = useState('');
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
@@ -12,13 +14,26 @@ const FiscalizacionLookup: React.FC = () => {
     e.preventDefault();
     setError(null);
     setResult(null);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Token no encontrado');
-      return;
-    }
-
     try {
+      const loginResp = await fetch(
+        'http://api.lalibertadavanzacomuna7.com/api/users/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dni: usuario, password }),
+        },
+      );
+      if (!loginResp.ok) {
+        const text = await loginResp.text();
+        throw new Error(text || 'Error al iniciar sesión');
+      }
+      const loginData = await loginResp.json();
+      const token = loginData.token;
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+      localStorage.setItem('token', token);
+
       const response = await fetch(
         'http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listar',
         {
@@ -50,14 +65,37 @@ const FiscalizacionLookup: React.FC = () => {
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
+            <IonLabel position="stacked">Usuario / DNI</IonLabel>
+            <Input
+              value={usuario}
+              onIonChange={e => setUsuario(e.detail.value!)}
+              required
+            />
+          </IonItem>
+          <IonItem>
+            <IonLabel position="stacked">Contraseña</IonLabel>
+            <Input
+              type="password"
+              value={password}
+              onIonChange={e => setPassword(e.detail.value!)}
+              required
+            />
+          </IonItem>
+          <IonItem>
             <IonLabel position="stacked">DNI del miembro</IonLabel>
             <Input
               value={dni}
               onIonChange={e => setDni(e.detail.value!)}
+              disabled={!usuario || !password}
               required
             />
           </IonItem>
-          <Button expand="block" type="submit" className="ion-margin-top">
+          <Button
+            expand="block"
+            type="submit"
+            className="ion-margin-top"
+            disabled={!usuario || !password}
+          >
             Buscar
           </Button>
         </form>
