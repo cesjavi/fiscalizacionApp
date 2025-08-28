@@ -85,6 +85,9 @@ const App: React.FC = () => (
           <Route exact path="/voter-count">
             <VoterCount />
           </Route>
+          <Route exact path="/lookup">
+            <FiscalizacionLookup />
+          </Route>
           <Route exact path="/">
             <Redirect to="/login" />
           </Route>
