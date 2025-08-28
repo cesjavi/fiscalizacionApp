@@ -89,7 +89,7 @@ const SelectMesa: React.FC = () => {
           <Input
             value={seccion}
             inputmode="numeric"
-            maxlength={3}
+            maxLength={3}
             disabled={!editing}
             onIonChange={(e) => setSeccion(e.detail.value ?? '')}
           />
@@ -99,7 +99,7 @@ const SelectMesa: React.FC = () => {
           <Input
             value={circuito}
             inputmode="numeric"
-            maxlength={3}
+            maxLength={3}
             disabled={!editing}
             onIonChange={(e) => setCircuito(e.detail.value ?? '')}
           />
@@ -109,7 +109,7 @@ const SelectMesa: React.FC = () => {
           <Input
             value={mesa}
             inputmode="numeric"
-            maxlength={4}
+            maxLength={4}
             disabled={!editing}
             onIonChange={(e) => setMesa(e.detail.value ?? '')}
           />
