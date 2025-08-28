@@ -54,12 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (usuario: string, password: string): Promise<string> => {
     try {
-      const baseUrl =
-        process.env.API_URL ?? 'http://api.lalibertadavanzacomuna7.com/api';
-      const response = await fetch(`${baseUrl}/auth/login`, {
+      const response = await fetch('/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, password }),
+        body: JSON.stringify({ dni: usuario, password }),
       });
 
       if (!response.ok) {
@@ -79,8 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const info: UserInfo = {
         uid: data.uid ?? '',
-        email: data.email ?? usuario,
-        dni: data.dni,
+        email: data.email ?? null,
+        dni: data.dni ?? usuario,
       };
 
       setUser(info);

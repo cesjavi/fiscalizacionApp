@@ -16,14 +16,16 @@ import Layout from '../components/Layout';
 const Login: React.FC = () => {
   const history = useHistory();
   const { login, loginWithGoogle } = useAuth();
-  const [usuario, setUsuario] = useState('');
+  const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(usuario, password);
-      history.push('/fiscalizacion-lookup');
+      const token = await login(dni, password);
+      if (token) {
+        history.push('/fiscalizacion-lookup');
+      }
     } catch (err) {
       console.error(err);
       alert('Usuario o clave incorrectos');
@@ -51,10 +53,10 @@ const Login: React.FC = () => {
         <form onSubmit={handleLogin}>
           <IonList>
             <IonItem>
-              <IonLabel position="floating">Usuario</IonLabel>
+              <IonLabel position="floating">DNI</IonLabel>
               <Input
-                value={usuario}
-                onIonChange={(e) => setUsuario(e.detail.value!)}
+                value={dni}
+                onIonChange={(e) => setDni(e.detail.value!)}
                 required
               />
             </IonItem>
