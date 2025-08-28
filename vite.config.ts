@@ -6,13 +6,7 @@ import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    legacy()
-  ],
-  define: {
-    'process.env.API_URL': JSON.stringify(process.env.API_URL ?? ''),
-  },
+  plugins: [react(), legacy()],
   server: {
     port: 5173,
     proxy: {
