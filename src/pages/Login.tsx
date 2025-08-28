@@ -35,7 +35,7 @@ const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-      history.push('/select-mesa');
+      history.push('/fiscalizacion-lookup');
     } catch (err) {
       console.error(err);
       alert('No se pudo iniciar sesión con Google');
