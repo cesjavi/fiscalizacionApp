@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, password }),
+        body: JSON.stringify({ dni: usuario, password }),
       });
 
       if (!response.ok) {
@@ -80,8 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const info: UserInfo = {
         uid: data.uid ?? '',
-        email: data.email ?? usuario,
-        dni: data.dni,
+        email: data.email ?? null,
+        dni: data.dni ?? usuario,
       };
 
       setUser(info);
