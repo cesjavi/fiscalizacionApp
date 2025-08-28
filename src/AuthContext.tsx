@@ -22,7 +22,8 @@ export interface UserInfo {
 
 export interface AuthContextType {
   user: UserInfo | null;
-  login: (usuario: string, password: string) => Promise<void>;
+  token: string | null;
+  login: (usuario: string, password: string) => Promise<string>;
   loginWithDni: (dni: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (email: string, dni: string, password: string) => Promise<void>;
@@ -37,20 +38,25 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
     if (stored) {
       setUser(JSON.parse(stored));
       setIsAuthenticated(true);
     }
+    if (storedToken) {
+      setToken(storedToken);
+    }
   }, []);
 
-  const login = async (usuario: string, password: string) => {
+  const login = async (usuario: string, password: string): Promise<string> => {
     try {
       const baseUrl =
         process.env.API_URL ?? 'http://api.lalibertadavanzacomuna7.com/api';
-      const response = await fetch(`${baseUrl}/users/login`, {
+      const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, password }),
@@ -66,6 +72,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dni?: string;
         token?: string;
       } = await response.json();
+
+      if (!data.token) {
+        throw new Error('Token no encontrado en la respuesta');
+      }
+
       const info: UserInfo = {
         uid: data.uid ?? '',
         email: data.email ?? usuario,
@@ -76,9 +87,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
 
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
+      setToken(data.token);
+      localStorage.setItem('token', data.token);
+
+      return data.token;
     } catch (error) {
       console.error('Error en login:', error);
       throw new Error('Usuario o clave incorrectos');
@@ -157,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (Capacitor.isNativePlatform()) {
         // Native (Android/iOS) via Capacitor plugin
         // Dynamic import to avoid breaking web builds if plugin is missing
-        // @ts-ignore – module is optional in web
+        // @ts-expect-error – module es opcional en entornos web
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
         // Start native Google sign-in via plugin
@@ -204,16 +216,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await signOut(auth);
-    } catch (e) {
+    } catch {
       // noop – continue clearing local state
     }
     setUser(null);
     setIsAuthenticated(false);
+    setToken(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithDni, loginWithGoogle, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, loginWithDni, loginWithGoogle, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
