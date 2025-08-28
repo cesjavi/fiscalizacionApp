@@ -134,6 +134,12 @@ const SelectMesa: React.FC = () => {
         >
           {loading ? 'Cargando...' : 'Siguiente'}
         </Button>
+        <Button
+          expand="block"
+          onClick={() => history.push('/fiscalizacion-lookup')}
+        >
+          Fiscalización Lookup
+        </Button>
       </IonContent>
     </Layout>
   );

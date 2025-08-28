@@ -74,6 +74,11 @@ const App: React.FC = () => (
           <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
           <PrivateRoute exact path="/voters" component={VoterList} />
           <PrivateRoute exact path="/add-voter" component={AddVoter} />
+          <PrivateRoute
+            exact
+            path="/fiscalizacion-lookup"
+            component={FiscalizacionLookup}
+          />
           <Route exact path="/escrutinio">
             <Escrutinio />
           </Route>
