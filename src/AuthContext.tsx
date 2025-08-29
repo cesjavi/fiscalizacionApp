@@ -166,8 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (Capacitor.isNativePlatform()) {
         // Native (Android/iOS) via Capacitor plugin
-        // Dynamic import to avoid breaking web builds if plugin is missing
-        // @ts-expect-error – module es opcional en entornos web
+        // Dynamic import to avoid breaking web builds if plugin is missing        
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
         // Start native Google sign-in via plugin
