@@ -11,14 +11,17 @@ type ApiResp<T = unknown> = ApiOk<T> | ApiFail;
 
 const LOGIN_PATHS = ['/api/users/login', '/api/auth/login'] as const;
 const BUSCAR_FISCAL_PATH = '/api/fiscalizacion/buscarFiscal';
+const API = import.meta.env.VITE_API_URL ?? ''; // '' en dev con proxy
+const LOGIN_PATH  = '/api/auth/login';        // unifica el endpoint
+//const LISTAR_PATH = '/api/fiscalizacion/listar';
 
 async function postJson(
   path: string,
   body: unknown,
   headers: Record<string, string> = {}
 ): Promise<ApiResp> {
-  const resp = await fetch(path, {
-    method: 'POST',
+  const resp = await fetch(`${API}${LOGIN_PATH}`, {
+  method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
