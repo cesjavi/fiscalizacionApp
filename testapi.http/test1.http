@@ -8,22 +8,23 @@ Content-Type: application/json
   "password": "Test123456"
 }
 
-### Listar fiscalizaciones #nombre apellido y zona 36293331 11386991
+### Listar fiscalizaciones #nombre apellido y zona 36293331 11386991 96179932
 POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listar
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "dni_miembro": "36293331",
+    "dni_miembro": "96179932",
     "asignado": true
 }
 
 
-### Listar establecimientos con filtros por POST
-POST http://api.lalibertadavanzacomuna7.com/api/establecimiento/listar
-Authorization: {{token}}
-Content-Type: application/json
 
-{ 
-  
- }
+ ### Listar fiscal
+POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/buscarFiscal
+Authorization: {{token}}
+Content-Type: application/json1
+
+{
+    "dni_miembro": 36293331
+}
