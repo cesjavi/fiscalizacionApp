@@ -50,6 +50,19 @@ API_URL="https://api.example.com/api" npm run build
 If `API_URL` is not provided, the app defaults to
 `http://api.lalibertadavanzacomuna7.com/api`.
 
+### Fiscalización credentials
+
+The fiscalización lookup page requires credentials to authenticate against the
+API. Provide them through the following environment variables:
+
+```
+VITE_FISCALIZACION_USER=<usuario>
+VITE_FISCALIZACION_PASS=<password>
+```
+
+Add these variables to your environment or `.env` file when running or building
+the app.
+
 ## Firebase configuration
 
 Copy `.env.example` to `.env` and add your Firebase project keys:
