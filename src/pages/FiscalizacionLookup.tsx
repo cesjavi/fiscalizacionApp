@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonContent, IonItem, IonLabel } from '@ionic/react';
+import { IonContent, IonItem, IonLabel, useIonViewWillEnter } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
@@ -59,6 +59,13 @@ const FiscalizacionLookup: React.FC = () => {
   const [result, setResult] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
   const history = useHistory();
+
+  useIonViewWillEnter(() => {
+    setDni('');
+    // Opcional: limpiar errores/resultados previos
+    // setError(null);
+    // setResult(null);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
