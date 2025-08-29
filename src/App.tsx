@@ -13,6 +13,7 @@ import Escrutinio from './pages/Escrutinio';
 import VoterCount from './pages/VoterCount';
 import SelectMesa from './pages/SelectMesa';
 import FiscalizacionLookup from './pages/FiscalizacionLookup';
+import FiscalizacionActions from './pages/FiscalizacionActions';
 import { AuthProvider } from './AuthContext';
 import PrivateRoute from './PrivateRoute';
 
@@ -78,6 +79,11 @@ const App: React.FC = () => (
             exact
             path="/fiscalizacion-lookup"
             component={FiscalizacionLookup}
+          />
+          <PrivateRoute
+            exact
+            path="/fiscalizacion-acciones"
+            component={FiscalizacionActions}
           />
           <Route exact path="/escrutinio">
             <Escrutinio />

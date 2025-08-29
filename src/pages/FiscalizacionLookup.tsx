@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { IonContent, IonItem, IonLabel } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 
@@ -57,6 +58,7 @@ const FiscalizacionLookup: React.FC = () => {
   const [dni, setDni] = useState('');
   const [result, setResult] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const history = useHistory();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +97,8 @@ const FiscalizacionLookup: React.FC = () => {
       }
 
       setResult(r.payload);
+      localStorage.setItem('fiscalData', JSON.stringify(r.payload));
+      history.push('/fiscalizacion-acciones', { fiscalData: r.payload });
 
       // (Opcional) ejemplo de “listar” con asignado: true
       // const l = await postJson(
