@@ -92,7 +92,7 @@ const FiscalizacionLookup: React.FC = () => {
           typeof r.payload === 'string'
             ? r.payload
             : r.payload?.message || 'Error en la solicitud';
-        setError(msg);
+        setError(msg === 'Error en la solicitud' ? 'DNI no registrado' : msg);
         return;
       }
 
@@ -109,7 +109,8 @@ const FiscalizacionLookup: React.FC = () => {
       // if (!l.ok) throw new Error(typeof l.payload === 'string' ? l.payload : (l.payload as { message?: string }).message || 'Error en listar');
       // setResult(l.payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error en la solicitud');
+      const msg = err instanceof Error ? err.message : 'Error en la solicitud';
+      setError(msg === 'Error en la solicitud' ? 'DNI no registrado' : msg);
     }
   };
 
