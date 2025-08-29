@@ -41,7 +41,7 @@ const EscrutinioModal: React.FC<EscrutinioModalProps> = ({ onClose }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mesa_id: mesaId,
-          datos: JSON.stringify(datos)
+          datos
         })
       });
       if (res.ok) {
