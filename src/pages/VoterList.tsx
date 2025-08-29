@@ -20,6 +20,7 @@ import { useHistory } from 'react-router-dom';
 import { voterDB } from '../voterDB';
 import { useAuth } from '../AuthContext';
 import EscrutinioModal from './EscrutinioModal';
+import { useFiscalData } from '../FiscalDataContext';
 
 interface Voter {
   id?: number;
@@ -52,6 +53,7 @@ const VoterList: React.FC = () => {
     return stored ? JSON.parse(stored) : false;
   });
   const history = useHistory();
+  const { hasFiscalData, setFiscalData } = useFiscalData();
 
   useEffect(() => {
     localStorage.setItem('votingFrozen', JSON.stringify(votingFrozen));
@@ -133,8 +135,20 @@ const toggleVoto = async (id: number) => {
   });
 
   useEffect(() => {
+    if (!hasFiscalData) {
+      const stored = localStorage.getItem('fiscalData');
+      if (stored) {
+        try {
+          setFiscalData(JSON.parse(stored));
+        } catch {
+          history.replace('/fiscalizacion-lookup');
+        }
+      } else {
+        history.replace('/fiscalizacion-lookup');
+      }
+    }
     loadVoters();
-  }, []);
+  }, [hasFiscalData, history, setFiscalData]);
 
   const filteredVoters = voters.filter(voter => {
     const dni = (voter.persona?.dni || '').toString().toLowerCase();

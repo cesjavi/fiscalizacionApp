@@ -5,18 +5,35 @@ import {
   IonInput,
 } from '@ionic/react';
 import { Button } from '../components';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { voterDB } from '../voterDB';
+import { useFiscalData } from '../FiscalDataContext';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
+  const { hasFiscalData, setFiscalData } = useFiscalData();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [orden, setOrden] = useState('');
   const [votanteDni, setVotanteDni] = useState('');
   const [genero, setGenero] = useState('');
+
+  useEffect(() => {
+    if (!hasFiscalData) {
+      const stored = localStorage.getItem('fiscalData');
+      if (stored) {
+        try {
+          setFiscalData(JSON.parse(stored));
+        } catch {
+          history.replace('/fiscalizacion-lookup');
+        }
+      } else {
+        history.replace('/fiscalizacion-lookup');
+      }
+    }
+  }, [hasFiscalData, history, setFiscalData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -16,6 +16,8 @@ import FiscalizacionLookup from './pages/FiscalizacionLookup';
 import FiscalizacionActions from './pages/FiscalizacionActions';
 import { AuthProvider } from './AuthContext';
 import PrivateRoute from './PrivateRoute';
+import FiscalRoute from './FiscalRoute';
+import { FiscalDataProvider } from './FiscalDataContext';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -53,7 +55,8 @@ const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <AuthProvider>
-        <IonRouterOutlet>
+        <FiscalDataProvider>
+          <IonRouterOutlet>
           <Route exact path="/register">
             <Register />
           </Route>
@@ -73,31 +76,27 @@ const App: React.FC = () => (
             <Home />
           </Route>
           <PrivateRoute exact path="/select-mesa" component={SelectMesa} />
-          <PrivateRoute exact path="/voters" component={VoterList} />
+          <FiscalRoute exact path="/voters" component={VoterList} />
           <PrivateRoute exact path="/add-voter" component={AddVoter} />
           <PrivateRoute
             exact
             path="/fiscalizacion-lookup"
             component={FiscalizacionLookup}
           />
-          <PrivateRoute
+          <FiscalRoute
             exact
             path="/fiscalizacion-acciones"
             component={FiscalizacionActions}
           />
-          <Route exact path="/escrutinio">
-            <Escrutinio />
-          </Route>
+          <FiscalRoute exact path="/escrutinio" component={Escrutinio} />
           <Route exact path="/voter-count">
             <VoterCount />
-          </Route>
-          <Route exact path="/lookup">
-            <FiscalizacionLookup />
           </Route>
           <Route exact path="/">
             <Redirect to="/login" />
           </Route>
         </IonRouterOutlet>
+        </FiscalDataProvider>
       </AuthProvider>
     </IonReactRouter>
   </IonApp>
