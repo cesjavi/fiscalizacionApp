@@ -9,8 +9,10 @@ import { vi } from 'vitest';
 const renderWithAuth = (authValue: Partial<AuthContextType> = {}) => {
   const defaultAuth: AuthContextType = {
     user: null,
+    token: null,
     login: vi.fn().mockResolvedValue(undefined),
     loginWithDni: vi.fn().mockResolvedValue(undefined),
+    loginWithGoogle: vi.fn().mockResolvedValue(undefined),
     register: vi.fn(),
     logout: vi.fn(),
     isAuthenticated: false,
