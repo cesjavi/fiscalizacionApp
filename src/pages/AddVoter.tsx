@@ -54,7 +54,9 @@ const AddVoter: React.FC = () => {
 
     try {
       const id = await voterDB.voters.add(data);
-      console.log('Votante guardado con ID:', id);
+      if (process.env.NODE_ENV !== 'test') {
+        alert('Votante guardado con ID: ' + id);
+      }
       history.push('/voters');
     } catch (error) {
       console.error('Error al guardar votante:', error);

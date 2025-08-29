@@ -89,7 +89,6 @@ const Escrutinio: React.FC = () => {
     fecha: new Date().toISOString(),
     // podés sumar más campos si querés
   };
-console.log(payload)
   try {
     await addDoc(collection(db, 'escrutinio'), payload);
     alert('Escrutinio enviado correctamente');
