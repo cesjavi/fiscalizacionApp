@@ -98,14 +98,27 @@ const FiscalizacionLookup: React.FC = () => {
         const msg =
           typeof r.payload === 'string'
             ? r.payload
-            : r.payload?.message || 'Error en la solicitud';
-        setError(msg === 'Error en la solicitud' ? 'DNI no registrado' : msg);
+            : (r.payload as { message?: string })?.message || 'DNI no registrado';
+        setError(msg);
         return;
       }
 
-      setResult(r.payload);
-      localStorage.setItem('fiscalData', JSON.stringify(r.payload));
-      history.push('/fiscalizacion-acciones', { fiscalData: r.payload });
+      const fiscal = r.payload as {
+        dni_miembro?: unknown;
+        nombre?: unknown;
+        [k: string]: unknown;
+      };
+      if (
+        typeof fiscal?.dni_miembro !== 'string' ||
+        typeof fiscal?.nombre !== 'string'
+      ) {
+        setError('DNI no registrado');
+        return;
+      }
+
+      setResult(fiscal);
+      localStorage.setItem('fiscalData', JSON.stringify(fiscal));
+      history.push('/fiscalizacion-acciones', { fiscalData: fiscal });
 
       // (Opcional) ejemplo de “listar” con asignado: true
       // const l = await postJson(
@@ -116,8 +129,8 @@ const FiscalizacionLookup: React.FC = () => {
       // if (!l.ok) throw new Error(typeof l.payload === 'string' ? l.payload : (l.payload as { message?: string }).message || 'Error en listar');
       // setResult(l.payload);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error en la solicitud';
-      setError(msg === 'Error en la solicitud' ? 'DNI no registrado' : msg);
+      const msg = err instanceof Error ? err.message : 'DNI no registrado';
+      setError(msg || 'DNI no registrado');
     }
   };
 
