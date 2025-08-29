@@ -11,6 +11,8 @@ import { Camera, CameraResultType } from '@capacitor/camera';
 import { getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { addDoc } from 'firebase/firestore';
+import { useHistory } from 'react-router-dom';
+import { useFiscalData } from '../FiscalDataContext';
 
 
 interface Lista {
@@ -23,6 +25,8 @@ interface Lista {
 const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'];
 
 const Escrutinio: React.FC = () => {
+  const history = useHistory();
+  const { hasFiscalData, setFiscalData } = useFiscalData();
   const [valores, setValores] = useState<Record<string, string>>({});
   const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
@@ -30,6 +34,18 @@ const Escrutinio: React.FC = () => {
   const [listas, setListas] = useState<Lista[]>([]);
   // Cargar las listas desde Firestore al iniciar
   useEffect(() => {
+    if (!hasFiscalData) {
+      const stored = localStorage.getItem('fiscalData');
+      if (stored) {
+        try {
+          setFiscalData(JSON.parse(stored));
+        } catch {
+          history.replace('/fiscalizacion-lookup');
+        }
+      } else {
+        history.replace('/fiscalizacion-lookup');
+      }
+    }
     const fetchListas = async () => {
       const snapshot = await getDocs(collection(db, 'listas'));
       const data: Lista[] = snapshot.docs.map((doc) => ({
@@ -39,7 +55,7 @@ const Escrutinio: React.FC = () => {
       setListas(data);
     };
     fetchListas();
-  }, []);
+  }, [hasFiscalData, history, setFiscalData]);
 
   // Handler de inputs
   const handleChange = (id: string, value: string) => {

@@ -3,6 +3,7 @@ import { IonContent, IonItem, IonLabel, useIonViewWillEnter } from '@ionic/react
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
+import { useFiscalData } from '../FiscalDataContext';
 
 type ApiOk<T = unknown> = { ok: true; status: number; payload: T };
 type ApiFail = { ok: false; status: number; payload: unknown };
@@ -59,6 +60,7 @@ const FiscalizacionLookup: React.FC = () => {
   const [result, setResult] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
   const history = useHistory();
+  const { setFiscalData } = useFiscalData();
 
   useIonViewWillEnter(() => {
     setDni('');
@@ -116,9 +118,10 @@ const FiscalizacionLookup: React.FC = () => {
         return;
       }
 
-      setResult(fiscal);
-      localStorage.setItem('fiscalData', JSON.stringify(fiscal));
-      history.push('/fiscalizacion-acciones', { fiscalData: fiscal });
+      setResult(r.payload);
+      localStorage.setItem('fiscalData', JSON.stringify(r.payload));
+      setFiscalData(r.payload);
+      history.push('/fiscalizacion-acciones', { fiscalData: r.payload });
 
       // (Opcional) ejemplo de “listar” con asignado: true
       // const l = await postJson(
