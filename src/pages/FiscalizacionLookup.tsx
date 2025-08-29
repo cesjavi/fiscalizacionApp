@@ -3,12 +3,11 @@ import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 
-type ApiOk<T = any> = { ok: true; status: number; payload: T };
-type ApiFail = { ok: false; status: number; payload: any };
-type ApiResp<T = any> = ApiOk<T> | ApiFail;
+type ApiOk<T = unknown> = { ok: true; status: number; payload: T };
+type ApiFail = { ok: false; status: number; payload: unknown };
+type ApiResp<T = unknown> = ApiOk<T> | ApiFail;
 
 const LOGIN_PATHS = ['/api/users/login', '/api/auth/login'] as const;
-const LISTAR_PATH = '/api/fiscalizacion/listar';
 const BUSCAR_FISCAL_PATH = '/api/fiscalizacion/buscarFiscal';
 
 async function postJson(
@@ -38,20 +37,23 @@ async function loginAndGetToken(usuario: string, password: string): Promise<stri
   let lastErr = 'Login no disponible';
   for (const path of LOGIN_PATHS) {
     const r = await postJson(path, { usuario, password });
-    if (r.ok && typeof (r.payload as any)?.token === 'string') {
-      return (r.payload as any).token as string;
+    if (r.ok) {
+      const payload = r.payload as { token?: unknown };
+      if (typeof payload.token === 'string') {
+        return payload.token;
+      }
     }
     lastErr =
       typeof r.payload === 'string'
         ? r.payload
-        : r.payload?.message || `${r.status} Error`;
+        : (r.payload as { message?: string }).message || `${r.status} Error`;
   }
   throw new Error(lastErr || 'No se pudo iniciar sesión');
 }
 
 const FiscalizacionLookup: React.FC = () => {
-  const [usuario, setUsuario] = useState('');
-  const [password, setPassword] = useState('');
+  const usuario = import.meta.env.VITE_FISCALIZACION_USER as string;
+  const password = import.meta.env.VITE_FISCALIZACION_PASS as string;
   const [dni, setDni] = useState('');
   const [result, setResult] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,11 +98,11 @@ const FiscalizacionLookup: React.FC = () => {
 
       // (Opcional) ejemplo de “listar” con asignado: true
       // const l = await postJson(
-      //   LISTAR_PATH,
+      //   '/api/fiscalizacion/listar',
       //   { dni_miembro: dni, asignado: true },
       //   { Authorization: token }
       // );
-      // if (!l.ok) throw new Error(typeof l.payload === 'string' ? l.payload : l.payload?.message || 'Error en listar');
+      // if (!l.ok) throw new Error(typeof l.payload === 'string' ? l.payload : (l.payload as { message?: string }).message || 'Error en listar');
       // setResult(l.payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error en la solicitud');
@@ -112,40 +114,15 @@ const FiscalizacionLookup: React.FC = () => {
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonItem>
-            <IonLabel position="stacked">Usuario / DNI</IonLabel>
-            <Input
-              value={usuario}
-              onIonChange={(e) => setUsuario(e.detail.value!)}
-              required
-            />
-          </IonItem>
-
-          <IonItem>
-            <IonLabel position="stacked">Contraseña</IonLabel>
-            <Input
-              type="password"
-              value={password}
-              onIonChange={(e) => setPassword(e.detail.value!)}
-              required
-            />
-          </IonItem>
-
-          <IonItem>
             <IonLabel position="stacked">DNI del miembro</IonLabel>
             <Input
               value={dni}
               onIonChange={(e) => setDni(e.detail.value!)}
-              disabled={!usuario || !password}
               required
             />
           </IonItem>
 
-          <Button
-            expand="block"
-            type="submit"
-            className="ion-margin-top"
-            disabled={!usuario || !password}
-          >
+          <Button expand="block" type="submit" className="ion-margin-top">
             Buscar
           </Button>
         </form>
