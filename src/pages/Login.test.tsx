@@ -13,7 +13,7 @@ const renderWithAuth = (authValue: Partial<AuthContextType> = {}) => {
     login: vi.fn().mockResolvedValue(undefined),
     loginWithDni: vi.fn().mockResolvedValue(undefined),
     loginWithGoogle: vi.fn().mockResolvedValue(undefined),
-    register: vi.fn(),
+    register: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn(),
     isAuthenticated: false,
   };

@@ -24,9 +24,22 @@ export interface AuthContextType {
   user: UserInfo | null;
   token: string | null;
   login: (usuario: string, password: string) => Promise<string>;
-  loginWithDni: (dni: string, password: string) => Promise<void>;
+  /**
+   * Intenta iniciar sesión usando un DNI y contraseña.
+   * Devuelve el token si la API lo provee; en caso contrario
+   * la promesa se resuelve sin valor.
+   */
+  loginWithDni: (dni: string, password: string) => Promise<string | void>;
   loginWithGoogle: () => Promise<void>;
-  register: (email: string, dni: string, password: string) => Promise<void>;
+  /**
+   * Registra un nuevo usuario y trata de recuperar un token.
+   * Si la API no entrega token, la promesa se resuelve sin valor.
+   */
+  register: (
+    email: string,
+    dni: string,
+    password: string
+  ) => Promise<string | void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -95,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithDni = async (dni: string, password: string) => {
+  const loginWithDni = async (dni: string, password: string): Promise<string | void> => {
     try {
       const userRef = ref(rtdb, 'users/' + dni);
       const snapshot = await get(userRef);
@@ -128,6 +141,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(info);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(info));
+
+      // Intentar obtener un token desde la API
+      try {
+        const response = await fetch('/api/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dni, password }),
+        });
+
+        if (response.ok) {
+          const apiData: { token?: string } = await response.json();
+          if (apiData.token) {
+            setToken(apiData.token);
+            localStorage.setItem('token', apiData.token);
+            return apiData.token;
+          } else {
+            console.warn('Token no proporcionado por la API');
+          }
+        } else {
+          console.warn('La API no pudo proporcionar un token');
+        }
+      } catch (err) {
+        console.warn('Error al recuperar el token de la API', err);
+      }
     } catch (error) {
       console.error('Error en login con DNI:', error);
       throw error instanceof Error
@@ -136,7 +173,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, dni: string, password: string) => {
+  const register = async (
+    email: string,
+    dni: string,
+    password: string
+  ): Promise<string | void> => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
@@ -156,6 +197,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser({ uid, email, dni });
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify({ uid, email, dni }));
+
+      // Intentar recuperar token después del registro
+      try {
+        const response = await fetch('/api/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dni, password }),
+        });
+        if (response.ok) {
+          const apiData: { token?: string } = await response.json();
+          if (apiData.token) {
+            setToken(apiData.token);
+            localStorage.setItem('token', apiData.token);
+            return apiData.token;
+          }
+          console.warn('Registro completado sin token: la API no devolvió token');
+        } else {
+          console.warn('Registro completado pero la API no pudo proporcionar token');
+        }
+      } catch (err) {
+        console.warn('No se pudo recuperar token tras el registro', err);
+      }
     } catch (error) {
       console.error('Error en registro:', error);
       throw new Error('No se pudo registrar');
