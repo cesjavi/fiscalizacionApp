@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface FiscalDataContextValue {
   fiscalData: unknown | null;
@@ -17,6 +17,14 @@ export const FiscalDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const stored = localStorage.getItem('fiscalData');
     return stored ? JSON.parse(stored) : null;
   });
+
+  useEffect(() => {
+    if (fiscalData === null) {
+      localStorage.removeItem('fiscalData');
+    } else {
+      localStorage.setItem('fiscalData', JSON.stringify(fiscalData));
+    }
+  }, [fiscalData]);
 
   const value: FiscalDataContextValue = {
     fiscalData,
