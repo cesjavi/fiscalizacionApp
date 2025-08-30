@@ -103,11 +103,13 @@ const Escrutinio: React.FC = () => {
     mesa_id: mesaId,
     datos,
     fecha: new Date().toISOString(),
+    foto,
     // podés sumar más campos si querés
   };
   try {
     await addDoc(collection(db, 'escrutinio'), payload);
     alert('Escrutinio enviado correctamente');
+    setFoto('');
   } catch (err) {
     alert('Error al guardar en Firestore');
     console.error(err);
