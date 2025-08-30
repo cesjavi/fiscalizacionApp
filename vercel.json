@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://api.lalibertadavanzacomuna7.com/api/:path*" }
-  ]
-}
