@@ -6,11 +6,32 @@ import logger from '../logger.js';
 
 const router = Router();
 
-// Fetch all users - primarily for development/testing purposes.
-router.get('/', async (req, res) => {
+// Simple JWT authentication middleware
+function authenticate(req, res, next) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  if (!process.env.JWT_SECRET) {
+    return res.status(500).json({ error: 'Server misconfigured' });
+  }
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Fetch all users - requires authentication.
+router.get('/', authenticate, async (req, res) => {
   try {
     const snapshot = await usersCollection.get();
-    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const users = snapshot.docs.map(doc => {
+      const { passwordHash, ...safeData } = doc.data();
+      return { id: doc.id, ...safeData };
+    });
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch users' });
