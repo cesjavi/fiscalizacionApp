@@ -1,4 +1,4 @@
-@token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJub21icmVzIjoiQXBwIiwiYXBlbGxpZG9zIjoiQXBwIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInJvbCI6ImZpc2NhbCIsInVzdWFyaW8iOiJ0ZXN0IiwiaWF0IjoxNzU2NDI0NzQ0LCJleHAiOjE3NTcwMjk1NDR9.zzU8K9MgKyQTHKNLyKsvu5lf_vDoOc1B35NMHrjG2mU'
+@token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJub21icmVzIjoiQXBwIiwiYXBlbGxpZG9zIjoiQXBwIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInJvbCI6ImZpc2NhbCIsInVzdWFyaW8iOiJ0ZXN0IiwiaWF0IjoxNzU2NTg0NzU4LCJleHAiOjE3NTcxODk1NTh9.yh9BXVkTgOyKOepcqgejMlN_O5w8v-_RDalmiRSA8dc'
 ### Login
 POST http://api.lalibertadavanzacomuna7.com/api/auth/login
 Content-Type: application/json
@@ -17,8 +17,6 @@ Content-Type: application/json
     "dni_miembro": "96179932",
     "asignado": true
 }
-
-
 
  ### Listar fiscal
 POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/buscarFiscal
