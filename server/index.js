@@ -19,8 +19,8 @@ const allowedOrigins = [
   'http://localhost:8100',     // Ionic (dev)
   'capacitor://localhost',     // Capacitor Android/iOS
   'ionic://localhost',
-  'https://api.lalibertadavanzacomuna7.com', // si llamás desde el mismo dominio (opcional)
-  'https://lalibertadavanzacomuna7.com',     // tu web (opcional)
+  //'https://api.lalibertadavanzacomuna7.com', // si llamás desde el mismo dominio (opcional)
+  //'https://lalibertadavanzacomuna7.com',     // tu web (opcional)
 ];
 
 const corsOptions = {

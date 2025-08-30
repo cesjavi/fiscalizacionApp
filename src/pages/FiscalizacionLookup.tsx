@@ -5,37 +5,28 @@ import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 import { useFiscalData } from '../FiscalDataContext';
 
-type ApiOk<T = unknown> = { ok: true; status: number; payload: T };
-type ApiFail = { ok: false; status: number; payload: unknown };
-type ApiResp<T = unknown> = ApiOk<T> | ApiFail;
+//type ApiOk<T = unknown> = { ok: true; status: number; payload: T };
+//type ApiFail = { ok: false; status: number; payload: unknown };
+//type ApiResp<T = unknown> = ApiOk<T> | ApiFail;
 
-const LOGIN_PATHS = ['/api/users/login', '/api/auth/login'] as const;
+const LOGIN_PATHS = ['/api/auth/login'] as const;
 const BUSCAR_FISCAL_PATH = '/api/fiscalizacion/buscarFiscal';
-const API = import.meta.env.VITE_API_URL ?? ''; // '' en dev con proxy
+//const API = '';//import.meta.env.VITE_API_URL ?? ''; // '' en dev con proxy
 //const LISTAR_PATH = '/api/fiscalizacion/listar';
 //const API = import.meta.env.VITE_API_URL ?? ''; // si usás proxy de Vite, dejar en ''.
 
-
-async function postJson(
-  path: string,
-  body: unknown,
-  headers: Record<string, string> = {}
-): Promise<ApiResp> {
-  const resp = await fetch(`${API}${path}`, {
+async function postJson(path: string, body: unknown, headers: Record<string,string> = {}) {
+  const url = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? '' : '/'}${path}`;
+  const resp = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...headers,
-    },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
     body: JSON.stringify(body),
   });
-
   const ct = resp.headers.get('content-type') || '';
   const payload = ct.includes('application/json') ? await resp.json() : await resp.text();
-  return { ok: resp.ok, status: resp.status, payload };
+  return { ok: resp.ok, status: resp.status, payload } as const;
 }
-
+ 
 async function loginAndGetToken(usuario: string, password: string): Promise<string> {
   if (!usuario || !password) throw new Error('Usuario y contraseña son obligatorios');
   let lastErr = 'Login no disponible';

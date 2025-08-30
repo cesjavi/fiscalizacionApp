@@ -2,36 +2,20 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent,
-  IonItem,
-  IonLabel,
-  IonList
+  IonContent  
 } from '@ionic/react';
-import { Button, Input } from '../components';
-import { useState } from 'react';
+import { Button } from '../components';
+//import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import Layout from '../components/Layout';
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const { login, loginWithGoogle } = useAuth();
-  const [dni, setDni] = useState('');
-  const [password, setPassword] = useState('');
+  const { loginWithGoogle } = useAuth();
+  
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const token = await login(dni, password);
-      if (token) {
-        history.push('/fiscalizacion-lookup');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Usuario o clave incorrectos');
-    }
-  };
-
+  
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
@@ -46,34 +30,10 @@ const Login: React.FC = () => {
     <Layout>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Ingresar (Login)</IonTitle>
+          <IonTitle>FISCALIZACION</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
-        <form onSubmit={handleLogin}>
-          <IonList>
-            <IonItem>
-              <IonLabel position="floating">DNI</IonLabel>
-              <Input
-                value={dni}
-                onIonChange={(e) => setDni(e.detail.value!)}
-                required
-              />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="floating">Clave</IonLabel>
-              <Input
-                type="password"
-                value={password}
-                onIonChange={(e) => setPassword(e.detail.value!)}
-                required
-              />
-            </IonItem>
-          </IonList>
-          <Button expand="block" type="submit" className="ion-margin-top">
-            INGRESAR
-          </Button>
-        </form>
+      <IonContent className="ion-padding">        
         <Button
           expand="block"
           color="tertiary"
@@ -81,17 +41,6 @@ const Login: React.FC = () => {
           onClick={handleGoogleLogin}
         >
           Ingresar con Google
-        </Button>
-        {/**
-         * Button to navigate to register page.
-         */}
-        <Button
-          expand="block"
-          routerLink="/register"
-          color="secondary"
-          className="ion-margin-top"
-        >
-          REGISTRARSE
         </Button>
       </IonContent>
     </Layout>
