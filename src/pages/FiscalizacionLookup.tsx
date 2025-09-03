@@ -5,31 +5,42 @@ import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 import { useFiscalData } from '../FiscalDataContext';
 
-//type ApiOk<T = unknown> = { ok: true; status: number; payload: T };
-//type ApiFail = { ok: false; status: number; payload: unknown };
-//type ApiResp<T = unknown> = ApiOk<T> | ApiFail;
+// ================== Configuración de API ==================
+// En desarrollo (Vite) dejá VITE_API_BASE = '' y usá proxy.
+// En producción (Vercel), seteá VITE_API_BASE = https://TU-BACKEND.com (¡sin barra final!)
+const API_BASE = import.meta.env.VITE_API_BASE || ''; 
 
+// Paths SIEMPRE con /api/... (tu backend los expone así)
 const LOGIN_PATHS = ['/api/auth/login'] as const;
 const BUSCAR_FISCAL_PATH = '/api/fiscalizacion/buscarFiscal';
-//const API = '';//import.meta.env.VITE_API_URL ?? ''; // '' en dev con proxy
-//const LISTAR_PATH = '/api/fiscalizacion/listar';
-//const API = import.meta.env.VITE_API_URL ?? ''; // si usás proxy de Vite, dejar en ''.
 
-async function postJson(path: string, body: unknown, headers: Record<string,string> = {}) {
-  const url = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? '' : '/'}${path}`;
+// ================== Helper de fetch ==================
+async function postJson(
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {}
+) {
+  // arma URL: absoluta en prod (API_BASE) o relativa en dev (proxy)
+  const url = path.startsWith('http')
+    ? path
+    : `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+
   const resp = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
     body: JSON.stringify(body),
   });
+
   const ct = resp.headers.get('content-type') || '';
   const payload = ct.includes('application/json') ? await resp.json() : await resp.text();
   return { ok: resp.ok, status: resp.status, payload } as const;
 }
- 
+
+// ================== Login ==================
 async function loginAndGetToken(usuario: string, password: string): Promise<string> {
   if (!usuario || !password) throw new Error('Usuario y contraseña son obligatorios');
   let lastErr = 'Login no disponible';
+
   for (const path of LOGIN_PATHS) {
     const r = await postJson(path, { usuario, password });
     if (r.ok) {
@@ -44,13 +55,16 @@ async function loginAndGetToken(usuario: string, password: string): Promise<stri
   throw new Error(lastErr || 'No se pudo iniciar sesión');
 }
 
+// ================== Componente ==================
 const FiscalizacionLookup: React.FC = () => {
+  // creds desde env (no hardcodear)
   const usuario = import.meta.env.VITE_FISCALIZACION_USER as string;
   const password = import.meta.env.VITE_FISCALIZACION_PASS as string;
 
   const [dni, setDni] = useState('');
   const [result, setResult] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const history = useHistory();
   const { setFiscalData } = useFiscalData();
 
@@ -69,9 +83,8 @@ const FiscalizacionLookup: React.FC = () => {
       // 1) LOGIN -> token
       const token = await loginAndGetToken(usuario, password);
       localStorage.setItem('token', token);
-      console.log('Token guardado en localStorage');
 
-      // 2) BUSCAR FISCAL con Authorization: Bearer <token>
+      // 2) BUSCAR FISCAL con Authorization
       const dniNum = Number((dni ?? '').toString().trim());
       if (Number.isNaN(dniNum)) throw new Error('DNI inválido');
 
@@ -81,19 +94,20 @@ const FiscalizacionLookup: React.FC = () => {
         { Authorization: `Bearer ${token}` }
       );
 
-      // Si el backend acepta token “pelado” (sin Bearer), podés reintentar:
+      // si el backend acepta token "pelado", reintentar
       if (!r.ok && r.status === 401) {
         const retry = await postJson(
           BUSCAR_FISCAL_PATH,
           { dni_miembro: dniNum },
           { Authorization: token }
         );
-        if (!retry.ok) throw new Error(
-          typeof retry.payload === 'string'
-            ? retry.payload
-            : (retry.payload as { message?: string })?.message || 'No autorizado'
-        );
-        // Éxito con el reintento
+        if (!retry.ok) {
+          const msg =
+            typeof retry.payload === 'string'
+              ? retry.payload
+              : (retry.payload as { message?: string })?.message || 'No autorizado';
+          throw new Error(msg);
+        }
         setResult(retry.payload);
         localStorage.setItem('fiscalData', JSON.stringify(retry.payload));
         setFiscalData(retry.payload);
