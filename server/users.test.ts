@@ -1,6 +1,6 @@
 // @vitest-environment node
 import request from 'supertest';
-import { vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 process.env.JWT_SECRET = 'testsecret';
 
@@ -44,7 +44,7 @@ describe('Users API auth', () => {
     const newUser = { email: 'test@example.com', dni: '123', password: 'pass' };
     await request(app).post('/api/users').send(newUser);
     const loginRes = await request(app)
-      .post('/api/users/login')
+      .post('/api/auth/login')
       .send({ dni: '123', password: 'pass' });
     const token = loginRes.body.token;
 
