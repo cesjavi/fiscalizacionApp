@@ -1,4 +1,4 @@
-@token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJub21icmVzIjoiQXBwIiwiYXBlbGxpZG9zIjoiQXBwIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInJvbCI6ImZpc2NhbCIsInVzdWFyaW8iOiJ0ZXN0IiwiaWF0IjoxNzU2NTg0NzU4LCJleHAiOjE3NTcxODk1NTh9.yh9BXVkTgOyKOepcqgejMlN_O5w8v-_RDalmiRSA8dc'
+@token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJub21icmVzIjoiQXBwIiwiYXBlbGxpZG9zIjoiQXBwIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInJvbCI6ImZpc2NhbCIsInVzdWFyaW8iOiJ0ZXN0IiwiaWF0IjoxNzU3MzAyMDk1LCJleHAiOjE3NTczODg0OTV9.FcZV1LlVKZ4I2Bfhfzpb5LsBg3RufRyUMD4QrIIzF6w'
 ### Login
 POST http://api.lalibertadavanzacomuna7.com/api/auth/login
 Content-Type: application/json
@@ -8,6 +8,19 @@ Content-Type: application/json
   "password": "Test123456"
 }
 
+POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/buscarFiscal
+Content-Type: application/json1
+Authorization: {{token}}
+{
+    "dni_miembro": 36293331
+}
+### Listar Candidatos en App 
+POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listarCandidatos
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+}
 ### Listar fiscalizaciones #nombre apellido y zona 36293331 11386991 96179932
 POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listar
 Authorization: {{token}}
@@ -19,10 +32,3 @@ Content-Type: application/json
 }
 
  ### Listar fiscal
-POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/buscarFiscal
-Authorization: {{token}}
-Content-Type: application/json1
-
-{
-    "dni_miembro": 36293331
-}
