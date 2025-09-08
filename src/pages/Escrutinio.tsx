@@ -95,7 +95,11 @@ const Escrutinio: React.FC = () => {
   listas.forEach(l => {
     datos[l.lista] = parseInt(valores[l.id], 10) || 0;
   });
-  
+
+  CAMPOS_ESPECIALES.forEach(key => {
+    datos[key] = parseInt(valores[key], 10) || 0;
+  });
+
   setResultado(datos);
 
   const mesaId = Number(localStorage.getItem('mesaId'));
