@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import app from './index.js';
 import db from './db.js';

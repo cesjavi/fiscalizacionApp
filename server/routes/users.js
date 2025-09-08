@@ -55,8 +55,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Login route. Verify the dni exists and the password matches the stored hash.
-router.post('/login', async (req, res) => {
+// Login route handler. Verify the dni exists and the password matches the stored hash.
+export async function loginHandler(req, res) {
   const { dni, password } = req.body;
   const timestamp = new Date().toISOString();
   logger.info('Login attempt', { dni, timestamp });
@@ -99,6 +99,8 @@ router.post('/login', async (req, res) => {
     logger.error('Login failed', { dni, timestamp, error: err.message });
     res.status(500).json({ error: 'Login failed' });
   }
-});
+}
+
+router.post('/login', loginHandler);
 
 export default router;
