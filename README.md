@@ -38,17 +38,17 @@ The app will be available at [http://localhost:5173](http://localhost:5173).
 
 ## API configuration
 
-The authentication endpoint is built from the `API_URL` environment variable.
-Set it to the base URL of your backend (without a trailing slash) when running
+The authentication endpoint is built from the `VITE_API_BASE` environment variable.
+Set it to the base URL of your backend (omit `/api` and the trailing slash) when running
 or building the app:
 
 ```bash
-API_URL="https://api.example.com/api" npm run dev
-API_URL="https://api.example.com/api" npm run build
+VITE_API_BASE="https://api.example.com" npm run dev
+VITE_API_BASE="https://api.example.com" npm run build
 ```
 
-If `API_URL` is not provided, the app defaults to
-`http://api.lalibertadavanzacomuna7.com/api`.
+If `VITE_API_BASE` is not provided, the app defaults to
+`http://api.lalibertadavanzacomuna7.com`.
 
 ### Fiscalización credentials
 

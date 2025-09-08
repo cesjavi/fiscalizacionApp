@@ -7,8 +7,10 @@ import { useFiscalData } from '../FiscalDataContext';
 
 // ================== Configuración de API ==================
 // En desarrollo (Vite) dejá VITE_API_BASE = '' y usá proxy.
-// En producción (Vercel), seteá VITE_API_BASE = https://TU-BACKEND.com (¡sin barra final!)
-const API_BASE = import.meta.env.VITE_API_BASE || ''; 
+// En producción (Vercel), seteá VITE_API_BASE = https://TU-BACKEND.com (sin '/api' ni barra final)
+const API_BASE = (import.meta.env.VITE_API_BASE || '')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
 
 // Paths SIEMPRE con /api/... (tu backend los expone así)
 const LOGIN_PATHS = ['/api/auth/login'] as const;
