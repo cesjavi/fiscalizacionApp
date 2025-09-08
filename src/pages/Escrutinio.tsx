@@ -8,9 +8,8 @@ import {
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
 import { Camera, CameraResultType } from '@capacitor/camera';
-import { getDocs, collection } from 'firebase/firestore';
+import { getDocs, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { addDoc } from 'firebase/firestore';
 import { useHistory } from 'react-router-dom';
 import { useFiscalData } from '../FiscalDataContext';
 
