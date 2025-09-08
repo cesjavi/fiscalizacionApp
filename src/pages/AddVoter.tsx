@@ -89,7 +89,7 @@ const AddVoter: React.FC = () => {
             <IonLabel position="stacked">Nombre</IonLabel>
             <IonInput
               value={nombre}
-              onInput={e => setNombre((e.target as HTMLInputElement).value)}
+              onIonChange={e => setNombre(e.detail.value ?? '')}
               required
             />
           </IonItem>
@@ -97,7 +97,7 @@ const AddVoter: React.FC = () => {
             <IonLabel position="stacked">Apellido</IonLabel>
             <IonInput
               value={apellido}
-              onInput={e => setApellido((e.target as HTMLInputElement).value)}
+              onIonChange={e => setApellido(e.detail.value ?? '')}
               required
             />
           </IonItem>
@@ -106,7 +106,7 @@ const AddVoter: React.FC = () => {
             <IonInput
               value={orden}
               type="number"
-              onInput={e => setOrden((e.target as HTMLInputElement).value)}              
+              onIonChange={e => setOrden(e.detail.value ?? '')}
               required
             />
           </IonItem>
@@ -114,7 +114,7 @@ const AddVoter: React.FC = () => {
             <IonLabel position="stacked">DNI Votante</IonLabel>
             <IonInput
               value={votanteDni}
-              onInput={e => setVotanteDni((e.target as HTMLInputElement).value)}
+              onIonChange={e => setVotanteDni(e.detail.value ?? '')}
               required
             />
           </IonItem>
@@ -122,7 +122,7 @@ const AddVoter: React.FC = () => {
             <IonLabel position="stacked">Género</IonLabel>
             <IonInput
               value={genero}
-              onInput={e => setGenero((e.target as HTMLInputElement).value)}
+              onIonChange={e => setGenero(e.detail.value ?? '')}
             />
           </IonItem>
           <Button expand="block" type="submit" className="ion-margin-top">
