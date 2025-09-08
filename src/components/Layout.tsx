@@ -45,6 +45,11 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
     setShowStats(true);
   };
 
+  const handleLogout = async () => {
+    await logout();
+    history.push('/login');
+  };
+
   return (
     <IonPage className="flex flex-col min-h-screen">
       <IonHeader className="bg-primary-500 text-white">
@@ -64,7 +69,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
           <IonTitle className="font-bold text-lg">Fiscalizacion App</IonTitle>
           <IonButtons slot="end">
             <IonButton color="primary" onClick={handleStats}>Estadísticas</IonButton>
-            <IonButton color="primary" onClick={logout}>Desloguearse</IonButton>
+            <IonButton color="primary" onClick={handleLogout}>Desloguearse</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
