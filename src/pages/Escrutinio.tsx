@@ -121,7 +121,7 @@ const Escrutinio: React.FC = () => {
 
 
   return (
-    <Layout backHref="/voters">
+    <Layout backHref="/fiscalizacion-acciones">
       <IonContent className="ion-padding">
         {/* Inputs para todas las listas */}
         {listas.map((l) => (

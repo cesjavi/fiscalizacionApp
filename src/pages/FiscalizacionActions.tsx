@@ -26,9 +26,11 @@ const FiscalizacionActions: React.FC = () => {
 
   return (
     <Layout backHref="/fiscalizacion-lookup">
-      <IonContent className="ion-padding flex flex-col gap-4">
-        <Button routerLink="/voters">Votación</Button>
-        <Button routerLink="/escrutinio">Enviar Resultado</Button>
+      <IonContent className="ion-padding">
+        <div className="flex flex-col items-center 1gap-4">
+        <Button routerLink="/voters" className="w-4/5">Votación</Button>
+        <Button routerLink="/escrutinio" className="w-4/5">Enviar Resultado</Button>
+        </div>
       </IonContent>
     </Layout>
   );
