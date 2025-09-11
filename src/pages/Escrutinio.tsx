@@ -14,9 +14,9 @@ import { getAuthHeaders } from '../utils/api';
 
 
 interface Lista {
-  id: string;
-  lista: string;
-  nro_lista?: string;  
+  identificador: string;
+  nombre: string;
+  nomenclatura?: string;
 }
 
 
@@ -45,40 +45,26 @@ const Escrutinio: React.FC = () => {
       }
     }
     const fetchListas = async () => {
-      try {
-        const res = await fetch('/api/fiscalizacion/listarCandidatos', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders()
-          },
-          body: JSON.stringify({})
-        });
-        if (!res.ok) throw new Error('Error al obtener listas');
-        const { data } = await res.json();
-        interface ApiLista {
-          identificador: string;
-          nombre: string;
-          nomenclatura: string;
-        }
-        const listas: Lista[] = (data as ApiLista[]).map(
-          ({ identificador, nombre, nomenclatura }) => ({
-            id: identificador,
-            lista: nombre,
-            nro_lista: nomenclatura
-          })
-        );
-        setListas(listas);
-      } catch (err) {
-        console.error(err);
-      }
+      const snapshot = await getDocs(collection(db, 'listas'));
+      const data: Lista[] = snapshot.docs.map((doc) => {
+        const { lista, nro_lista } = doc.data() as {
+          lista: string;
+          nro_lista?: string;
+        };
+        return {
+          identificador: doc.id,
+          nombre: lista,
+          nomenclatura: nro_lista
+        };
+      });
+      setListas(data);
     };
     fetchListas();
   }, [hasFiscalData, history, setFiscalData]);
 
   // Handler de inputs
-  const handleChange = (id: string, value: string) => {
-    setValores((prev) => ({ ...prev, [id]: value }));
+  const handleChange = (identificador: string, value: string) => {
+    setValores((prev) => ({ ...prev, [identificador]: value }));
   };
 
   // Capturar foto
@@ -110,10 +96,9 @@ const Escrutinio: React.FC = () => {
   // Al enviar
   const handleSubmit = async () => {
     const datos: Record<string, number> = {};
-
-    listas.forEach(l => {
-      datos[l.lista] = parseInt(valores[l.id], 10) || 0;
-    });
+ listas.forEach(l => {
+    datos[l.nombre] = parseInt(valores[l.identificador], 10) || 0;
+  });
 
     CAMPOS_ESPECIALES.forEach(key => {
       datos[key] = parseInt(valores[key], 10) || 0;
@@ -153,14 +138,14 @@ const Escrutinio: React.FC = () => {
       <IonContent className="ion-padding">
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
-          <IonItem key={l.id}>
+          <IonItem key={l.identificador}>
             <IonLabel position="stacked">
-              {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
+              {l.nomenclatura ? `${l.nomenclatura} - ${l.nombre}` : l.nombre}
             </IonLabel>
             <Input
               type="number"
-              value={valores[l.id] || ''}
-              onIonChange={e => handleChange(l.id, e.detail.value ?? '')}
+              value={valores[l.identificador] || ''}
+              onIonChange={e => handleChange(l.identificador, e.detail.value ?? '')}
               placeholder="Cantidad de votos"
             />
           </IonItem>
