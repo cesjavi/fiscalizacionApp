@@ -30,19 +30,12 @@ const renderWithAuth = (authValue: Partial<AuthContextType> = {}) => {
 };
 
 describe('Login', () => {
-  test('calls login with usuario and password', async () => {
-    const { container, auth } = renderWithAuth();
-    const inputs = container.querySelectorAll('ion-input');
-    const usuarioInput = inputs[0];
-    const passwordInput = inputs[1];
-    const form = container.querySelector('form');
-
-    fireEvent(usuarioInput!, new CustomEvent('ionChange', { detail: { value: 'testuser' } }));
-    fireEvent(passwordInput!, new CustomEvent('ionChange', { detail: { value: 'pass' } }));
-    fireEvent.submit(form!);
+  test('calls loginWithGoogle when button is clicked', async () => {
+    const { getByText, auth } = renderWithAuth();
+    fireEvent.click(getByText('Ingresar con Google'));
 
     await waitFor(() => {
-      expect(auth.login).toHaveBeenCalledWith('testuser', 'pass');
+      expect(auth.loginWithGoogle).toHaveBeenCalled();
     });
   });
 });

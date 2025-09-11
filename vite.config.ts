@@ -16,6 +16,11 @@ export default defineConfig({
         secure: true,
       }
     }
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts',
+    globals: true
   }
 });
 

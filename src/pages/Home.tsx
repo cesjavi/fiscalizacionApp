@@ -12,8 +12,8 @@ const Home: React.FC = () => {
           <p className="text-gray-600">Seleccione una opción para comenzar</p>
         </div>
         <div className="w-full grid gap-4">
-          <Button routerLink="/escrutinio" expand="block">
-            Ir a Escrutinio
+          <Button routerLink="/voters" expand="block">
+            Ir a Votación
           </Button>
           <Button routerLink="/voter-count" expand="block" color="secondary">
             Conteo de Votantes

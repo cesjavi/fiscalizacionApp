@@ -2,8 +2,11 @@
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
-import '@testing-library/jest-dom/extend-expect';
+import { expect, vi } from 'vitest';
+import matchers from '@testing-library/jest-dom/matchers';
 import 'fake-indexeddb/auto';
+
+expect.extend(matchers);
 
 // Mock matchmedia when running in a browser-like environment
 if (typeof window !== 'undefined') {
@@ -19,7 +22,6 @@ if (typeof window !== 'undefined') {
 }
 
 // Prevent Firebase from initializing during tests
-import { vi } from 'vitest';
 
 vi.mock('firebase/app', () => ({
   initializeApp: () => ({}),
@@ -37,4 +39,8 @@ vi.mock('firebase/firestore', () => ({
 
 vi.mock('firebase/database', () => ({
   getDatabase: () => ({})
+}));
+
+vi.mock('firebase/storage', () => ({
+  getStorage: () => ({})
 }));
