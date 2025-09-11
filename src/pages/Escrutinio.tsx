@@ -8,10 +8,9 @@ import {
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
 import { Camera, CameraResultType } from '@capacitor/camera';
-import { getDocs, collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import { useHistory } from 'react-router-dom';
 import { useFiscalData } from '../FiscalDataContext';
+import { getAuthHeaders } from '../utils/api';
 
 
 interface Lista {
@@ -31,7 +30,7 @@ const Escrutinio: React.FC = () => {
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listas, setListas] = useState<Lista[]>([]);
-  // Cargar las listas desde Firestore al iniciar
+  // Cargar las listas desde la API al iniciar
   useEffect(() => {
     if (!hasFiscalData) {
       const stored = localStorage.getItem('fiscalData');
@@ -96,35 +95,42 @@ const Escrutinio: React.FC = () => {
 
   // Al enviar
   const handleSubmit = async () => {
-  const datos: Record<string, number> = {};
-
-  listas.forEach(l => {
+    const datos: Record<string, number> = {};
+ listas.forEach(l => {
     datos[l.nombre] = parseInt(valores[l.identificador], 10) || 0;
   });
 
-  CAMPOS_ESPECIALES.forEach(key => {
-    datos[key] = parseInt(valores[key], 10) || 0;
-  });
+    CAMPOS_ESPECIALES.forEach(key => {
+      datos[key] = parseInt(valores[key], 10) || 0;
+    });
 
-  setResultado(datos);
+    setResultado(datos);
 
-  const mesaId = Number(localStorage.getItem('mesaId'));
-  const payload = {
-    mesa_id: mesaId,
-    datos,
-    fecha: new Date().toISOString(),
-    foto,
-    // podés sumar más campos si querés
+    const mesaId = Number(localStorage.getItem('mesaId'));
+    const payload = {
+      mesa_id: mesaId,
+      datos,
+      fecha: new Date().toISOString(),
+      foto,
+      // podés sumar más campos si querés
+    };
+    try {
+      const res = await fetch('/api/escrutinio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Error al enviar escrutinio');
+      alert('Escrutinio enviado correctamente');
+      setFoto('');
+    } catch (err) {
+      alert('Error al guardar escrutinio');
+      console.error(err);
+    }
   };
-  try {
-    await addDoc(collection(db, 'escrutinio'), payload);
-    alert('Escrutinio enviado correctamente');
-    setFoto('');
-  } catch (err) {
-    alert('Error al guardar en Firestore');
-    console.error(err);
-  }
-};
 
 
   return (
