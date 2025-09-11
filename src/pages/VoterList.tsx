@@ -111,7 +111,7 @@ const toggleVoto = async (id: number) => {
       console.error('Error taking photo', err);
     }
     setVotingFrozen(true);
-    history.push('/escrutinio');
+    setShowEscrutinioModal(true);
   };
 
   const handleUnfreezeVoting = () => {

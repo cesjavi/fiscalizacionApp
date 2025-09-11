@@ -9,7 +9,6 @@ import VoteSubmission from './pages/VoteSubmission';
 import VoterDetails from './pages/VoterDetails';
 import VoterList from './pages/VoterList';
 import AddVoter from './pages/AddVoter';
-import Escrutinio from './pages/Escrutinio';
 import VoterCount from './pages/VoterCount';
 import SelectMesa from './pages/SelectMesa';
 import FiscalizacionLookup from './pages/FiscalizacionLookup';
@@ -88,7 +87,6 @@ const App: React.FC = () => (
             path="/fiscalizacion-acciones"
             component={FiscalizacionActions}
           />
-          <FiscalRoute exact path="/escrutinio" component={Escrutinio} />
           <Route exact path="/voter-count">
             <VoterCount />
           </Route>

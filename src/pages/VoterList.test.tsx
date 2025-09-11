@@ -5,11 +5,15 @@ import { createMemoryHistory } from 'history';
 import VoterList from './VoterList';
 import { AuthProvider } from '../AuthContext';
 import { voterDB } from '../voterDB';
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
+import { Camera } from '@capacitor/camera';
+import type { CameraPhoto } from '@capacitor/camera';
+import { FiscalDataProvider } from '../FiscalDataContext';
 
 describe('VoterList', () => {
   beforeEach(async () => {
     localStorage.removeItem('votingFrozen');
+    localStorage.setItem('fiscalData', '{}');
     await voterDB.voters.clear();
     await voterDB.voters.bulkAdd([
       {
@@ -28,13 +32,20 @@ describe('VoterList', () => {
     ]);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.removeItem('fiscalData');
+  });
+
   it('loads voters from Dexie', async () => {
     const history = createMemoryHistory({ initialEntries: ['/voters'] });
     const { getAllByText } = render(
       <AuthProvider>
-        <Router history={history}>
-          <VoterList />
-        </Router>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <VoterList />
+          </Router>
+        </FiscalDataProvider>
       </AuthProvider>
     );
 
@@ -45,9 +56,11 @@ describe('VoterList', () => {
     const history = createMemoryHistory({ initialEntries: ['/voters'] });
     const { getByTestId, getAllByText, queryAllByText } = render(
       <AuthProvider>
-        <Router history={history}>
-          <VoterList />
-        </Router>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <VoterList />
+          </Router>
+        </FiscalDataProvider>
       </AuthProvider>
     );
 
@@ -64,14 +77,37 @@ describe('VoterList', () => {
     expect(row.className).toContain('bg-green-50');
   });
 
+  it('remains on /voters after ending voting', async () => {
+    const history = createMemoryHistory({ initialEntries: ['/voters'] });
+    (Camera as unknown as { getPhoto: () => Promise<CameraPhoto> }).getPhoto = vi
+      .fn()
+      .mockResolvedValue({ dataUrl: 'mock' } as CameraPhoto);
+    const { getByText } = render(
+      <AuthProvider>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <VoterList />
+          </Router>
+        </FiscalDataProvider>
+      </AuthProvider>
+    );
+
+    const endBtn = getByText('Terminar Votación');
+    fireEvent.click(endBtn);
+
+    await waitFor(() => expect(history.location.pathname).toBe('/voters'));
+  });
+
   it('disables actions when voting is frozen', async () => {
     localStorage.setItem('votingFrozen', 'true');
     const history = createMemoryHistory({ initialEntries: ['/voters'] });
     const { getByTestId, getByText } = render(
       <AuthProvider>
-        <Router history={history}>
-          <VoterList />
-        </Router>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <VoterList />
+          </Router>
+        </FiscalDataProvider>
       </AuthProvider>
     );
 
@@ -87,9 +123,11 @@ describe('VoterList', () => {
     window.confirm = vi.fn(() => true);
     const { getByTestId, getByText, queryByTestId, getAllByText } = render(
       <AuthProvider>
-        <Router history={history}>
-          <VoterList />
-        </Router>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <VoterList />
+          </Router>
+        </FiscalDataProvider>
       </AuthProvider>
     );
 

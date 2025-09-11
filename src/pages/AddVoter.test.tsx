@@ -6,21 +6,26 @@ import AddVoter from './AddVoter';
 import { AuthProvider } from '../AuthContext';
 import { voterDB } from '../voterDB';
 import { vi } from 'vitest';
+import { FiscalDataProvider } from '../FiscalDataContext';
 
 describe('AddVoter', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    localStorage.removeItem('fiscalData');
     return voterDB.delete();
   });
 
   test('redirects to /voters on successful submit', async () => {
     const history = createMemoryHistory({ initialEntries: ['/add-voter'] });
+    localStorage.setItem('fiscalData', '{}');
 
     const { container } = render(
       <AuthProvider>
-        <Router history={history}>
-          <AddVoter />
-        </Router>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <AddVoter />
+          </Router>
+        </FiscalDataProvider>
       </AuthProvider>
     );
 
@@ -32,14 +37,17 @@ describe('AddVoter', () => {
 
   test('shows alert on failure and stays on page', async () => {
     const history = createMemoryHistory({ initialEntries: ['/add-voter'] });
+    localStorage.setItem('fiscalData', '{}');
     vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(voterDB.voters, 'add').mockRejectedValue(new Error('Bad'));
 
     const { container } = render(
       <AuthProvider>
-        <Router history={history}>
-          <AddVoter />
-        </Router>
+        <FiscalDataProvider>
+          <Router history={history}>
+            <AddVoter />
+          </Router>
+        </FiscalDataProvider>
       </AuthProvider>
     );
 
