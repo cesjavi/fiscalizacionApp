@@ -15,9 +15,9 @@ import { useFiscalData } from '../FiscalDataContext';
 
 
 interface Lista {
-  id: string;
-  lista: string;
-  nro_lista?: string;  
+  identificador: string;
+  nombre: string;
+  nomenclatura?: string;
 }
 
 
@@ -47,18 +47,25 @@ const Escrutinio: React.FC = () => {
     }
     const fetchListas = async () => {
       const snapshot = await getDocs(collection(db, 'listas'));
-      const data: Lista[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Lista, 'id'>)
-      }));
+      const data: Lista[] = snapshot.docs.map((doc) => {
+        const { lista, nro_lista } = doc.data() as {
+          lista: string;
+          nro_lista?: string;
+        };
+        return {
+          identificador: doc.id,
+          nombre: lista,
+          nomenclatura: nro_lista
+        };
+      });
       setListas(data);
     };
     fetchListas();
   }, [hasFiscalData, history, setFiscalData]);
 
   // Handler de inputs
-  const handleChange = (id: string, value: string) => {
-    setValores((prev) => ({ ...prev, [id]: value }));
+  const handleChange = (identificador: string, value: string) => {
+    setValores((prev) => ({ ...prev, [identificador]: value }));
   };
 
   // Capturar foto
@@ -92,7 +99,7 @@ const Escrutinio: React.FC = () => {
   const datos: Record<string, number> = {};
 
   listas.forEach(l => {
-    datos[l.lista] = parseInt(valores[l.id], 10) || 0;
+    datos[l.nombre] = parseInt(valores[l.identificador], 10) || 0;
   });
 
   CAMPOS_ESPECIALES.forEach(key => {
@@ -125,14 +132,14 @@ const Escrutinio: React.FC = () => {
       <IonContent className="ion-padding">
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
-          <IonItem key={l.id}>
+          <IonItem key={l.identificador}>
             <IonLabel position="stacked">
-              {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
+              {l.nomenclatura ? `${l.nomenclatura} - ${l.nombre}` : l.nombre}
             </IonLabel>
             <Input
               type="number"
-              value={valores[l.id] || ''}
-              onIonChange={e => handleChange(l.id, e.detail.value ?? '')}
+              value={valores[l.identificador] || ''}
+              onIonChange={e => handleChange(l.identificador, e.detail.value ?? '')}
               placeholder="Cantidad de votos"
             />
           </IonItem>
