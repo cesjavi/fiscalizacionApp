@@ -164,7 +164,7 @@ const toggleVoto = async (id: number) => {
   });
 
   return (
-    <Layout backHref="/select-mesa">
+    <Layout backHref="/fiscalizacion-acciones">
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
