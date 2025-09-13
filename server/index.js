@@ -7,6 +7,7 @@ import mesaRoutes from './routes/mesas.js';
 import userRoutes from './routes/users.js';
 import escrutinioRoutes from './routes/escrutinio.js';
 import authRoutes from './routes/auth.js';
+import fiscalRoutes from './routes/fiscalizacion.js';
 import logger from './logger.js';
 
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/mesas', mesaRoutes);
 app.use('/api/auth', authRoutes);            // login
 app.use('/api/users', userRoutes);           // user management
 app.use('/api/escrutinio', escrutinioRoutes);
+app.use('/api/fiscalizacion', fiscalRoutes);
 
 // IMPORTANTE: no redirijas OPTIONS ni /api/auth/login en ningún middleware
 
