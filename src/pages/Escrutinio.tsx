@@ -46,29 +46,60 @@ const Escrutinio: React.FC = () => {
     }
     const fetchListas = async () => {
       try {
-        const res = await fetch('/api/fiscalizacion/listarCandidatos', {
+        const url = '/api/fiscalizacion/listarCandidatos';
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        };
+        console.log('fetchListas request', url, headers);
+        let res = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders()
-          },
+          headers,
           body: JSON.stringify({})
         });
-        if (!res.ok) throw new Error('Error al obtener listas');
-        const { data } = await res.json();
-        interface ApiLista {
-          identificador: string;
-          nombre: string;
-          nomenclatura: string;
+        console.log('fetchListas status', res.status);
+        let body = await res.text();
+        console.log('fetchListas body', body);
+        let json: { data: unknown } | null = null;
+        if (res.ok) {
+          json = JSON.parse(body);
+        } else if (res.status === 401) {
+          const tokenWithBearer = headers.Authorization as string | undefined;
+          const token = tokenWithBearer?.replace(/^Bearer\s+/i, '');
+          const retryHeaders = {
+            ...headers,
+            Authorization: token || ''
+          };
+          res = await fetch(url, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: JSON.stringify({})
+          });
+          console.log('fetchListas retry status', res.status);
+          body = await res.text();
+          console.log('fetchListas retry body', body);
+          if (res.ok) {
+            json = JSON.parse(body);
+          }
         }
-        const listas: Lista[] = (data as ApiLista[]).map(
-          ({ identificador, nombre, nomenclatura }) => ({
-            id: identificador,
-            lista: nombre,
-            nro_lista: nomenclatura
-          })
-        );
-        setListas(listas);
+        if (res.ok && json) {
+          const { data } = json;
+          interface ApiLista {
+            identificador: string;
+            nombre: string;
+            nomenclatura: string;
+          }
+          const listas: Lista[] = (data as ApiLista[]).map(
+            ({ identificador, nombre, nomenclatura }) => ({
+              id: identificador,
+              lista: nombre,
+              nro_lista: nomenclatura
+            })
+          );
+          setListas(listas);
+        } else {
+          throw new Error('Error al obtener listas');
+        }
       } catch (err) {
         console.error(err);
       }
