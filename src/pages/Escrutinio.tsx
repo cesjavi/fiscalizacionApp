@@ -30,6 +30,7 @@ const Escrutinio: React.FC = () => {
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listas, setListas] = useState<Lista[]>([]);
+  const [error, setError] = useState<string | null>(null);
   // Cargar las listas desde la API al iniciar
   useEffect(() => {
     if (!hasFiscalData) {
@@ -46,8 +47,7 @@ const Escrutinio: React.FC = () => {
     }
     const fetchListas = async () => {
       const url = '/api/fiscalizacion/listarCandidatos';
-      const fallbackUrl =
-        'https://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listarCandidatos';
+      // El backend actúa como proxy; no consumas el dominio externo desde el navegador.
       const options: RequestInit = {
         method: 'POST',
         headers: {
@@ -94,20 +94,7 @@ const Escrutinio: React.FC = () => {
       } catch (err) {
         const error = err as Error & { status?: number };
         console.error('[fetchListas] Error:', error.message, error.status);
-        try {
-          const { data } = await fetchAndLog(fallbackUrl);
-          const listas: Lista[] = data.map(
-            ({ identificador, nombre, nomenclatura }) => ({
-              id: identificador,
-              lista: nombre,
-              nro_lista: nomenclatura
-            })
-          );
-          setListas(listas);
-        } catch (fallbackErr) {
-          const fbError = fallbackErr as Error & { status?: number };
-          console.error('[fetchListas] Fallback error:', fbError.message, fbError.status);
-        }
+        setError('No se pudieron cargar las listas. Verifica que el backend esté disponible.');
       }
     };
     fetchListas();
@@ -188,6 +175,7 @@ const Escrutinio: React.FC = () => {
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonContent className="ion-padding">
+        {error && <p className="text-red-600 ion-margin-bottom">{error}</p>}
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
           <IonItem key={l.id}>
