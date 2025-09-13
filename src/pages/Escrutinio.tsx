@@ -45,51 +45,58 @@ const Escrutinio: React.FC = () => {
       }
     }
     const fetchListas = async () => {
-      try {
-        const url = '/api/fiscalizacion/listarCandidatos';
-        const headers: Record<string, string> = {
+      const url = '/api/fiscalizacion/listarCandidatos';
+      const fallbackUrl =
+        'https://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listarCandidatos';
+      const options: RequestInit = {
+        method: 'POST',
+        headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders()
-        };
-        console.log('fetchListas request', url, headers);
-        let res = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({})
-        });
-        console.log('fetchListas status', res.status);
-        let body = await res.text();
-        console.log('fetchListas body', body);
-        let json: { data: unknown } | null = null;
-        if (res.ok) {
-          json = JSON.parse(body);
-        } else if (res.status === 401) {
-          const tokenWithBearer = headers.Authorization as string | undefined;
-          const token = tokenWithBearer?.replace(/^Bearer\s+/i, '');
-          const retryHeaders = {
-            ...headers,
-            Authorization: token || ''
+        },
+        body: JSON.stringify({})
+      };
+
+      interface ApiLista {
+        identificador: string;
+        nombre: string;
+        nomenclatura: string;
+      }
+
+      const fetchAndLog = async (targetUrl: string) => {
+        console.log('[fetchListas] URL:', targetUrl);
+        console.log('[fetchListas] Headers:', options.headers);
+        console.log('[fetchListas] Body:', options.body);
+        const response = await fetch(targetUrl, options);
+        const text = await response.clone().text();
+        console.log('[fetchListas] Response status:', response.status);
+        console.log('[fetchListas] Response body:', text);
+        if (!response.ok) {
+          const error = new Error('Error al obtener listas') as Error & {
+            status?: number;
           };
-          res = await fetch(url, {
-            method: 'POST',
-            headers: retryHeaders,
-            body: JSON.stringify({})
-          });
-          console.log('fetchListas retry status', res.status);
-          body = await res.text();
-          console.log('fetchListas retry body', body);
-          if (res.ok) {
-            json = JSON.parse(body);
-          }
+          error.status = response.status;
+          throw error;
         }
-        if (res.ok && json) {
-          const { data } = json;
-          interface ApiLista {
-            identificador: string;
-            nombre: string;
-            nomenclatura: string;
-          }
-          const listas: Lista[] = (data as ApiLista[]).map(
+        return JSON.parse(text) as { data: ApiLista[] };
+      };
+
+      try {
+        const { data } = await fetchAndLog(url);
+        const listas: Lista[] = data.map(
+          ({ identificador, nombre, nomenclatura }) => ({
+            id: identificador,
+            lista: nombre,
+            nro_lista: nomenclatura
+          })
+        );
+        setListas(listas);
+      } catch (err) {
+        const error = err as Error & { status?: number };
+        console.error('[fetchListas] Error:', error.message, error.status);
+        try {
+          const { data } = await fetchAndLog(fallbackUrl);
+          const listas: Lista[] = data.map(
             ({ identificador, nombre, nomenclatura }) => ({
               id: identificador,
               lista: nombre,
@@ -97,11 +104,10 @@ const Escrutinio: React.FC = () => {
             })
           );
           setListas(listas);
-        } else {
-          throw new Error('Error al obtener listas');
+        } catch (fallbackErr) {
+          const fbError = fallbackErr as Error & { status?: number };
+          console.error('[fetchListas] Fallback error:', fbError.message, fbError.status);
         }
-      } catch (err) {
-        console.error(err);
       }
     };
     fetchListas();
