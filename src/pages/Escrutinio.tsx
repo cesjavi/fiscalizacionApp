@@ -45,58 +45,61 @@ const Escrutinio: React.FC = () => {
         history.replace('/fiscalizacion-lookup');
       }
     }
-    const fetchListas = async () => {
-      const url = '/api/fiscalizacion/listarCandidatos';
-      // El backend actúa como proxy; no consumas el dominio externo desde el navegador.
-      const options: RequestInit = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders()
-        },
-        body: JSON.stringify({})
-      };
+    // Dentro de useEffect, reemplaza fetchListas por:
+// Tipos auxiliares seguros
+class HttpError extends Error {
+  constructor(message: string, public status?: number, public body?: string) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+type WithStatus = { status?: number };
 
-      interface ApiLista {
-        identificador: string;
-        nombre: string;
-        nomenclatura: string;
-      }
+const fetchListas = async () => {
+  const url = '/api/fiscalizacion/listarCandidatos';
 
-      const fetchAndLog = async (targetUrl: string) => {
-        console.log('[fetchListas] URL:', targetUrl);
-        console.log('[fetchListas] Headers:', options.headers);
-        console.log('[fetchListas] Body:', options.body);
-        const response = await fetch(targetUrl, options);
-        const text = await response.clone().text();
-        console.log('[fetchListas] Response status:', response.status);
-        console.log('[fetchListas] Response body:', text);
-        if (!response.ok) {
-          const error = new Error('Error al obtener listas') as Error & {
-            status?: number;
-          };
-          error.status = response.status;
-          throw error;
-        }
-        return JSON.parse(text) as { data: ApiLista[] };
-      };
+  // GET: sin body y sin Content-Type
+  const headers: HeadersInit = {
+    Accept: 'application/json',
+    ...getAuthHeaders(),
+  };
 
-      try {
-        const { data } = await fetchAndLog(url);
-        const listas: Lista[] = data.map(
-          ({ identificador, nombre, nomenclatura }) => ({
-            id: identificador,
-            lista: nombre,
-            nro_lista: nomenclatura
-          })
-        );
-        setListas(listas);
-      } catch (err) {
-        const error = err as Error & { status?: number };
-        console.error('[fetchListas] Error:', error.message, error.status);
-        setError('No se pudieron cargar las listas. Verifica que el backend esté disponible.');
-      }
-    };
+  interface ApiLista {
+    identificador: string;
+    nombre: string;
+    nomenclatura: string;
+  }
+
+  try {
+    console.log('[fetchListas] URL:', url);
+    console.log('[fetchListas] Headers:', headers);
+
+    const res = await fetch(url, { method: 'GET', headers });
+    const text = await res.text();
+    console.log('[fetchListas] Response status:', res.status);
+    console.log('[fetchListas] Response body:', text);
+
+    if (!res.ok) {
+      throw new HttpError('Error al obtener listas', res.status, text);
+    }
+
+    const { data } = JSON.parse(text) as { data: ApiLista[] };
+    const listas = data.map(({ identificador, nombre, nomenclatura }) => ({
+      id: identificador,
+      lista: nombre,
+      nro_lista: nomenclatura,
+    }));
+    setListas(listas);
+  } catch (e: unknown) {
+    // ✅ sin `any`, con estrechamiento de tipo
+    const msg = e instanceof Error ? e.message : String(e);
+    const status = (e as WithStatus)?.status;
+    console.error('[fetchListas] Error:', msg, status);
+    setError('No se pudieron cargar las listas. Verifica que el backend esté disponible.');
+  }
+};
+
+
     fetchListas();
   }, [hasFiscalData, history, setFiscalData]);
 
