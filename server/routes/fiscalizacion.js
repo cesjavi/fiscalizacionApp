@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 import { Router } from 'express';
 
 const router = Router();
