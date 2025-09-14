@@ -74,7 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (!response.ok) {
-        throw new Error('Usuario o clave incorrectos');
+        if (response.status === 401) {
+          throw new Error('Usuario o clave incorrectos');
+        }
+        throw new Error(
+          `Error del servidor: ${response.status} ${response.statusText}`
+        );
       }
 
       const data: {
@@ -103,8 +108,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return data.token;
     } catch (error) {
+      if (error instanceof TypeError) {
+        console.error('Error de red en login:', error);
+        throw new Error('Error de red al intentar iniciar sesión');
+      }
       console.error('Error en login:', error);
-      throw new Error('Usuario o clave incorrectos');
+      throw error instanceof Error
+        ? error
+        : new Error('Error desconocido al iniciar sesión');
     }
   };
 
