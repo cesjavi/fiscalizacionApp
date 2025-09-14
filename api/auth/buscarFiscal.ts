@@ -5,16 +5,17 @@ const BASE = process.env.UPSTREAM_BASE ?? 'https://api.lalibertadavanzacomuna7.c
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Only POST' });
 
-  // Tomamos el token que te manda el frontend
   const auth = (req.headers.authorization as string) || '';
-
+  console.log('Auth header:', auth);
+  console.log('Request body:', req.body);
+  console.log('Upstream base URL:', BASE);
+  console.debug('Upstream base URL:', BASE);
   try {
     const upstream = await fetch(`${BASE}/fiscalizacion/buscarFiscal`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        // Mandá como lo espera tu API (si usa Bearer, mantené el Bearer)
         'Authorization': auth,
         'User-Agent': (req.headers['user-agent'] as string) || 'Mozilla/5.0',
         'Accept-Language': (req.headers['accept-language'] as string) || 'es-AR,es;q=0.9,en;q=0.8'

@@ -5,29 +5,63 @@ import Layout from '../components/Layout';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { useHistory } from 'react-router-dom';
 import { useFiscalData } from '../FiscalDataContext';
-import { postJson, getAuthHeaders /* si tu endpoint fuera GET: getJson */ } from '../utils/api';
 
 interface Lista {
   id: string;
   lista: string;
   nro_lista?: string;
 }
+// helper común arriba del componente (o en utils)
+function toErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
 
 const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'] as const;
 
+// ===== API helpers igual que en FiscalizacionLookup =====
+const API_BASE = (import.meta.env.VITE_API_BASE || '')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
+
+type ApiResult<T = unknown> = { ok: boolean; status: number; payload: T | string };
+
+async function postJson<T = unknown>(
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {}
+): Promise<ApiResult<T>> {
+  const url = path.startsWith('http')
+    ? path
+    : `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
+
+  const ct = resp.headers.get('content-type') || '';
+  const payload = ct.includes('application/json') ? await resp.json() : await resp.text();
+  return { ok: resp.ok, status: resp.status, payload };
+}
+
+// ===== Componente =====
 const Escrutinio: React.FC = () => {
   const history = useHistory();
   const { hasFiscalData, setFiscalData } = useFiscalData();
+
+  const [listas, setListas] = useState<Lista[]>([]);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [listas, setListas] = useState<Lista[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cargar listas desde la API al iniciar
+  // Cargar listas al iniciar (requiere token)
   useEffect(() => {
-    // Verifica que haya datos de fiscal en memoria/localStorage
+    // Garantizar fiscalData
     if (!hasFiscalData) {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
@@ -46,56 +80,72 @@ const Escrutinio: React.FC = () => {
     type ApiLista = { identificador: string; nombre: string; nomenclatura: string };
 
     const fetchListas = async () => {
+      setError(null);
+      const token = localStorage.getItem('token') || '';
+      if (!token) {
+        history.replace('/fiscalizacion-lookup');
+        return;
+      }
+
       try {
-        // Si tu backend fuese GET, cambia por getJson y remueve el body {}
-        const r = await postJson<{ data: ApiLista[] }>(
-          '/api/fiscalizacion/listarCandidatos',
+        // 1) Intento con Bearer
+        let r = await postJson<{ data: ApiLista[] }>(
+          '/api/candidatos/listarCandidatos',
           {},
-          getAuthHeaders()
+          { Authorization: `${token}` }
         );
+
+        // 2) Si 401, reintento con token pelado (como en buscarFiscal)
+        if (!r.ok && r.status === 401) {
+          r = await postJson<{ data: ApiLista[] }>(
+            '/api/candidatos/listarCandidatos',
+            {},
+            { Authorization: token }
+          );
+        }
+
         if (!r.ok) {
-          const msg = typeof r.payload === 'string' ? r.payload : `HTTP ${r.status}`;
+          const msg = typeof r.payload === 'string'
+            ? r.payload
+            : (r.payload as { message?: string })?.message || `HTTP ${r.status}`;
           throw new Error(msg);
         }
 
         const data = (r.payload as { data?: ApiLista[] }).data ?? [];
-        const mapped = data.map(({ identificador, nombre, nomenclatura }) => ({
+        const mapped: Lista[] = data.map(({ identificador, nombre, nomenclatura }) => ({
           id: identificador,
           lista: nombre,
           nro_lista: nomenclatura,
         }));
         setListas(mapped);
-      } catch (e) {
-        console.error('[fetchListas] Error:', e);
-        setError('No se pudieron cargar las listas. Verifica que el backend esté disponible.');
-      }
+      } catch (e: unknown) {
+          const msg = toErrorMessage(e);
+          console.error('[escrutinio] submit error:', e);
+          setError(msg || 'Error al guardar escrutinio');
+          alert('[escrutinio]');
+        }
     };
 
     fetchListas();
   }, [hasFiscalData, history, setFiscalData]);
 
-  // Handler de inputs
+  // Handlers
   const handleChange = (id: string, value: string) => {
     setValores((prev) => ({ ...prev, [id]: value }));
   };
 
-  // Capturar foto
   const handleFoto = async () => {
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.DataUrl,
         quality: 80,
       });
-      if (photo.dataUrl) {
-        setFoto(photo.dataUrl);
-      }
+      if (photo.dataUrl) setFoto(photo.dataUrl);
     } catch {
-      // fallback manual
       fileInputRef.current?.click();
     }
   };
 
-  // Para subir foto manual
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -104,18 +154,16 @@ const Escrutinio: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  // Enviar escrutinio
   const handleSubmit = async () => {
+    setError(null);
+
+    // Construir objeto de resultados
     const datos: Record<string, number> = {};
-
-    // todas las listas
     listas.forEach((l) => {
-      datos[l.lista] = parseInt(valores[l.id], 10) || 0;
+      datos[l.lista] = Number.parseInt(valores[l.id] || '0', 10) || 0;
     });
-
-    // campos especiales
     CAMPOS_ESPECIALES.forEach((key) => {
-      datos[key] = parseInt(valores[key], 10) || 0;
+      datos[key] = Number.parseInt(valores[key] || '0', 10) || 0;
     });
 
     setResultado(datos);
@@ -128,24 +176,42 @@ const Escrutinio: React.FC = () => {
       foto,
     };
 
+    const token = localStorage.getItem('token') || '';
+    if (!token) {
+      history.replace('/fiscalizacion-lookup');
+      return;
+    }
+
     try {
-      const res = await fetch('/api/escrutinio', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(payload),
+      // 1) Bearer
+      let r = await postJson('/api/actas/crear', payload, {
+        Authorization: `${token}`,
       });
-      if (!res.ok) throw new Error('Error al enviar escrutinio');
+
+      // 2) Reintento con token pelado si 401
+      if (!r.ok && r.status === 401) {
+        r = await postJson('/api/actas/crear', payload, {
+          Authorization: token,
+        });
+      }
+
+      if (!r.ok) {
+        const msg =
+          typeof r.payload === 'string'
+            ? r.payload
+            : (r.payload as { message?: string })?.message || `HTTP ${r.status}`;
+        throw new Error(msg);
+      }
+
       alert('Escrutinio enviado correctamente');
       setFoto('');
-    } catch (err) {
-      alert('Error al guardar escrutinio');
-      console.error(err);
-    }
-  };
-
+    } catch (e: unknown) {
+          const msg = toErrorMessage(e);
+          console.error('[escrutinio] submit error:', e);
+          setError(msg || 'Error al guardar escrutinio');
+          //alert('Error al guardar escrutinio');
+        }
+    };
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonContent className="ion-padding">
@@ -198,7 +264,6 @@ const Escrutinio: React.FC = () => {
           Enviar
         </Button>
 
-        {/* Mostrar resultado si está seteado */}
         {resultado && (
           <IonText className="ion-margin-top">
             <pre>{JSON.stringify(resultado, null, 2)}</pre>

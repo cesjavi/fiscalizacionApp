@@ -6,10 +6,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Only POST' });
 
   const auth = (req.headers.authorization as string) || '';
-
+  console.log('Auth header:', auth);
+  console.log('Request body:', req.body);
+  console.log('Upstream base URL:', BASE);
+  console.debug('Upstream base URL:', BASE);
   try {
     const upstream = await fetch(`${BASE}/fiscalizacion/listarCandidatos`, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

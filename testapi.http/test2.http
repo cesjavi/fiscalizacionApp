@@ -1,0 +1,10 @@
+@fiscal =http://api.lalibertadavanzacomuna7.com
+@baseUrl = {{fiscal}}/api
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "usuario": "test",
+  "password": "Test123456"
+}

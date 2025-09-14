@@ -1,12 +1,13 @@
 @token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJub21icmVzIjoiQXBwIiwiYXBlbGxpZG9zIjoiQXBwIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInJvbCI6ImZpc2NhbCIsInVzdWFyaW8iOiJ0ZXN0IiwiaWF0IjoxNzU3MzAyMDk1LCJleHAiOjE3NTczODg0OTV9.FcZV1LlVKZ4I2Bfhfzpb5LsBg3RufRyUMD4QrIIzF6w'
+@baseUrl =http://api.lalibertadavanzacomuna7.com 
 ### Login
-POST http://api.lalibertadavanzacomuna7.com/api/auth/login
+POST http://api.lalibertadavanzacomuna7.com/auth/login
 Content-Type: application/json
-
 {
   "usuario": "test",
-  "password": "Test123456"
+  "password": "Test123456"
 }
+
 
 POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/buscarFiscal
 Content-Type: application/json1
@@ -15,7 +16,7 @@ Authorization: {{token}}
     "dni_miembro": 36293331
 }
 ### Listar Candidatos en App 
-POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listarCandidatos
+POST http://api.lalibertadavanzacomuna7.com/api/candidatos/listarCandidatos
 Content-Type: application/json
 Authorization: {{token}}
 
