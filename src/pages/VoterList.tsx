@@ -163,6 +163,10 @@ const toggleVoto = async (id: number) => {
     return matchesDni && matchesOrden;
   });
 
+  const votersWithId = filteredVoters.filter(
+    (voter): voter is Voter & { id: number } => voter.id !== undefined
+  );
+
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonHeader>
@@ -207,10 +211,10 @@ const toggleVoto = async (id: number) => {
     </IonItem>
   </div>
   <div className="grid gap-4">
-    {filteredVoters.length === 0 ? (
+    {votersWithId.length === 0 ? (
       <div className="text-gray-500 text-center">No hay votantes cargados.</div>
     ) : (
-      filteredVoters.map((voter, index) => {
+      votersWithId.map((voter, index) => {
         const persona = {
           nombre: voter.persona?.nombre ?? '-',
           apellido: voter.persona?.apellido ?? '-'
@@ -219,13 +223,12 @@ const toggleVoto = async (id: number) => {
           dni: voter.personasVotantes?.[0]?.dni ?? '-',
           numero_de_orden: voter.personasVotantes?.[0]?.numero_de_orden ?? '-'
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const id = (voter as any).id as number;
+        const id = voter.id;
         const voto = voter.voto ?? false;
 
         return (
           <div
-            key={voter.id}
+            key={id}
             data-testid={`voter-row-${index}`}
             className={`rounded shadow p-4 grid grid-cols-5 items-center gap-2 ${
               voter.voto ? 'bg-green-50' : 'bg-white'
