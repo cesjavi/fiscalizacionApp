@@ -1,26 +1,19 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
-import {
-  IonContent,
-  IonItem,
-  IonLabel,
-  IonText
-} from '@ionic/react';
+import { IonContent, IonItem, IonLabel, IonText } from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { useHistory } from 'react-router-dom';
 import { useFiscalData } from '../FiscalDataContext';
-import { getAuthHeaders } from '../utils/api';
-
+import { postJson, getAuthHeaders /* si tu endpoint fuera GET: getJson */ } from '../utils/api';
 
 interface Lista {
   id: string;
   lista: string;
-  nro_lista?: string;  
+  nro_lista?: string;
 }
 
-
-const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'];
+const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'] as const;
 
 const Escrutinio: React.FC = () => {
   const history = useHistory();
@@ -31,8 +24,10 @@ const Escrutinio: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listas, setListas] = useState<Lista[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // Cargar las listas desde la API al iniciar
+
+  // Cargar listas desde la API al iniciar
   useEffect(() => {
+    // Verifica que haya datos de fiscal en memoria/localStorage
     if (!hasFiscalData) {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
@@ -40,65 +35,41 @@ const Escrutinio: React.FC = () => {
           setFiscalData(JSON.parse(stored));
         } catch {
           history.replace('/fiscalizacion-lookup');
+          return;
         }
       } else {
         history.replace('/fiscalizacion-lookup');
+        return;
       }
     }
-    // Dentro de useEffect, reemplaza fetchListas por:
-// Tipos auxiliares seguros
-class HttpError extends Error {
-  constructor(message: string, public status?: number, public body?: string) {
-    super(message);
-    this.name = 'HttpError';
-  }
-}
-type WithStatus = { status?: number };
 
-const fetchListas = async () => {
-  const url = '/api/fiscalizacion/listarCandidatos';
+    type ApiLista = { identificador: string; nombre: string; nomenclatura: string };
 
-  // GET: sin body y sin Content-Type
-  const headers: HeadersInit = {
-    Accept: 'application/json',
-    ...getAuthHeaders(),
-  };
+    const fetchListas = async () => {
+      try {
+        // Si tu backend fuese GET, cambia por getJson y remueve el body {}
+        const r = await postJson<{ data: ApiLista[] }>(
+          '/api/fiscalizacion/listarCandidatos',
+          {},
+          getAuthHeaders()
+        );
+        if (!r.ok) {
+          const msg = typeof r.payload === 'string' ? r.payload : `HTTP ${r.status}`;
+          throw new Error(msg);
+        }
 
-  interface ApiLista {
-    identificador: string;
-    nombre: string;
-    nomenclatura: string;
-  }
-
-  try {
-    console.log('[fetchListas] URL:', url);
-    console.log('[fetchListas] Headers:', headers);
-
-    const res = await fetch(url, { method: 'GET', headers });
-    const text = await res.text();
-    console.log('[fetchListas] Response status:', res.status);
-    console.log('[fetchListas] Response body:', text);
-
-    if (!res.ok) {
-      throw new HttpError('Error al obtener listas', res.status, text);
-    }
-
-    const { data } = JSON.parse(text) as { data: ApiLista[] };
-    const listas = data.map(({ identificador, nombre, nomenclatura }) => ({
-      id: identificador,
-      lista: nombre,
-      nro_lista: nomenclatura,
-    }));
-    setListas(listas);
-  } catch (e: unknown) {
-    // ✅ sin `any`, con estrechamiento de tipo
-    const msg = e instanceof Error ? e.message : String(e);
-    const status = (e as WithStatus)?.status;
-    console.error('[fetchListas] Error:', msg, status);
-    setError('No se pudieron cargar las listas. Verifica que el backend esté disponible.');
-  }
-};
-
+        const data = (r.payload as { data?: ApiLista[] }).data ?? [];
+        const mapped = data.map(({ identificador, nombre, nomenclatura }) => ({
+          id: identificador,
+          lista: nombre,
+          nro_lista: nomenclatura,
+        }));
+        setListas(mapped);
+      } catch (e) {
+        console.error('[fetchListas] Error:', e);
+        setError('No se pudieron cargar las listas. Verifica que el backend esté disponible.');
+      }
+    };
 
     fetchListas();
   }, [hasFiscalData, history, setFiscalData]);
@@ -113,12 +84,13 @@ const fetchListas = async () => {
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.DataUrl,
-        quality: 80
+        quality: 80,
       });
       if (photo.dataUrl) {
         setFoto(photo.dataUrl);
       }
     } catch {
+      // fallback manual
       fileInputRef.current?.click();
     }
   };
@@ -128,21 +100,21 @@ const fetchListas = async () => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      setFoto(reader.result as string);
-    };
+    reader.onload = () => setFoto(reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  // Al enviar
+  // Enviar escrutinio
   const handleSubmit = async () => {
     const datos: Record<string, number> = {};
 
-    listas.forEach(l => {
+    // todas las listas
+    listas.forEach((l) => {
       datos[l.lista] = parseInt(valores[l.id], 10) || 0;
     });
 
-    CAMPOS_ESPECIALES.forEach(key => {
+    // campos especiales
+    CAMPOS_ESPECIALES.forEach((key) => {
       datos[key] = parseInt(valores[key], 10) || 0;
     });
 
@@ -154,16 +126,16 @@ const fetchListas = async () => {
       datos,
       fecha: new Date().toISOString(),
       foto,
-      // podés sumar más campos si querés
     };
+
     try {
       const res = await fetch('/api/escrutinio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Error al enviar escrutinio');
       alert('Escrutinio enviado correctamente');
@@ -174,11 +146,11 @@ const fetchListas = async () => {
     }
   };
 
-
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonContent className="ion-padding">
         {error && <p className="text-red-600 ion-margin-bottom">{error}</p>}
+
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
           <IonItem key={l.id}>
@@ -188,20 +160,20 @@ const fetchListas = async () => {
             <Input
               type="number"
               value={valores[l.id] || ''}
-              onIonChange={e => handleChange(l.id, e.detail.value ?? '')}
+              onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
               placeholder="Cantidad de votos"
             />
           </IonItem>
         ))}
 
-        {/* Inputs para los campos especiales */}
-        {CAMPOS_ESPECIALES.map(key => (
+        {/* Inputs para campos especiales */}
+        {CAMPOS_ESPECIALES.map((key) => (
           <IonItem key={key}>
             <IonLabel position="stacked">{key}</IonLabel>
             <Input
               type="number"
               value={valores[key] || ''}
-              onIonChange={e => handleChange(key, e.detail.value ?? '')}
+              onIonChange={(e) => handleChange(key, e.detail.value ?? '')}
               placeholder={`Cantidad de votos ${key.toLowerCase()}`}
             />
           </IonItem>
@@ -217,18 +189,16 @@ const fetchListas = async () => {
             accept="image/*"
             className="hidden"
             onChange={handleFileChange}
-             title="Subir foto de acta"
+            title="Subir foto de acta"
           />
-          {foto && (
-            <img src={foto} alt="Foto de acta" className="max-w-xs mt-2 rounded shadow" />
-          )}
+          {foto && <img src={foto} alt="Foto de acta" className="max-w-xs mt-2 rounded shadow" />}
         </IonItem>
 
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
           Enviar
         </Button>
 
-        {/* Mostrar el resultado si está seteado */}
+        {/* Mostrar resultado si está seteado */}
         {resultado && (
           <IonText className="ion-margin-top">
             <pre>{JSON.stringify(resultado, null, 2)}</pre>
@@ -240,4 +210,3 @@ const fetchListas = async () => {
 };
 
 export default Escrutinio;
-
