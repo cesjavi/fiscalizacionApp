@@ -1,11 +1,28 @@
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, applicationDefault, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { readFileSync } from 'fs';
 
-// Initialize Firebase Admin using default credentials so the server can
-// access Firestore. In a real deployment the credentials should be provided
-// through environment configuration or a service account key.
+// Determine credentials from environment variables. Prefer an explicit
+// service account JSON if provided, otherwise fall back to the default
+// application credentials.
+const serviceAccountEnv =
+  process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_SERVICE_ACCOUNT;
+
+let firebaseCredential;
+
+if (serviceAccountEnv) {
+  try {
+    const serviceAccountJson = serviceAccountEnv.trim().startsWith('{')
+      ? serviceAccountEnv
+      : readFileSync(serviceAccountEnv, 'utf8');
+    firebaseCredential = cert(JSON.parse(serviceAccountJson));
+  } catch (err) {
+    console.error('Error parsing Firebase credentials from environment:', err);
+  }
+}
+
 initializeApp({
-  credential: applicationDefault(),
+  credential: firebaseCredential || applicationDefault(),
 });
 
 // Export the Firestore instance as `db` and a convenience reference to the
