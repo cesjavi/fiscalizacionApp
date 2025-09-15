@@ -13,7 +13,6 @@ import { chevronBackOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { useFiscalData } from '../FiscalDataContext';
-import type { FiscalData } from '../FiscalDataContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -24,13 +23,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();
   const history = useHistory();
-  let fiscalData: FiscalData | null = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    ({ fiscalData } = useFiscalData());
-  } catch {
-    fiscalData = null;
-  }
+  const { fiscalData } = useFiscalData();
   const title = fiscalData
     ? `${fiscalData.persona.nombre} ${fiscalData.persona.apellido} – ${fiscalData.tipo_fiscal} – ${fiscalData.zona}`
     : 'Fiscalizacion App';
