@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonContent, IonItem, IonLabel, IonText } from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
-import { Camera, CameraResultType } from '@capacitor/camera';
 import { useHistory } from 'react-router-dom';
 import { useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
@@ -55,10 +54,8 @@ const Escrutinio: React.FC = () => {
 
   const [listas, setListas] = useState<Lista[]>([]);
   const [valores, setValores] = useState<Record<string, string>>({});
-  const [foto, setFoto] = useState('');
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cargar listas al iniciar (requiere token)
   useEffect(() => {
@@ -135,26 +132,6 @@ const Escrutinio: React.FC = () => {
     setValores((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleFoto = async () => {
-    try {
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.DataUrl,
-        quality: 80,
-      });
-      if (photo.dataUrl) setFoto(photo.dataUrl);
-    } catch {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setFoto(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
   const handleSubmit = async () => {
     setError(null);
 
@@ -170,12 +147,13 @@ const Escrutinio: React.FC = () => {
     setResultado(datos);
 
     const mesaId = Number(localStorage.getItem('mesaId'));
-    const payload = {
+    const foto = localStorage.getItem('fotoActa');
+    const payload: Record<string, unknown> = {
       mesa_id: mesaId,
       datos,
       fecha: new Date().toISOString(),
-      foto,
     };
+    if (foto) payload.foto = foto;
 
     const token = localStorage.getItem('token') || '';
     if (!token) {
@@ -205,7 +183,7 @@ const Escrutinio: React.FC = () => {
       }
 
       alert('Escrutinio enviado correctamente');
-      setFoto('');
+      localStorage.removeItem('fotoActa');
     } catch (e: unknown) {
           const msg = toErrorMessage(e);
           console.error('[escrutinio] submit error:', e);
@@ -245,21 +223,6 @@ const Escrutinio: React.FC = () => {
             />
           </IonItem>
         ))}
-
-        {/* Subir foto */}
-        <IonItem>
-          <IonLabel position="stacked">Foto (opcional)</IonLabel>
-          <Button onClick={handleFoto}>Tomar/Subir Foto</Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-            title="Subir foto de acta"
-          />
-          {foto && <img src={foto} alt="Foto de acta" className="max-w-xs mt-2 rounded shadow" />}
-        </IonItem>
 
         <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
           Enviar
