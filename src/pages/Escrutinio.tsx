@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { useHistory } from 'react-router-dom';
 import { useFiscalData } from '../FiscalDataContext';
+import type { FiscalData } from '../FiscalDataContext';
 
 interface Lista {
   id: string;
@@ -66,7 +67,7 @@ const Escrutinio: React.FC = () => {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
         try {
-          setFiscalData(JSON.parse(stored));
+          setFiscalData(JSON.parse(stored) as FiscalData);
         } catch {
           history.replace('/fiscalizacion-lookup');
           return;

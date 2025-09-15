@@ -21,6 +21,7 @@ import { voterDB } from '../voterDB';
 import { useAuth } from '../AuthContext';
 import EscrutinioModal from './EscrutinioModal';
 import { useFiscalData } from '../FiscalDataContext';
+import type { FiscalData } from '../FiscalDataContext';
 
 interface Voter {
   id?: number;
@@ -139,7 +140,7 @@ const toggleVoto = async (id: number) => {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
         try {
-          setFiscalData(JSON.parse(stored));
+          setFiscalData(JSON.parse(stored) as FiscalData);
         } catch {
           history.replace('/fiscalizacion-lookup');
         }

@@ -1,8 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export interface FiscalData {
+  persona: {
+    nombre: string;
+    apellido: string;
+  };
+  tipo_fiscal: string;
+  zona: string;
+}
+
 interface FiscalDataContextValue {
-  fiscalData: unknown | null;
-  setFiscalData: React.Dispatch<React.SetStateAction<unknown | null>>;
+  fiscalData: FiscalData | null;
+  setFiscalData: React.Dispatch<React.SetStateAction<FiscalData | null>>;
   hasFiscalData: boolean;
 }
 
@@ -13,9 +22,9 @@ const FiscalDataContext = createContext<FiscalDataContextValue | undefined>(
 export const FiscalDataProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [fiscalData, setFiscalData] = useState<unknown | null>(() => {
+  const [fiscalData, setFiscalData] = useState<FiscalData | null>(() => {
     const stored = localStorage.getItem('fiscalData');
-    return stored ? JSON.parse(stored) : null;
+    return stored ? (JSON.parse(stored) as FiscalData) : null;
   });
 
   useEffect(() => {

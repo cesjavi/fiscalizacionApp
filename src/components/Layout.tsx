@@ -15,6 +15,8 @@ import { chevronBackOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { voterDB } from '../voterDB';
+import { useFiscalData } from '../FiscalDataContext';
+import type { FiscalData } from '../FiscalDataContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,6 +30,15 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const [showStats, setShowStats] = useState(false);
   const [totalVoters, setTotalVoters] = useState(0);
   const [votedCount, setVotedCount] = useState(0);
+  let fiscalData: FiscalData | null = null;
+  try {
+    ({ fiscalData } = useFiscalData());
+  } catch {
+    fiscalData = null;
+  }
+  const title = fiscalData
+    ? `${fiscalData.persona.nombre} ${fiscalData.persona.apellido} – ${fiscalData.tipo_fiscal} – ${fiscalData.zona}`
+    : 'Fiscalizacion App';
 
   useEffect(() => {
     if (!showStats) {
@@ -66,7 +77,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
               </IonButton>
             </IonButtons>
           )}
-          <IonTitle className="font-bold text-lg">Fiscalizacion App</IonTitle>
+          <IonTitle className="font-bold text-lg">{title}</IonTitle>
           <IonButtons slot="end">
             <IonButton color="primary" onClick={handleStats}>Estadísticas</IonButton>
             <IonButton color="primary" onClick={handleLogout}>Desloguearse</IonButton>

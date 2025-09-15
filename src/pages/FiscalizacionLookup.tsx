@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 import { useFiscalData } from '../FiscalDataContext';
+import type { FiscalData } from '../FiscalDataContext';
 
 // ================== Configuración de API ==================
 // En desarrollo (Vite) dejá VITE_API_BASE = '' y usá proxy.
@@ -64,7 +65,7 @@ const FiscalizacionLookup: React.FC = () => {
   const password = import.meta.env.VITE_FISCALIZACION_PASS as string;
 
   const [dni, setDni] = useState('');
-  const [result, setResult] = useState<unknown | null>(null);
+  const [result, setResult] = useState<FiscalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const history = useHistory();
@@ -110,10 +111,11 @@ const FiscalizacionLookup: React.FC = () => {
               : (retry.payload as { message?: string })?.message || 'No autorizado';
           throw new Error(msg);
         }
-        setResult(retry.payload);
-        localStorage.setItem('fiscalData', JSON.stringify(retry.payload));
-        setFiscalData(retry.payload);
-        history.push('/fiscalizacion-acciones', { fiscalData: retry.payload });
+        const fiscal = retry.payload as FiscalData;
+        setResult(fiscal);
+        localStorage.setItem('fiscalData', JSON.stringify(fiscal));
+        setFiscalData(fiscal);
+        history.push('/fiscalizacion-acciones', { fiscalData: fiscal });
         return;
       }
 
@@ -126,10 +128,11 @@ const FiscalizacionLookup: React.FC = () => {
       }
 
       // OK
-      setResult(r.payload);
-      localStorage.setItem('fiscalData', JSON.stringify(r.payload));
-      setFiscalData(r.payload);
-      history.push('/fiscalizacion-acciones', { fiscalData: r.payload });
+      const fiscal = r.payload as FiscalData;
+      setResult(fiscal);
+      localStorage.setItem('fiscalData', JSON.stringify(fiscal));
+      setFiscalData(fiscal);
+      history.push('/fiscalizacion-acciones', { fiscalData: fiscal });
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'DNI no registrado';

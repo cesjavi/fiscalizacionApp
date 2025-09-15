@@ -10,6 +10,7 @@ import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { voterDB } from '../voterDB';
 import { useFiscalData } from '../FiscalDataContext';
+import type { FiscalData } from '../FiscalDataContext';
 
 const AddVoter: React.FC = () => {
   const history = useHistory();
@@ -25,7 +26,7 @@ const AddVoter: React.FC = () => {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
         try {
-          setFiscalData(JSON.parse(stored));
+          setFiscalData(JSON.parse(stored) as FiscalData);
         } catch {
           history.replace('/fiscalizacion-lookup');
         }
