@@ -2,7 +2,8 @@ import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button } from '../components';
 import { useFiscalData } from '../FiscalDataContext';
-import { useEffect, useState, useRef, ChangeEvent } from 'react';
+import type { FiscalData } from '../FiscalDataContext';
+import { useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
 
@@ -49,7 +50,7 @@ const FiscalizacionActions: React.FC = () => {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
         try {
-          setFiscalData(JSON.parse(stored));
+          setFiscalData(JSON.parse(stored) as FiscalData);
         } catch {
           history.replace('/fiscalizacion-lookup');
         }
