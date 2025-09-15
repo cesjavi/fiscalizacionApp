@@ -3,9 +3,10 @@ import Layout from '../components/Layout';
 import { Button } from '../components';
 import { useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
+import type { ChangeEvent } from 'react';
 
 const FiscalizacionActions: React.FC = () => {
   const history = useHistory();
@@ -65,6 +66,9 @@ const FiscalizacionActions: React.FC = () => {
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Foto del acta</IonLabel>
+          
+        </IonItem>
+        <div className="flex flex-col items-center gap-4  w-4/5 mx-auto mt-4">
           <Button onClick={handleFoto}>Tomar/Subir Foto</Button>
           <input
             ref={fileInputRef}
@@ -75,17 +79,15 @@ const FiscalizacionActions: React.FC = () => {
             title="Subir foto del acta"
           />
           {foto && (
-            <div className="flex flex-col items-center">
-              <img src={foto} alt="Foto del acta" className="max-w-xs mt-2 rounded shadow" />
-              <Button size="small" color="danger" className="mt-2" onClick={handleClearFoto}>
+            <div className="flex flex-col items-center w-4/5">
+              <img src={foto} alt="Foto del acta" className="max-w-xs mt-2 rounded shadow " />
+              <Button size="small" color="danger" className="mt-2 w-4/5" onClick={handleClearFoto}>
                 Borrar foto
               </Button>
             </div>
           )}
-        </IonItem>
-        <div className="flex flex-col items-center 1gap-4 mt-4">
-          <Button routerLink="/voters" className="w-4/5">Votación</Button>
-          <Button routerLink="/escrutinio" className="w-4/5">Escrutinio</Button>
+          <Button routerLink="/voters" className="flex flex-col items-center w-4/5">Votación</Button>
+          <Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">Escrutinio</Button>
         </div>
       </IonContent>
     </Layout>

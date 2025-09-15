@@ -13,20 +13,28 @@ import { chevronBackOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { useFiscalData } from '../FiscalDataContext';
+import type { FiscalData } from '../FiscalDataContext';
 
 interface LayoutProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   backHref?: string;
 }
-
+function formatTitle(fd?: FiscalData | null) {
+  if (!fd) return 'Fiscalizacion App';
+  const nombre   = fd.persona?.nombre   ?? '';
+  const apellido = fd.persona?.apellido ?? '';
+  const tipo     = fd.tipo_fiscal       ?? '';
+  const zona     = fd.zona              ?? '';
+  const left = [nombre, apellido].filter(Boolean).join(' ').trim();
+  const parts = [left, tipo, zona].filter(Boolean);
+  return parts.length ? parts.join(' – ') : 'Fiscalizacion App';
+}
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();
   const history = useHistory();
   const { fiscalData } = useFiscalData();
-  const title = fiscalData
-    ? `${fiscalData.persona.nombre} ${fiscalData.persona.apellido} – ${fiscalData.tipo_fiscal} – ${fiscalData.zona}`
-    : 'Fiscalizacion App';
+  const title = formatTitle(fiscalData);
 
   const handleLogout = async () => {
     await logout();
