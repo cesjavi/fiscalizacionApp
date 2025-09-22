@@ -69,7 +69,9 @@ const FiscalizacionActions: React.FC = () => {
           
         </IonItem>
         <div className="flex flex-col items-center gap-4  w-4/5 mx-auto mt-4">
-          <Button onClick={handleFoto}>Tomar/Subir Foto</Button>
+          <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
+            Tomar/Subir Foto
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
