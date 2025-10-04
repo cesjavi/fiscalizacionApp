@@ -12,7 +12,7 @@ import {
 import { chevronBackOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { useFiscalData } from '../FiscalDataContext';
+import { getMemberNameParts, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
 
 interface LayoutProps {
@@ -20,15 +20,18 @@ interface LayoutProps {
   footer?: React.ReactNode;
   backHref?: string;
 }
-function formatTitle(fd?: FiscalData | null) {
+export function formatTitle(fd?: FiscalData | null) {
   const baseTitle = 'Fiscalizacion App';
   if (!fd) return baseTitle;
 
-  const apellidos = typeof fd.apellidos_miembro === 'string' ? fd.apellidos_miembro.trim() : '';
-  const nombres = typeof fd.nombres_miembro === 'string' ? fd.nombres_miembro.trim() : '';
+  const { apellidos, nombres, displayName } = getMemberNameParts(fd);
 
   if (apellidos && nombres) {
     return `${baseTitle} – ${apellidos} ${nombres}`;
+  }
+
+  if (displayName) {
+    return `${baseTitle} – ${displayName}`;
   }
 
   return baseTitle;
