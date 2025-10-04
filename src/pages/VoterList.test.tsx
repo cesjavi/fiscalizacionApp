@@ -10,10 +10,15 @@ import { Camera } from '@capacitor/camera';
 import type { CameraPhoto } from '@capacitor/camera';
 import { FiscalDataProvider } from '../FiscalDataContext';
 
+const mockFiscalData = JSON.stringify({
+  apellidos_miembro: 'Test',
+  nombres_miembro: 'User',
+});
+
 describe('VoterList', () => {
   beforeEach(async () => {
     localStorage.removeItem('votingFrozen');
-    localStorage.setItem('fiscalData', '{}');
+    localStorage.setItem('fiscalData', mockFiscalData);
     await voterDB.voters.clear();
     await voterDB.voters.bulkAdd([
       {

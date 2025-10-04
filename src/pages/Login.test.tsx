@@ -5,6 +5,7 @@ import { createMemoryHistory } from 'history';
 import Login from './Login';
 import { AuthContext, AuthContextType } from '../AuthContext';
 import { vi } from 'vitest';
+import { FiscalDataProvider } from '../FiscalDataContext';
 
 const renderWithAuth = (authValue: Partial<AuthContextType> = {}) => {
   const defaultAuth: AuthContextType = {
@@ -21,9 +22,11 @@ const renderWithAuth = (authValue: Partial<AuthContextType> = {}) => {
   const history = createMemoryHistory({ initialEntries: ['/login'] });
   const utils = render(
     <AuthContext.Provider value={value}>
-      <Router history={history}>
-        <Login />
-      </Router>
+      <FiscalDataProvider>
+        <Router history={history}>
+          <Login />
+        </Router>
+      </FiscalDataProvider>
     </AuthContext.Provider>
   );
   return { ...utils, history, auth: value };

@@ -8,6 +8,11 @@ import { voterDB } from '../voterDB';
 import { vi } from 'vitest';
 import { FiscalDataProvider } from '../FiscalDataContext';
 
+const mockFiscalData = JSON.stringify({
+  apellidos_miembro: 'Test',
+  nombres_miembro: 'User',
+});
+
 describe('AddVoter', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -17,7 +22,7 @@ describe('AddVoter', () => {
 
   test('redirects to /voters on successful submit', async () => {
     const history = createMemoryHistory({ initialEntries: ['/add-voter'] });
-    localStorage.setItem('fiscalData', '{}');
+    localStorage.setItem('fiscalData', mockFiscalData);
 
     const { container } = render(
       <AuthProvider>
@@ -37,7 +42,7 @@ describe('AddVoter', () => {
 
   test('shows alert on failure and stays on page', async () => {
     const history = createMemoryHistory({ initialEntries: ['/add-voter'] });
-    localStorage.setItem('fiscalData', '{}');
+    localStorage.setItem('fiscalData', mockFiscalData);
     vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(voterDB.voters, 'add').mockRejectedValue(new Error('Bad'));
 
