@@ -21,14 +21,18 @@ interface LayoutProps {
   backHref?: string;
 }
 function formatTitle(fd?: FiscalData | null) {
-  if (!fd) return 'Fiscalizacion App';
-  const nombre   = fd.persona?.nombre   ?? '';
+  const baseTitle = 'Fiscalizacion App';
+  if (!fd) return baseTitle;
+
+  const nombre = fd.persona?.nombre ?? '';
   const apellido = fd.persona?.apellido ?? '';
-  const tipo     = fd.tipo_fiscal       ?? '';
-  const zona     = fd.zona              ?? '';
-  const left = [nombre, apellido].filter(Boolean).join(' ').trim();
-  const parts = [left, tipo, zona].filter(Boolean);
-  return parts.length ? parts.join(' – ') : 'Fiscalizacion App';
+  const tipo = fd.tipo_fiscal ?? '';
+  const zona = fd.zona ?? '';
+
+  const persona = [nombre, apellido].filter(Boolean).join(' ').trim();
+  const details = [persona, tipo, zona].filter(Boolean);
+
+  return details.length ? `${baseTitle} – ${details.join(' – ')}` : baseTitle;
 }
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();
