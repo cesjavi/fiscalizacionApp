@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface FiscalData {
-  persona: {
-    nombre: string;
-    apellido: string;
-  };
-  tipo_fiscal: string;
-  zona: string;
+  apellidos_miembro?: string | null;
+  nombres_miembro?: string | null;
+  nombre_tipo_miembro?: string | null;
+  nombre_zona?: string | null;
+  [key: string]: unknown;
 }
 
 interface FiscalDataContextValue {

@@ -24,15 +24,14 @@ function formatTitle(fd?: FiscalData | null) {
   const baseTitle = 'Fiscalizacion App';
   if (!fd) return baseTitle;
 
-  const nombre = fd.persona?.nombre ?? '';
-  const apellido = fd.persona?.apellido ?? '';
-  const tipo = fd.tipo_fiscal ?? '';
-  const zona = fd.zona ?? '';
+  const apellidos = typeof fd.apellidos_miembro === 'string' ? fd.apellidos_miembro.trim() : '';
+  const nombres = typeof fd.nombres_miembro === 'string' ? fd.nombres_miembro.trim() : '';
 
-  const persona = [nombre, apellido].filter(Boolean).join(' ').trim();
-  const details = [persona, tipo, zona].filter(Boolean);
+  if (apellidos && nombres) {
+    return `${baseTitle} – ${apellidos} ${nombres}`;
+  }
 
-  return details.length ? `${baseTitle} – ${details.join(' – ')}` : baseTitle;
+  return baseTitle;
 }
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();

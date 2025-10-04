@@ -7,6 +7,11 @@ import Escrutinio from './Escrutinio';
 import { AuthProvider } from '../AuthContext';
 import { FiscalDataProvider } from '../FiscalDataContext';
 
+const mockFiscalData = JSON.stringify({
+  apellidos_miembro: 'Test',
+  nombres_miembro: 'User',
+});
+
 describe('Escrutinio', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -15,7 +20,9 @@ describe('Escrutinio', () => {
 
   test('shows error if backend is unavailable', async () => {
     const history = createMemoryHistory({ initialEntries: ['/escrutinio'] });
-    localStorage.setItem('fiscalData', '{}');
+    localStorage.setItem('fiscalData', mockFiscalData);
+    localStorage.setItem('token', 'test-token');
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
 
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('backend down'));
 
@@ -31,11 +38,9 @@ describe('Escrutinio', () => {
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/fiscalizacion/listarCandidatos',
+      '/api/candidatos/listarCandidatos',
       expect.any(Object)
     );
-    expect(
-      await findByText(/No se pudieron cargar las listas/i)
-    ).toBeInTheDocument();
+    expect(await findByText(/backend down/i)).toBeInTheDocument();
   });
 });
