@@ -1,5 +1,5 @@
 @fiscal =http://api.lalibertadavanzacomuna7.com
-@baseUrl = {{fiscal}}/api
+@baseUrl = {{fiscal}}
 ### Login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
