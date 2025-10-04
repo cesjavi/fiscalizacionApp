@@ -4,7 +4,7 @@ import db from '../db.js';
 const router = Router();
 
 router.get('/', (req, res) => {
-  const results = db.prepare('SELECT * FROM escrutinio').all();
+  const results = db.prepare('SELECT * FROM escrutiniox').all();
   res.json(results);
 });
 
