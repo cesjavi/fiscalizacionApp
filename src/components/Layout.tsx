@@ -24,14 +24,23 @@ export function formatTitle(fd?: FiscalData | null) {
   const baseTitle = 'Fiscalizacion App';
   if (!fd) return baseTitle;
 
+  const normalizedApellidos =
+    typeof fd.apellidos_miembro === 'string' ? fd.apellidos_miembro.trim() : '';
+  const normalizedNombres =
+    typeof fd.nombres_miembro === 'string' ? fd.nombres_miembro.trim() : '';
+
   const { apellidos, nombres, displayName } = getMemberNameParts(fd);
 
-  if (apellidos && nombres) {
-    return `${baseTitle} – ${apellidos} ${nombres}`;
+  if (normalizedApellidos && normalizedNombres) {
+    return `${baseTitle} – ${normalizedApellidos}, ${normalizedNombres}`;
   }
 
   if (displayName) {
     return `${baseTitle} – ${displayName}`;
+  }
+
+  if (apellidos && nombres) {
+    return `${baseTitle} – ${apellidos} ${nombres}`;
   }
 
   return baseTitle;
