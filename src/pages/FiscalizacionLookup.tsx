@@ -3,7 +3,7 @@ import { IonContent, IonItem, IonLabel, useIonViewWillEnter } from '@ionic/react
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
-import { useFiscalData } from '../FiscalDataContext';
+import { normalizeFiscalData, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
 
 // ================== Configuración de API ==================
@@ -97,6 +97,12 @@ const FiscalizacionLookup: React.FC = () => {
         { Authorization: `Bearer ${token}` }
       );
 
+      console.log('[FiscalizacionLookup] buscarFiscal response', {
+        status: r.status,
+        ok: r.ok,
+        payload: r.payload,
+      });
+
       // si el backend acepta token "pelado", reintentar
       if (!r.ok && r.status === 401) {
         const retry = await postJson(
@@ -104,6 +110,12 @@ const FiscalizacionLookup: React.FC = () => {
           { dni_miembro: dniNum },
           { Authorization: token }
         );
+
+        console.log('[FiscalizacionLookup] buscarFiscal retry response', {
+          status: retry.status,
+          ok: retry.ok,
+          payload: retry.payload,
+        });
         if (!retry.ok) {
           const msg =
             typeof retry.payload === 'string'
@@ -112,10 +124,11 @@ const FiscalizacionLookup: React.FC = () => {
           throw new Error(msg);
         }
         const fiscal = retry.payload as FiscalData;
-        setResult(fiscal);
-        localStorage.setItem('fiscalData', JSON.stringify(fiscal));
-        setFiscalData(fiscal);
-        history.push('/fiscalizacion-acciones', { fiscalData: fiscal });
+        const normalizedFiscal = normalizeFiscalData(fiscal) ?? fiscal;
+        setResult(normalizedFiscal);
+        localStorage.setItem('fiscalData', JSON.stringify(normalizedFiscal));
+        setFiscalData(normalizedFiscal);
+        history.push('/fiscalizacion-acciones', { fiscalData: normalizedFiscal });
         return;
       }
 
@@ -129,10 +142,11 @@ const FiscalizacionLookup: React.FC = () => {
 
       // OK
       const fiscal = r.payload as FiscalData;
-      setResult(fiscal);
-      localStorage.setItem('fiscalData', JSON.stringify(fiscal));
-      setFiscalData(fiscal);
-      history.push('/fiscalizacion-acciones', { fiscalData: fiscal });
+      const normalizedFiscal = normalizeFiscalData(fiscal) ?? fiscal;
+      setResult(normalizedFiscal);
+      localStorage.setItem('fiscalData', JSON.stringify(normalizedFiscal));
+      setFiscalData(normalizedFiscal);
+      history.push('/fiscalizacion-acciones', { fiscalData: normalizedFiscal });
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'DNI no registrado';
