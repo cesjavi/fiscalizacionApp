@@ -34,7 +34,7 @@ describe('formatTitle', () => {
         apellidos_miembro: 'Doe',
         nombres_miembro: 'Jane',
       }),
-    ).toBe('Fiscalizacion App – Doe, Jane');
+    ).toBe('Doe, Jane');
   });
 
   it('falls back to legacy persona strings', () => {
@@ -42,7 +42,7 @@ describe('formatTitle', () => {
       formatTitle({
         persona: 'Doe, Jane',
       } as FiscalData),
-    ).toBe('Fiscalizacion App – Doe, Jane');
+    ).toBe('Doe, Jane');
   });
 });
 
@@ -66,9 +66,7 @@ describe('Layout title rendering', () => {
       </FiscalDataProvider>,
     );
 
-    expect(
-      screen.getByText('Fiscalizacion App – Doe, Jane'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Doe, Jane')).toBeInTheDocument();
   });
 
   it('renders title when only legacy cached data is present', () => {
@@ -85,8 +83,6 @@ describe('Layout title rendering', () => {
       </FiscalDataProvider>,
     );
 
-    expect(
-      screen.getByText('Fiscalizacion App – Doe, Jane'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Doe, Jane')).toBeInTheDocument();
   });
 });
