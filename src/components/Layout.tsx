@@ -20,6 +20,14 @@ interface LayoutProps {
   footer?: React.ReactNode;
   backHref?: string;
 }
+const joinMemberName = (apellidos?: string, nombres?: string) => {
+  if (apellidos && nombres) {
+    return `${apellidos}, ${nombres}`;
+  }
+
+  return apellidos || nombres || '';
+};
+
 export function formatTitle(fd?: FiscalData | null) {
   const baseTitle = 'Fiscalizacion App';
   if (!fd) return baseTitle;
@@ -31,16 +39,20 @@ export function formatTitle(fd?: FiscalData | null) {
 
   const { apellidos, nombres, displayName } = getMemberNameParts(fd);
 
-  if (normalizedApellidos && normalizedNombres) {
-    return `${baseTitle} – ${normalizedApellidos}, ${normalizedNombres}`;
+  if (normalizedApellidos || normalizedNombres) {
+    const normalizedTitle = joinMemberName(normalizedApellidos, normalizedNombres);
+    if (normalizedTitle) {
+      return normalizedTitle;
+    }
   }
 
   if (displayName) {
-    return `${baseTitle} – ${displayName}`;
+    return displayName;
   }
 
-  if (apellidos && nombres) {
-    return `${baseTitle} – ${apellidos} ${nombres}`;
+  const fallbackTitle = joinMemberName(apellidos, nombres);
+  if (fallbackTitle) {
+    return fallbackTitle;
   }
 
   return baseTitle;
