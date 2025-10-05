@@ -1,18 +1,41 @@
 import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button } from '../components';
-import { useFiscalData } from '../FiscalDataContext';
+import { getMemberNameParts, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import type { ChangeEvent } from 'react';
 
 const FiscalizacionActions: React.FC = () => {
   const history = useHistory();
-  const { hasFiscalData, setFiscalData } = useFiscalData();
+  const { fiscalData, hasFiscalData, setFiscalData } = useFiscalData();
   const [foto, setFoto] = useState<string>(localStorage.getItem('fotoActa') || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const memberName = useMemo(() => {
+    if (!fiscalData) return '';
+    const { apellidos, nombres, displayName } = getMemberNameParts(fiscalData);
+    if (displayName) return displayName;
+    if (apellidos && nombres) return `${apellidos}, ${nombres}`;
+    return apellidos || nombres || '';
+  }, [fiscalData]);
+
+  const memberType = useMemo(() => {
+    if (!fiscalData) return '';
+    const value =
+      typeof fiscalData.nombre_tipo_miembro === 'string'
+        ? fiscalData.nombre_tipo_miembro.trim()
+        : '';
+    return value;
+  }, [fiscalData]);
+
+  const memberZone = useMemo(() => {
+    if (!fiscalData) return '';
+    const value = typeof fiscalData.nombre_zona === 'string' ? fiscalData.nombre_zona.trim() : '';
+    return value;
+  }, [fiscalData]);
 
   const handleFoto = async () => {
     try {
@@ -64,9 +87,23 @@ const FiscalizacionActions: React.FC = () => {
   return (
     <Layout backHref="/fiscalizacion-lookup">
       <IonContent className="ion-padding">
+        {fiscalData && (
+          <IonItem lines="none" className="ion-margin-bottom rounded-lg bg-gray-100">
+            <IonLabel>
+              <h2 className="font-semibold text-base">Fiscal asignado</h2>
+              {memberName && <p className="text-sm">{memberName}</p>}
+              {memberType && <p className="text-sm text-gray-600">{memberType}</p>}
+              {memberZone && (
+                <p className="text-sm text-gray-600">
+                  Zona: <span className="font-medium text-gray-700">{memberZone}</span>
+                </p>
+              )}
+            </IonLabel>
+          </IonItem>
+        )}
         <IonItem>
           <IonLabel position="stacked">Foto del acta</IonLabel>
-          
+
         </IonItem>
         <div className="flex flex-col items-center gap-4  w-4/5 mx-auto mt-4">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
