@@ -28,6 +28,80 @@ const getTrimmedString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const NAME_FIELD_KEYS = [
+  'apellidos_miembro',
+  'apellidos',
+  'apellido',
+  'nombres_miembro',
+  'nombres',
+  'nombre',
+  'apellido_miembro',
+  'nombre_miembro',
+];
+
+const METADATA_FIELD_KEYS = ['nombre_tipo_miembro', 'tipo_fiscal', 'nombre_zona', 'zona'];
+
+const findNestedPersona = (value: unknown): Record<string, unknown> | undefined => {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findNestedPersona(item);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if ('persona' in value && isRecord(value['persona'])) {
+    return value['persona'] as Record<string, unknown>;
+  }
+
+  for (const nested of Object.values(value)) {
+    const found = findNestedPersona(nested);
+    if (found) return found;
+  }
+
+  return undefined;
+};
+
+const hasNameFields = (record: Record<string, unknown>): boolean => {
+  return NAME_FIELD_KEYS.some((key) => {
+    const value = record[key];
+    return typeof value === 'string' && value.trim().length > 0;
+  });
+};
+
+const findNameSource = (value: unknown): Record<string, unknown> | undefined => {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findNameSource(item);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if (hasNameFields(value)) {
+    return value;
+  }
+
+  for (const nested of Object.values(value)) {
+    const found = findNameSource(nested);
+    if (found) return found;
+  }
+
+  return undefined;
+};
+
 const deriveNamesFromPersona = (persona: unknown): MemberNameParts => {
   if (!persona) return {};
 
@@ -120,8 +194,22 @@ export const normalizeFiscalData = (value: unknown): FiscalData | null => {
   const raw = value as Record<string, unknown>;
   const normalized: Record<string, unknown> = { ...raw };
 
+  const nestedPersona = findNestedPersona(raw);
+  if (nestedPersona) {
+    normalized['persona'] = nestedPersona;
+  }
+
+  const nameSource = findNameSource(raw);
+  if (nameSource) {
+    for (const key of [...NAME_FIELD_KEYS, ...METADATA_FIELD_KEYS]) {
+      if (normalized[key] === undefined && key in nameSource) {
+        normalized[key] = nameSource[key];
+      }
+    }
+  }
+
   const { apellidos, nombres } = getMemberNameParts(
-    raw as Record<string, unknown> & { persona?: unknown },
+    normalized as Record<string, unknown> & { persona?: unknown },
   );
 
   if (apellidos) {
@@ -133,15 +221,15 @@ export const normalizeFiscalData = (value: unknown): FiscalData | null => {
   }
 
   const tipo =
-    getTrimmedString(raw['nombre_tipo_miembro']) ||
-    getTrimmedString(raw['tipo_fiscal']);
+    getTrimmedString(normalized['nombre_tipo_miembro']) ||
+    getTrimmedString(normalized['tipo_fiscal']);
 
   if (tipo) {
     normalized['nombre_tipo_miembro'] = tipo;
   }
 
   const zona =
-    getTrimmedString(raw['nombre_zona']) || getTrimmedString(raw['zona']);
+    getTrimmedString(normalized['nombre_zona']) || getTrimmedString(normalized['zona']);
 
   if (zona) {
     normalized['nombre_zona'] = zona;
