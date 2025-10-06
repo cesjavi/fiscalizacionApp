@@ -44,6 +44,85 @@ const NAME_FIELD_KEYS = [
 ];
 
 const METADATA_FIELD_KEYS = ['nombre_tipo_miembro', 'tipo_fiscal', 'nombre_zona', 'zona'];
+const FISCAL_GENERAL_FIELD_KEYS = [
+  'fiscal_general',
+  'nombre_fiscal_general',
+  'fiscalGeneral',
+  'fiscal_general_nombre',
+] as const;
+const MESA_FIELD_KEYS = [
+  'mesa',
+  'mesa_asignada',
+  'mesa_id',
+  'numero_mesa',
+  'mesa_numero',
+  'mesaNumero',
+] as const;
+const LOCATION_FIELD_KEYS = [
+  'lugar',
+  'lugar_fiscalizacion',
+  'nombre_lugar',
+  'nombre_establecimiento',
+  'establecimiento',
+  'nombre_establecimiento_educativo',
+  'ubicacion',
+  'direccion',
+] as const;
+const NESTED_STRING_KEYS = [
+  'nombre',
+  'name',
+  'descripcion',
+  'description',
+  'direccion',
+  'ubicacion',
+  'lugar',
+] as const;
+
+const extractStringValue = (value: unknown): string | undefined => {
+  const direct = getTrimmedString(value);
+  if (direct) return direct;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nested = extractStringValue(item);
+      if (nested) return nested;
+    }
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  for (const key of NESTED_STRING_KEYS) {
+    if (key in value) {
+      const nested = extractStringValue(value[key]);
+      if (nested) return nested;
+    }
+  }
+
+  for (const nested of Object.values(value)) {
+    const nestedValue = extractStringValue(nested);
+    if (nestedValue) return nestedValue;
+  }
+
+  return undefined;
+};
+
+const getFirstMatchingField = (
+  source: Record<string, unknown>,
+  keys: readonly string[],
+): string | undefined => {
+  for (const key of keys) {
+    if (key in source) {
+      const value = extractStringValue(source[key]);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+};
 
 const findNestedPersona = (value: unknown): Record<string, unknown> | undefined => {
   if (Array.isArray(value)) {
@@ -236,6 +315,22 @@ export const normalizeFiscalData = (value: unknown): FiscalData | null => {
   }
 
   return normalized as FiscalData;
+};
+
+export const getFiscalAssignmentDetails = (
+  data?: FiscalData | null,
+): { mesa?: string; lugar?: string; fiscalGeneral?: string } => {
+  if (!data) {
+    return {};
+  }
+
+  const record = data as Record<string, unknown>;
+
+  return {
+    mesa: getFirstMatchingField(record, MESA_FIELD_KEYS),
+    lugar: getFirstMatchingField(record, LOCATION_FIELD_KEYS),
+    fiscalGeneral: getFirstMatchingField(record, FISCAL_GENERAL_FIELD_KEYS),
+  };
 };
 
 interface FiscalDataContextValue {

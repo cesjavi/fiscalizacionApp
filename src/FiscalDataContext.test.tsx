@@ -5,6 +5,7 @@ import {
   FiscalDataProvider,
   useFiscalData,
   type FiscalData,
+  getFiscalAssignmentDetails,
 } from './FiscalDataContext';
 
 const Consumer: React.FC = () => {
@@ -76,5 +77,33 @@ describe('FiscalDataProvider hydration', () => {
       expect(parsed.nombre_tipo_miembro).toBe('Suplente');
       expect(parsed.nombre_zona).toBe('Zona 9');
     });
+  });
+});
+
+describe('getFiscalAssignmentDetails', () => {
+  it('returns values from direct fields', () => {
+    const payload: FiscalData = {
+      mesa: '1234',
+      lugar: 'Escuela Primaria 1',
+      fiscal_general: 'Juan Pérez',
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.mesa).toBe('1234');
+    expect(result.lugar).toBe('Escuela Primaria 1');
+    expect(result.fiscalGeneral).toBe('Juan Pérez');
+  });
+
+  it('extracts nested values when necessary', () => {
+    const payload: FiscalData = {
+      establecimiento: { nombre: 'Colegio Nacional', direccion: 'Calle Falsa 123' },
+      mesa_asignada: { numero: '4321' },
+      fiscalGeneral: { nombre: 'María López' },
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.mesa).toBe('4321');
+    expect(result.lugar).toBe('Colegio Nacional');
+    expect(result.fiscalGeneral).toBe('María López');
   });
 });

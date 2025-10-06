@@ -1,7 +1,7 @@
 import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button } from '../components';
-import { getMemberNameParts, useFiscalData } from '../FiscalDataContext';
+import { getFiscalAssignmentDetails, getMemberNameParts, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -36,6 +36,36 @@ const FiscalizacionActions: React.FC = () => {
     const value = typeof fiscalData.nombre_zona === 'string' ? fiscalData.nombre_zona.trim() : '';
     return value;
   }, [fiscalData]);
+
+  const { mesa: mesaAsignadaDesdeData, lugar: lugarAsignadoDesdeData, fiscalGeneral } = useMemo(
+    () => getFiscalAssignmentDetails(fiscalData ?? undefined),
+    [fiscalData],
+  );
+
+  const mesaAsignada = useMemo(() => {
+    if (mesaAsignadaDesdeData) return mesaAsignadaDesdeData;
+    if (typeof window === 'undefined') return undefined;
+    const storedMesa = localStorage.getItem('mesa');
+    return storedMesa?.trim() ? storedMesa.trim() : undefined;
+  }, [mesaAsignadaDesdeData]);
+
+  const lugarAsignado = useMemo(() => {
+    if (lugarAsignadoDesdeData) return lugarAsignadoDesdeData;
+    if (typeof window === 'undefined') return undefined;
+    const storedEstablecimiento = localStorage.getItem('establecimiento');
+    if (storedEstablecimiento?.trim()) return storedEstablecimiento.trim();
+
+    const seccion = localStorage.getItem('seccion')?.trim();
+    const circuito = localStorage.getItem('circuito')?.trim();
+    const parts = [seccion ? `Sección ${seccion}` : null, circuito ? `Circuito ${circuito}` : null]
+      .filter(Boolean)
+      .join(' · ');
+
+    return parts || undefined;
+  }, [lugarAsignadoDesdeData]);
+
+  const metadataLabelClass = 'text-sm text-gray-600';
+  const metadataValueClass = 'font-medium text-gray-700';
 
   const handleFoto = async () => {
     try {
@@ -92,10 +122,31 @@ const FiscalizacionActions: React.FC = () => {
             <IonLabel>
               <h2 className="font-semibold text-base">Fiscal asignado</h2>
               {memberName && <p className="text-sm">{memberName}</p>}
-              {memberType && <p className="text-sm text-gray-600">{memberType}</p>}
+              {memberType && (
+                <p className={metadataLabelClass}>
+                  Tipo de fiscal:{' '}
+                  <span className={metadataValueClass}>{memberType}</span>
+                </p>
+              )}
+              {mesaAsignada && (
+                <p className={metadataLabelClass}>
+                  Mesa: <span className={metadataValueClass}>{mesaAsignada}</span>
+                </p>
+              )}
+              {lugarAsignado && (
+                <p className={metadataLabelClass}>
+                  Lugar: <span className={metadataValueClass}>{lugarAsignado}</span>
+                </p>
+              )}
               {memberZone && (
-                <p className="text-sm text-gray-600">
-                  Zona: <span className="font-medium text-gray-700">{memberZone}</span>
+                <p className={metadataLabelClass}>
+                  Zona: <span className={metadataValueClass}>{memberZone}</span>
+                </p>
+              )}
+              {fiscalGeneral && (
+                <p className={metadataLabelClass}>
+                  Fiscal general:{' '}
+                  <span className={metadataValueClass}>{fiscalGeneral}</span>
                 </p>
               )}
             </IonLabel>
