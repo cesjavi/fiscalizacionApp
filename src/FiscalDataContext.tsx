@@ -44,6 +44,111 @@ const NAME_FIELD_KEYS = [
 ];
 
 const METADATA_FIELD_KEYS = ['nombre_tipo_miembro', 'tipo_fiscal', 'nombre_zona', 'zona'];
+const FISCAL_GENERAL_FIELD_KEYS = [
+  'fiscal_general',
+  'nombre_fiscal_general',
+  'fiscalGeneral',
+  'fiscal_general_nombre',
+] as const;
+const MESA_FIELD_KEYS = [
+  'mesa',
+  'mesa_asignada',
+  'mesa_id',
+  'numero_mesa',
+  'mesa_numero',
+  'mesaNumero',
+] as const;
+const ESTABLECIMIENTO_FIELD_KEYS = [
+  'nombre_establecimiento',
+  'nombre_establecimiento_educativo',
+  'establecimiento',
+  'nombre_establecimiento_fiscalizacion',
+  'nombre_lugar',
+  'lugar',
+] as const;
+const DIRECCION_FIELD_KEYS = [
+  'direccion_establecimiento',
+  'direccion_establecimiento_educativo',
+  'direccion',
+  'domicilio',
+  'ubicacion',
+  'direccion_lugar',
+  'direccion_establecimiento_fiscalizacion',
+] as const;
+const LUGAR_FIELD_KEYS = [
+  'lugar',
+  'lugar_fiscalizacion',
+  'nombre_lugar',
+  'ubicacion',
+] as const;
+const NESTED_STRING_KEYS = [
+  'nombre',
+  'name',
+  'descripcion',
+  'description',
+  'direccion',
+  'ubicacion',
+  'lugar',
+] as const;
+
+const extractStringValue = (
+  value: unknown,
+  preferredNestedKeys?: readonly string[],
+): string | undefined => {
+  const direct = getTrimmedString(value);
+  if (direct) return direct;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nested = extractStringValue(item, preferredNestedKeys);
+      if (nested) return nested;
+    }
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if (preferredNestedKeys) {
+    for (const key of preferredNestedKeys) {
+      if (key in value) {
+        const nested = extractStringValue(value[key], preferredNestedKeys);
+        if (nested) return nested;
+      }
+    }
+  }
+
+  for (const key of NESTED_STRING_KEYS) {
+    if (key in value) {
+      const nested = extractStringValue(value[key], preferredNestedKeys);
+      if (nested) return nested;
+    }
+  }
+
+  for (const nested of Object.values(value)) {
+    const nestedValue = extractStringValue(nested, preferredNestedKeys);
+    if (nestedValue) return nestedValue;
+  }
+
+  return undefined;
+};
+
+const getFirstMatchingField = (
+  source: Record<string, unknown>,
+  keys: readonly string[],
+  preferredNestedKeys?: readonly string[],
+): string | undefined => {
+  for (const key of keys) {
+    if (key in source) {
+      const value = extractStringValue(source[key], preferredNestedKeys);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+};
 
 const findNestedPersona = (value: unknown): Record<string, unknown> | undefined => {
   if (Array.isArray(value)) {
@@ -236,6 +341,56 @@ export const normalizeFiscalData = (value: unknown): FiscalData | null => {
   }
 
   return normalized as FiscalData;
+};
+
+export const getFiscalAssignmentDetails = (
+  data?: FiscalData | null,
+): {
+  mesa?: string;
+  lugar?: string;
+  establecimiento?: string;
+  direccion?: string;
+  fiscalGeneral?: string;
+} => {
+  if (!data) {
+    return {};
+  }
+
+  const record = data as Record<string, unknown>;
+
+  const establecimiento = getFirstMatchingField(
+    record,
+    ESTABLECIMIENTO_FIELD_KEYS,
+    ['nombre', 'name', 'descripcion', 'description', 'lugar'],
+  );
+
+  const direccion =
+    getFirstMatchingField(record, DIRECCION_FIELD_KEYS, [
+      'direccion',
+      'domicilio',
+      'ubicacion',
+      'address',
+      'calle',
+    ]) ||
+    (typeof record['establecimiento'] === 'object' &&
+    record['establecimiento'] !== null &&
+    !Array.isArray(record['establecimiento'])
+      ? getFirstMatchingField(record['establecimiento'] as Record<string, unknown>, ['direccion', 'domicilio', 'ubicacion'], [
+          'direccion',
+          'domicilio',
+          'ubicacion',
+          'address',
+          'calle',
+        ])
+      : undefined);
+
+  return {
+    mesa: getFirstMatchingField(record, MESA_FIELD_KEYS),
+    lugar: getFirstMatchingField(record, LUGAR_FIELD_KEYS),
+    establecimiento,
+    direccion,
+    fiscalGeneral: getFirstMatchingField(record, FISCAL_GENERAL_FIELD_KEYS),
+  };
 };
 
 interface FiscalDataContextValue {

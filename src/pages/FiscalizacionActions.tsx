@@ -1,9 +1,13 @@
 import { IonContent, IonItem, IonLabel } from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button } from '../components';
-import { getMemberNameParts, useFiscalData } from '../FiscalDataContext';
+import {
+  getFiscalAssignmentDetails,
+  getMemberNameParts,
+  useFiscalData,
+} from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import type { ChangeEvent } from 'react';
@@ -36,6 +40,131 @@ const FiscalizacionActions: React.FC = () => {
     const value = typeof fiscalData.nombre_zona === 'string' ? fiscalData.nombre_zona.trim() : '';
     return value;
   }, [fiscalData]);
+
+  const {
+    mesa: mesaAsignadaDesdeData,
+    lugar: lugarAsignadoDesdeData,
+    establecimiento: establecimientoDesdeData,
+    direccion: direccionDesdeData,
+    fiscalGeneral,
+  } = useMemo(
+    () => getFiscalAssignmentDetails(fiscalData ?? undefined),
+    [fiscalData],
+  );
+
+  const readStoredAssignmentValue = useCallback(
+    (keys: string[], preferredNestedKeys: readonly string[]): string | undefined => {
+      for (const key of keys) {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+
+        const trimmed = raw.trim();
+        if (!trimmed) {
+          continue;
+        }
+
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (typeof parsed === 'string') {
+            const value = parsed.trim();
+            if (value) {
+              return value;
+            }
+          } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            const parsedRecord = parsed as Record<string, unknown>;
+            for (const nestedKey of preferredNestedKeys) {
+              const value = parsedRecord[nestedKey];
+              if (typeof value === 'string') {
+                const nestedTrimmed = value.trim();
+                if (nestedTrimmed) {
+                  return nestedTrimmed;
+                }
+              }
+            }
+
+            for (const value of Object.values(parsedRecord)) {
+              if (typeof value === 'string') {
+                const nestedTrimmed = value.trim();
+                if (nestedTrimmed) {
+                  return nestedTrimmed;
+                }
+              }
+            }
+          }
+        } catch {
+          // Not JSON, fall back to returning the trimmed string below.
+        }
+
+        return trimmed;
+      }
+
+      return undefined;
+    },
+    [],
+  );
+
+  const mesaAsignada = useMemo(() => {
+    if (mesaAsignadaDesdeData) return mesaAsignadaDesdeData;
+    if (typeof window === 'undefined') return undefined;
+    const storedMesa = localStorage.getItem('mesa');
+    return storedMesa?.trim() ? storedMesa.trim() : undefined;
+  }, [mesaAsignadaDesdeData]);
+
+  const establecimientoAsignado = useMemo(() => {
+    if (establecimientoDesdeData) return establecimientoDesdeData;
+    if (typeof window === 'undefined') return undefined;
+
+    return readStoredAssignmentValue(
+      [
+        'nombre_establecimiento',
+        'nombreEstablecimiento',
+        'establecimiento',
+        'lugar',
+      ],
+      ['nombre', 'name', 'descripcion', 'description', 'lugar'],
+    );
+  }, [establecimientoDesdeData, readStoredAssignmentValue]);
+
+  const direccionAsignada = useMemo(() => {
+    if (direccionDesdeData) return direccionDesdeData;
+    if (typeof window === 'undefined') return undefined;
+
+    const fallback = readStoredAssignmentValue(
+      [
+        'direccion_establecimiento',
+        'direccionEstablecimiento',
+        'direccion',
+        'domicilio',
+        'ubicacion',
+        'establecimiento',
+      ],
+      ['direccion', 'domicilio', 'ubicacion', 'address', 'calle'],
+    );
+
+    if (fallback) {
+      return fallback;
+    }
+
+    const seccion = localStorage.getItem('seccion')?.trim();
+    const circuito = localStorage.getItem('circuito')?.trim();
+    const parts = [seccion ? `Sección ${seccion}` : null, circuito ? `Circuito ${circuito}` : null]
+      .filter(Boolean)
+      .join(' · ');
+
+    return parts || undefined;
+  }, [direccionDesdeData, readStoredAssignmentValue]);
+
+  const lugarAsignado = useMemo(() => {
+    if (lugarAsignadoDesdeData) return lugarAsignadoDesdeData;
+    if (typeof window === 'undefined') return undefined;
+    const storedLugar = localStorage.getItem('lugar');
+    if (storedLugar?.trim()) return storedLugar.trim();
+
+    return establecimientoAsignado || undefined;
+  }, [establecimientoAsignado, lugarAsignadoDesdeData]);
+
+  const metadataLabelClass = 'text-sm text-gray-600';
+  const metadataValueClass = 'font-medium text-gray-700';
 
   const handleFoto = async () => {
     try {
@@ -92,10 +221,47 @@ const FiscalizacionActions: React.FC = () => {
             <IonLabel>
               <h2 className="font-semibold text-base">Fiscal asignado</h2>
               {memberName && <p className="text-sm">{memberName}</p>}
-              {memberType && <p className="text-sm text-gray-600">{memberType}</p>}
+              {memberType && (
+                <p className={metadataLabelClass}>
+                  Tipo de fiscal:{' '}
+                  <span className={metadataValueClass}>{memberType}</span>
+                </p>
+              )}
+              {mesaAsignada && (
+                <p className={metadataLabelClass}>
+                  Mesa: <span className={metadataValueClass}>{mesaAsignada}</span>
+                </p>
+              )}
+              {establecimientoAsignado && (
+                <p className={metadataLabelClass}>
+                  Establecimiento:{' '}
+                  <span className={metadataValueClass}>{establecimientoAsignado}</span>
+                </p>
+              )}
+              {direccionAsignada && (
+                <p className={metadataLabelClass}>
+                  Dirección: <span className={metadataValueClass}>{direccionAsignada}</span>
+                </p>
+              )}
+              {lugarAsignado && (!establecimientoAsignado || lugarAsignado !== establecimientoAsignado) && (
+                <p className={metadataLabelClass}>
+                  Lugar: <span className={metadataValueClass}>{lugarAsignado}</span>
+                </p>
+              )}
               {memberZone && (
-                <p className="text-sm text-gray-600">
-                  Zona: <span className="font-medium text-gray-700">{memberZone}</span>
+                <p className={metadataLabelClass}>
+                  Zona: <span className={metadataValueClass}>{memberZone}</span>
+                </p>
+              )}
+              {fiscalGeneral && (
+                <p className={metadataLabelClass}>
+                  Fiscal general:{' '}
+                  <span className={metadataValueClass}>{fiscalGeneral}</span>
+                </p>
+              )}
+              {(establecimientoAsignado || direccionAsignada) && (
+                <p className="text-xs italic text-gray-500 mt-2">
+                  Sugerencia: agregá un mapa del establecimiento para facilitar la ubicación en el territorio.
                 </p>
               )}
             </IonLabel>
