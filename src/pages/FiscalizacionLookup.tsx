@@ -16,6 +16,13 @@ const API_BASE = (import.meta.env.VITE_API_BASE || '')
 // Paths SIEMPRE con /api/... (tu backend los expone así)
 const LOGIN_PATHS = ['/api/auth/login'] as const;
 const BUSCAR_FISCAL_PATH = '/api/fiscalizacion/buscarFiscal';
+// helper para extraer el objeto real del fiscal desde la respuesta del backend
+function extractFiscalData(payload: unknown): unknown {
+  // soporta {payload:{data}}, {data}, o el objeto ya “desenvuelto”
+  type PayloadType = { payload?: { data?: unknown }; data?: unknown };
+  const p = payload as PayloadType;
+  return p?.payload?.data ?? p?.data ?? payload;
+}
 
 // ================== Helper de fetch ==================
 async function postJson(
@@ -123,8 +130,8 @@ const FiscalizacionLookup: React.FC = () => {
               : (retry.payload as { message?: string })?.message || 'No autorizado';
           throw new Error(msg);
         }
-        const fiscal = retry.payload as FiscalData;
-        const normalizedFiscal = normalizeFiscalData(fiscal) ?? fiscal;
+        const fiscalRaw = extractFiscalData(retry.payload);
+        const normalizedFiscal = normalizeFiscalData(fiscalRaw) ?? (fiscalRaw as FiscalData);
         setResult(normalizedFiscal);
         localStorage.setItem('fiscalData', JSON.stringify(normalizedFiscal));
         setFiscalData(normalizedFiscal);
@@ -141,8 +148,8 @@ const FiscalizacionLookup: React.FC = () => {
       }
 
       // OK
-      const fiscal = r.payload as FiscalData;
-      const normalizedFiscal = normalizeFiscalData(fiscal) ?? fiscal;
+      const fiscalRaw = extractFiscalData(r.payload);
+      const normalizedFiscal = normalizeFiscalData(fiscalRaw) ?? (fiscalRaw as FiscalData);
       setResult(normalizedFiscal);
       localStorage.setItem('fiscalData', JSON.stringify(normalizedFiscal));
       setFiscalData(normalizedFiscal);
@@ -158,8 +165,8 @@ const FiscalizacionLookup: React.FC = () => {
     <Layout backHref="/login">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
-          <IonItem>
-            <IonLabel position="stacked">DNI del miembro</IonLabel>
+          <IonItem className="flex flex-col items-start space-y-2">
+            <IonLabel position="stacked" className="mb-2 text-gray-700">DNI del miembro</IonLabel>
             <Input
               value={dni}
               onIonChange={(e) => setDni(e.detail.value!)}

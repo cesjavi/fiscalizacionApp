@@ -383,6 +383,76 @@ export const normalizeFiscalData = (value: unknown): FiscalData | null => {
 
   return normalized as FiscalData;
 };
+// En FiscalDataContext.ts
+
+//import type { FiscalData } from "./FiscalDataContext";
+
+// Extendemos lo que ya tenés con los campos que llegan del API
+// ---- mapeo desde API real ----
+type FiscalDataAPI = FiscalData & {
+  mesa?: string | number;
+  mesa_nro?: string | number;                     // <— nuevo
+  fg_asignado?: Array<{ nombre?: string }>;       // <— nuevo (array)
+  f_g_asignado?: { nombre?: string };             // por si viniera así en otras respuestas
+  establecimiento_fiscalizacion?: { direccion?: string };
+  nombre?: string;                                // <— nombre a nivel raíz (escuela)
+  nombre_establecimiento?: string;
+  establecimiento?: string;
+  lugar?: string;
+  direccion_establecimiento?: string;
+  direccion?: string;
+};
+
+const asStr = (v: unknown): string | undefined =>
+  typeof v === "string" ? (v.trim() || undefined) : undefined;
+
+export function getFiscalAssignmentDetails(fd?: FiscalData): {
+  mesa?: string;
+  lugar?: string;
+  establecimiento?: string;
+  direccion?: string;
+  fiscalGeneral?: string;
+} {
+  const data = fd as FiscalDataAPI | undefined;
+  if (!data) return {};
+
+  // Mesa: mesa | mesa_nro | primera de fg_asignado.mesas (si existiera)
+  let mesa: string | undefined;
+  const mesaRaw =
+    (typeof data.mesa === "number" || typeof data.mesa === "string") ? data.mesa :
+    (typeof data.mesa_nro === "number" || typeof data.mesa_nro === "string") ? data.mesa_nro :
+    undefined;
+  if (mesaRaw !== undefined) {
+    const s = String(mesaRaw).trim();
+    mesa = s || undefined;
+  }
+
+  // Establecimiento: fg_asignado[0].nombre | f_g_asignado.nombre | nombre (root) | otros
+  const establecimiento =
+    asStr(data.fg_asignado?.[0]?.nombre) ??
+    asStr(data.f_g_asignado?.nombre) ??
+    asStr(data.nombre) ??
+    asStr(data.nombre_establecimiento) ??
+    asStr(data.establecimiento) ??
+    asStr(data.lugar);
+
+  // Dirección: establecimiento_fiscalizacion.direccion | otras variantes
+  const direccion =
+    asStr(data.establecimiento_fiscalizacion?.direccion) ??
+    asStr(data.direccion_establecimiento) ??
+    asStr(data.direccion);
+
+  // Para la UI actual, usamos el mismo valor
+  const lugar = establecimiento;
+
+  // (opcional) “fiscalGeneral”: si querés mostrarlo
+  const fiscalGeneral =
+    asStr(data.fg_asignado?.[0]?.nombre) ?? asStr(data.f_g_asignado?.nombre);
+
+  return { mesa, lugar, establecimiento, direccion, fiscalGeneral };
+}
+
+
 
 export const getFiscalAssignmentDetails = (
   data?: FiscalData | null,
