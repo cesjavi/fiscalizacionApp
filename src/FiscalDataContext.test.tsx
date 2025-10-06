@@ -5,6 +5,7 @@ import {
   FiscalDataProvider,
   useFiscalData,
   type FiscalData,
+  getFiscalAssignmentDetails,
 } from './FiscalDataContext';
 
 const Consumer: React.FC = () => {
@@ -76,5 +77,81 @@ describe('FiscalDataProvider hydration', () => {
       expect(parsed.nombre_tipo_miembro).toBe('Suplente');
       expect(parsed.nombre_zona).toBe('Zona 9');
     });
+  });
+});
+
+describe('getFiscalAssignmentDetails', () => {
+  it('returns values from direct fields', () => {
+    const payload: FiscalData = {
+      mesa: '1234',
+      nombre_escuela: 'Escuela Primaria 1',
+      direccion_escuela: 'Calle Principal 456',
+      fiscal_general: 'Juan Pérez',
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.mesa).toBe('1234');
+    expect(result.establecimiento).toBe('Escuela Primaria 1');
+    expect(result.direccion).toBe('Calle Principal 456');
+    expect(result.fiscalGeneral).toBe('Juan Pérez');
+  });
+
+  it('extracts nested values when necessary', () => {
+    const payload: FiscalData = {
+      establecimiento: { nombre: 'Colegio Nacional', direccion: 'Calle Falsa 123' },
+      mesa_asignada: { numero: '4321' },
+      fiscalGeneral: { nombre: 'María López' },
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.mesa).toBe('4321');
+    expect(result.establecimiento).toBe('Colegio Nacional');
+    expect(result.direccion).toBe('Calle Falsa 123');
+    expect(result.fiscalGeneral).toBe('María López');
+  });
+
+  it('prefers escuela specific keys when available', () => {
+    const payload: FiscalData = {
+      escuela: { descripcion: 'Escuela Secundaria 12' },
+      direccionEscuela: 'Av. Siempre Viva 742',
+      lugar: 'Polideportivo Municipal',
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.establecimiento).toBe('Escuela Secundaria 12');
+    expect(result.direccion).toBe('Av. Siempre Viva 742');
+    expect(result.lugar).toBe('Polideportivo Municipal');
+  });
+
+  it('reads establecimiento_fiscalizacion nested metadata', () => {
+    const payload: FiscalData = {
+      establecimiento_fiscalizacion: {
+        nombre: 'Inst. Ntra. Sra. De La Misericordia',
+        direccion: 'Camacua 493',
+      },
+      mesas: [{ numero: '123' }],
+      fg_asignado: [{ nombre: 'Fiscal General' }],
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.establecimiento).toBe('Inst. Ntra. Sra. De La Misericordia');
+    expect(result.direccion).toBe('Camacua 493');
+    expect(result.fiscalGeneral).toBe('Fiscal General');
+  });
+
+  it('derives fiscal general name from nested persona details', () => {
+    const payload: FiscalData = {
+      fg_asignado: [
+        {
+          persona: {
+            apellidos: 'Pérez',
+            nombres: 'Juana',
+          },
+        },
+      ],
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.fiscalGeneral).toBe('Juana Pérez');
   });
 });
