@@ -12,6 +12,44 @@ import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import type { ChangeEvent } from 'react';
 
+// ==== Tipos auxiliares para leer el shape real que llega del API ====
+type FDAsignado = { nombre?: string; mesas?: Array<{ numero?: string | number }> };
+type FDEstablecimiento = { direccion?: string };
+type FDShape = {
+  f_g_asignado?: FDAsignado;
+  establecimiento_fiscalizacion?: FDEstablecimiento;
+  nombre_establecimiento?: string;
+  establecimiento?: string;
+  lugar?: string;
+  direccion_establecimiento?: string;
+  direccion?: string;
+  mesa?: string | number;
+};
+
+
+
+// helper local: string recortado o undefined
+const str = (v: unknown): string | undefined =>
+  typeof v === 'string' ? (v.trim() ? v.trim() : undefined) : undefined;
+
+// === Tipos para coords del API (sin any) ===
+type GeoPoint = { lat?: number | string; lng?: number | string };
+type FiscalDataGeo = FiscalData & {
+  ubicacion?: GeoPoint;
+  establecimiento_fiscalizacion?: { direccion?: string; ubicacion?: GeoPoint };
+};
+
+// number seguro desde string|number|otro
+const toNumber = (v: unknown): number | undefined => {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+};
+
+
 const FiscalizacionActions: React.FC = () => {
   const history = useHistory();
   const { fiscalData, hasFiscalData, setFiscalData } = useFiscalData();
@@ -190,6 +228,25 @@ const FiscalizacionActions: React.FC = () => {
     }
   };
 
+  // Coords desde fiscalData (ubicacion o establecimiento_fiscalizacion.ubicacion)
+const coords = useMemo<{ lat: number; lng: number } | undefined>(() => {
+  const fd = (fiscalData as unknown as FiscalDataGeo) || null;
+  if (!fd) return undefined;
+  const u = fd.ubicacion ?? fd.establecimiento_fiscalizacion?.ubicacion;
+  const lat = toNumber(u?.lat);
+  const lng = toNumber(u?.lng);
+  return lat !== undefined && lng !== undefined ? { lat, lng } : undefined;
+}, [fiscalData]);
+
+// Query de búsqueda para Maps (prefiere nombre+dirección, si no coords)
+const mapsQuery = useMemo<string | undefined>(() => {
+  const q = [establecimientoAsignado, direccionAsignada].filter(Boolean).join(' ').trim();
+  if (q) return encodeURIComponent(q);
+  if (coords) return `${coords.lat},${coords.lng}`;
+  return undefined;
+}, [establecimientoAsignado, direccionAsignada, coords]);
+
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -273,12 +330,53 @@ const FiscalizacionActions: React.FC = () => {
                   Sugerencia: agregá un mapa del establecimiento para facilitar la ubicación en el territorio.
                 </p>
               )}
+              {fiscalGeneral && (
+                <p className={metadataLabelClass}>
+                  Fiscal general:{' '}
+                  <span className={metadataValueClass}>{fiscalGeneral}</span>
+                </p>
+              )}              
+              {(establecimientoAsignado ) }
             </IonLabel>
           </IonItem>
         )}
+        {coords && (
+  <IonItem lines="none" className="ion-margin-bottom rounded-lg overflow-hidden">
+    <IonLabel>
+      <p className="text-sm text-gray-600 mb-2">Mapa del establecimiento</p>
+      <div className="w-full" style={{ height: 240, borderRadius: 8, overflow: 'hidden' }}>
+        <iframe
+          title="Mapa"
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          src={
+            mapsQuery
+              ? `https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`
+              : `https://www.google.com/maps?q=${coords.lat},${coords.lng}&z=16&output=embed`
+          }
+        />
+      </div>
+      <a
+        className="text-sm text-blue-600 underline mt-2 inline-block"
+        href={
+          mapsQuery
+            ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`
+            : `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
+        }
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Abrir en Google Maps
+      </a>
+    </IonLabel>
+  </IonItem>
+)}
+
         <IonItem>
           <IonLabel position="stacked">Foto del acta</IonLabel>
-
         </IonItem>
         <div className="flex flex-col items-center gap-4  w-4/5 mx-auto mt-4">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">

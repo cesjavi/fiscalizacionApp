@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { IonContent, IonItem, IonLabel, useIonViewWillEnter } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -7,15 +7,20 @@ import { normalizeFiscalData, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
 
 // ================== Configuración de API ==================
-// En desarrollo (Vite) dejá VITE_API_BASE = '' y usá proxy.
-// En producción (Vercel), seteá VITE_API_BASE = https://TU-BACKEND.com (sin '/api' ni barra final)
 const API_BASE = (import.meta.env.VITE_API_BASE || '')
   .replace(/\/api\/?$/, '')
   .replace(/\/$/, '');
 
-// Paths SIEMPRE con /api/... (tu backend los expone así)
+// Paths SIEMPRE con /api/...
 const LOGIN_PATHS = ['/api/auth/login'] as const;
 const BUSCAR_FISCAL_PATH = '/api/fiscalizacion/buscarFiscal';
+
+// helper para extraer el objeto real del fiscal
+function extractFiscalData(payload: unknown): unknown {
+  type PayloadType = { payload?: { data?: unknown }; data?: unknown };
+  const p = payload as PayloadType;
+  return p?.payload?.data ?? p?.data ?? payload;
+}
 
 // ================== Helper de fetch ==================
 async function postJson(
@@ -23,7 +28,6 @@ async function postJson(
   body: unknown,
   headers: Record<string, string> = {}
 ) {
-  // arma URL: absoluta en prod (API_BASE) o relativa en dev (proxy)
   const url = path.startsWith('http')
     ? path
     : `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
@@ -60,7 +64,6 @@ async function loginAndGetToken(usuario: string, password: string): Promise<stri
 
 // ================== Componente ==================
 const FiscalizacionLookup: React.FC = () => {
-  // creds desde env (no hardcodear)
   const usuario = import.meta.env.VITE_FISCALIZACION_USER as string;
   const password = import.meta.env.VITE_FISCALIZACION_PASS as string;
 
@@ -68,6 +71,7 @@ const FiscalizacionLookup: React.FC = () => {
   const [result, setResult] = useState<FiscalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const formRef = useRef<HTMLFormElement>(null);
   const history = useHistory();
   const { setFiscalData } = useFiscalData();
 
@@ -83,14 +87,19 @@ const FiscalizacionLookup: React.FC = () => {
     setResult(null);
 
     try {
+      // Leer el valor más reciente directamente del input (evita lag de setState)
+      const el = document.getElementById('dni-input') as HTMLInputElement | null;
+      const dniValue = (el?.value ?? dni ?? '').toString().trim();
+
+      if (!dniValue) throw new Error('DNI inválido');
+      const dniNum = Number(dniValue);
+      if (Number.isNaN(dniNum)) throw new Error('DNI inválido');
+
       // 1) LOGIN -> token
       const token = await loginAndGetToken(usuario, password);
       localStorage.setItem('token', token);
 
-      // 2) BUSCAR FISCAL con Authorization
-      const dniNum = Number((dni ?? '').toString().trim());
-      if (Number.isNaN(dniNum)) throw new Error('DNI inválido');
-
+      // 2) BUSCAR FISCAL
       const r = await postJson(
         BUSCAR_FISCAL_PATH,
         { dni_miembro: dniNum },
@@ -123,8 +132,8 @@ const FiscalizacionLookup: React.FC = () => {
               : (retry.payload as { message?: string })?.message || 'No autorizado';
           throw new Error(msg);
         }
-        const fiscal = retry.payload as FiscalData;
-        const normalizedFiscal = normalizeFiscalData(fiscal) ?? fiscal;
+        const fiscalRaw = extractFiscalData(retry.payload);
+        const normalizedFiscal = normalizeFiscalData(fiscalRaw) ?? (fiscalRaw as FiscalData);
         setResult(normalizedFiscal);
         localStorage.setItem('fiscalData', JSON.stringify(normalizedFiscal));
         setFiscalData(normalizedFiscal);
@@ -141,8 +150,8 @@ const FiscalizacionLookup: React.FC = () => {
       }
 
       // OK
-      const fiscal = r.payload as FiscalData;
-      const normalizedFiscal = normalizeFiscalData(fiscal) ?? fiscal;
+      const fiscalRaw = extractFiscalData(r.payload);
+      const normalizedFiscal = normalizeFiscalData(fiscalRaw) ?? (fiscalRaw as FiscalData);
       setResult(normalizedFiscal);
       localStorage.setItem('fiscalData', JSON.stringify(normalizedFiscal));
       setFiscalData(normalizedFiscal);
@@ -157,12 +166,22 @@ const FiscalizacionLookup: React.FC = () => {
   return (
     <Layout backHref="/login">
       <IonContent className="ion-padding">
-        <form onSubmit={handleSubmit}>
-          <IonItem>
-            <IonLabel position="stacked">DNI del miembro</IonLabel>
+        <form ref={formRef} onSubmit={handleSubmit}>
+          <IonItem className="flex flex-col items-start space-y-2">
+            <IonLabel position="stacked" className="mb-2 text-gray-700">DNI del miembro</IonLabel>
             <Input
+              id="dni-input"
               value={dni}
+              inputMode="numeric"
+              enterKeyHint="done"
               onIonChange={(e) => setDni(e.detail.value!)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  // Dispara el submit nativo del form con el valor actual del input
+                  formRef.current?.requestSubmit();
+                }
+              }}
               required
             />
           </IonItem>

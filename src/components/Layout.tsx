@@ -63,7 +63,14 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();
   const history = useHistory();
   const { fiscalData, setFiscalData } = useFiscalData();
-  const title = formatTitle(fiscalData);
+  //const title = formatTitle(fiscalData);
+
+  const HIDE_NAME_ROUTES = ['/login', '/fiscalizacion-lookup'];
+  const isHideName = HIDE_NAME_ROUTES.some((r) =>
+    location.pathname === r || location.pathname.startsWith(`${r}/`)
+  );
+
+  const title = isHideName ? 'Fiscalizacion App' : formatTitle(fiscalData);  // ⬅️
 
   const handleLogout = async () => {
     setFiscalData?.(null);
