@@ -161,3 +161,9 @@ indexedDB.deleteDatabase('fiscalizacionApp');
 ```
 
 Reload the app to recreate an empty database.
+
+## Flujo de dirección de fiscalización
+
+Consulta `docs/flujo-direccion-fiscalizacion.md` para una explicación paso a paso
+de cómo la aplicación obtiene, normaliza y muestra la dirección del
+establecimiento asignado a cada fiscal.

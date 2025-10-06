@@ -324,6 +324,17 @@ const mapsQuery = useMemo<string | undefined>(() => {
                   Fiscal general:{' '}
                   <span className={metadataValueClass}>{fiscalGeneral}</span>
                 </p>
+              )}
+              {(establecimientoAsignado || direccionAsignada) && (
+                <p className="text-xs italic text-gray-500 mt-2">
+                  Sugerencia: agregá un mapa del establecimiento para facilitar la ubicación en el territorio.
+                </p>
+              )}
+              {fiscalGeneral && (
+                <p className={metadataLabelClass}>
+                  Fiscal general:{' '}
+                  <span className={metadataValueClass}>{fiscalGeneral}</span>
+                </p>
               )}              
               {(establecimientoAsignado ) }
             </IonLabel>

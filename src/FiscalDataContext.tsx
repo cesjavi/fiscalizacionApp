@@ -504,6 +504,56 @@ export const getFiscalAssignmentDetails = (
   };
 };*/
 
+export const getFiscalAssignmentDetails = (
+  data?: FiscalData | null,
+): {
+  mesa?: string;
+  lugar?: string;
+  establecimiento?: string;
+  direccion?: string;
+  fiscalGeneral?: string;
+} => {
+  if (!data) {
+    return {};
+  }
+
+  const record = data as Record<string, unknown>;
+
+  const establecimiento = getFirstMatchingField(
+    record,
+    ESTABLECIMIENTO_FIELD_KEYS,
+    ['nombre', 'name', 'descripcion', 'description', 'lugar'],
+  );
+
+  const direccion =
+    getFirstMatchingField(record, DIRECCION_FIELD_KEYS, [
+      'direccion',
+      'domicilio',
+      'ubicacion',
+      'address',
+      'calle',
+    ]) ||
+    (typeof record['establecimiento'] === 'object' &&
+    record['establecimiento'] !== null &&
+    !Array.isArray(record['establecimiento'])
+      ? getFirstMatchingField(record['establecimiento'] as Record<string, unknown>, ['direccion', 'domicilio', 'ubicacion'], [
+          'direccion',
+          'domicilio',
+          'ubicacion',
+          'address',
+          'calle',
+        ])
+      : undefined);
+
+  return {
+    mesa: getFirstMatchingField(record, MESA_FIELD_KEYS),
+    lugar: getFirstMatchingField(record, LUGAR_FIELD_KEYS),
+    establecimiento,
+    direccion,
+    fiscalGeneral: getFirstMatchingField(record, FISCAL_GENERAL_FIELD_KEYS),
+  };
+};
+
 interface FiscalDataContextValue {
   fiscalData: FiscalData | null;
   setFiscalData: React.Dispatch<React.SetStateAction<FiscalData | null>>;
