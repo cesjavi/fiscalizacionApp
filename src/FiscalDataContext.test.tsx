@@ -122,4 +122,20 @@ describe('getFiscalAssignmentDetails', () => {
     expect(result.direccion).toBe('Av. Siempre Viva 742');
     expect(result.lugar).toBe('Polideportivo Municipal');
   });
+
+  it('reads establecimiento_fiscalizacion nested metadata', () => {
+    const payload: FiscalData = {
+      establecimiento_fiscalizacion: {
+        nombre: 'Inst. Ntra. Sra. De La Misericordia',
+        direccion: 'Camacua 493',
+      },
+      mesas: [{ numero: '123' }],
+      fg_asignado: [{ nombre: 'Fiscal General' }],
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.establecimiento).toBe('Inst. Ntra. Sra. De La Misericordia');
+    expect(result.direccion).toBe('Camacua 493');
+    expect(result.fiscalGeneral).toBe('Fiscal General');
+  });
 });

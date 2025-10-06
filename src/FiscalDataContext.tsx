@@ -49,6 +49,7 @@ const FISCAL_GENERAL_FIELD_KEYS = [
   'nombre_fiscal_general',
   'fiscalGeneral',
   'fiscal_general_nombre',
+  'fg_asignado',
 ] as const;
 const MESA_FIELD_KEYS = [
   'mesa',
@@ -66,6 +67,7 @@ const ESTABLECIMIENTO_FIELD_KEYS = [
   'nombreEscuela',
   'escuela',
   'establecimiento',
+  'establecimiento_fiscalizacion',
   'nombre_lugar',
   'lugar',
 ] as const;
@@ -78,6 +80,7 @@ const DIRECCION_FIELD_KEYS = [
   'direccion',
   'domicilio',
   'ubicacion',
+  'establecimiento_fiscalizacion',
   'direccion_lugar',
 ] as const;
 const LUGAR_FIELD_KEYS = [
