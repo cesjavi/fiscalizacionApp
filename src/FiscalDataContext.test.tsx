@@ -90,7 +90,8 @@ describe('getFiscalAssignmentDetails', () => {
 
     const result = getFiscalAssignmentDetails(payload);
     expect(result.mesa).toBe('1234');
-    expect(result.lugar).toBe('Escuela Primaria 1');
+    expect(result.establecimiento).toBe('Escuela Primaria 1');
+    expect(result.direccion).toBe('Calle Principal 456');
     expect(result.fiscalGeneral).toBe('Juan Pérez');
   });
 
@@ -103,7 +104,8 @@ describe('getFiscalAssignmentDetails', () => {
 
     const result = getFiscalAssignmentDetails(payload);
     expect(result.mesa).toBe('4321');
-    expect(result.lugar).toBe('Colegio Nacional');
+    expect(result.establecimiento).toBe('Colegio Nacional');
+    expect(result.direccion).toBe('Calle Falsa 123');
     expect(result.fiscalGeneral).toBe('María López');
   });
 });
