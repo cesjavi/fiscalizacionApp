@@ -84,8 +84,7 @@ describe('getFiscalAssignmentDetails', () => {
   it('returns values from direct fields', () => {
     const payload: FiscalData = {
       mesa: '1234',
-      nombre_establecimiento: 'Escuela Primaria 1',
-      direccion: 'Calle Principal 456',
+      lugar: 'Escuela Primaria 1',
       fiscal_general: 'Juan Pérez',
     };
 
