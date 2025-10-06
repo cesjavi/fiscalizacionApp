@@ -84,7 +84,8 @@ describe('getFiscalAssignmentDetails', () => {
   it('returns values from direct fields', () => {
     const payload: FiscalData = {
       mesa: '1234',
-      lugar: 'Escuela Primaria 1',
+      nombre_escuela: 'Escuela Primaria 1',
+      direccion_escuela: 'Calle Principal 456',
       fiscal_general: 'Juan Pérez',
     };
 
@@ -107,5 +108,18 @@ describe('getFiscalAssignmentDetails', () => {
     expect(result.establecimiento).toBe('Colegio Nacional');
     expect(result.direccion).toBe('Calle Falsa 123');
     expect(result.fiscalGeneral).toBe('María López');
+  });
+
+  it('prefers escuela specific keys when available', () => {
+    const payload: FiscalData = {
+      escuela: { descripcion: 'Escuela Secundaria 12' },
+      direccionEscuela: 'Av. Siempre Viva 742',
+      lugar: 'Polideportivo Municipal',
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.establecimiento).toBe('Escuela Secundaria 12');
+    expect(result.direccion).toBe('Av. Siempre Viva 742');
+    expect(result.lugar).toBe('Polideportivo Municipal');
   });
 });

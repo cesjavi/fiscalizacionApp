@@ -61,19 +61,24 @@ const MESA_FIELD_KEYS = [
 const ESTABLECIMIENTO_FIELD_KEYS = [
   'nombre_establecimiento',
   'nombre_establecimiento_educativo',
-  'establecimiento',
   'nombre_establecimiento_fiscalizacion',
+  'nombre_escuela',
+  'nombreEscuela',
+  'escuela',
+  'establecimiento',
   'nombre_lugar',
   'lugar',
 ] as const;
 const DIRECCION_FIELD_KEYS = [
   'direccion_establecimiento',
   'direccion_establecimiento_educativo',
+  'direccion_establecimiento_fiscalizacion',
+  'direccion_escuela',
+  'direccionEscuela',
   'direccion',
   'domicilio',
   'ubicacion',
   'direccion_lugar',
-  'direccion_establecimiento_fiscalizacion',
 ] as const;
 const LUGAR_FIELD_KEYS = [
   'lugar',

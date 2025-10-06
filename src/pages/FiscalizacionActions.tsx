@@ -118,6 +118,10 @@ const FiscalizacionActions: React.FC = () => {
       [
         'nombre_establecimiento',
         'nombreEstablecimiento',
+        'nombre_establecimiento_fiscalizacion',
+        'nombre_escuela',
+        'nombreEscuela',
+        'escuela',
         'establecimiento',
         'lugar',
       ],
@@ -133,6 +137,9 @@ const FiscalizacionActions: React.FC = () => {
       [
         'direccion_establecimiento',
         'direccionEstablecimiento',
+        'direccion_establecimiento_fiscalizacion',
+        'direccion_escuela',
+        'direccionEscuela',
         'direccion',
         'domicilio',
         'ubicacion',
@@ -234,7 +241,7 @@ const FiscalizacionActions: React.FC = () => {
               )}
               {establecimientoAsignado && (
                 <p className={metadataLabelClass}>
-                  Establecimiento:{' '}
+                  Escuela:{' '}
                   <span className={metadataValueClass}>{establecimientoAsignado}</span>
                 </p>
               )}
