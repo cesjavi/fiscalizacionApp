@@ -138,4 +138,20 @@ describe('getFiscalAssignmentDetails', () => {
     expect(result.direccion).toBe('Camacua 493');
     expect(result.fiscalGeneral).toBe('Fiscal General');
   });
+
+  it('derives fiscal general name from nested persona details', () => {
+    const payload: FiscalData = {
+      fg_asignado: [
+        {
+          persona: {
+            apellidos: 'Pérez',
+            nombres: 'Juana',
+          },
+        },
+      ],
+    };
+
+    const result = getFiscalAssignmentDetails(payload);
+    expect(result.fiscalGeneral).toBe('Juana Pérez');
+  });
 });

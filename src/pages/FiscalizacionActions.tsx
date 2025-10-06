@@ -85,10 +85,11 @@ const FiscalizacionActions: React.FC = () => {
     establecimiento: establecimientoDesdeData,
     direccion: direccionDesdeData,
     fiscalGeneral,
-  } = useMemo(() => getFiscalAssignmentDetails(fiscalData ?? undefined), [fiscalData]);
+  } = useMemo(
+    () => getFiscalAssignmentDetails(fiscalData ?? undefined),
+    [fiscalData],
+  );
 
-
-  
   const readStoredAssignmentValue = useCallback(
     (keys: string[], preferredNestedKeys: readonly string[]): string | undefined => {
       for (const key of keys) {
@@ -96,35 +97,45 @@ const FiscalizacionActions: React.FC = () => {
         if (!raw) continue;
 
         const trimmed = raw.trim();
-        if (!trimmed) continue;
+        if (!trimmed) {
+          continue;
+        }
 
         try {
           const parsed = JSON.parse(trimmed);
           if (typeof parsed === 'string') {
             const value = parsed.trim();
-            if (value) return value;
+            if (value) {
+              return value;
+            }
           } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             const parsedRecord = parsed as Record<string, unknown>;
             for (const nestedKey of preferredNestedKeys) {
               const value = parsedRecord[nestedKey];
               if (typeof value === 'string') {
                 const nestedTrimmed = value.trim();
-                if (nestedTrimmed) return nestedTrimmed;
+                if (nestedTrimmed) {
+                  return nestedTrimmed;
+                }
               }
             }
+
             for (const value of Object.values(parsedRecord)) {
               if (typeof value === 'string') {
                 const nestedTrimmed = value.trim();
-                if (nestedTrimmed) return nestedTrimmed;
+                if (nestedTrimmed) {
+                  return nestedTrimmed;
+                }
               }
             }
           }
         } catch {
-          // Not JSON -> devolvemos el string crudo
+          // Not JSON, fall back to returning the trimmed string below.
         }
 
         return trimmed;
       }
+
       return undefined;
     },
     [],
@@ -137,20 +148,10 @@ const FiscalizacionActions: React.FC = () => {
     return storedMesa?.trim() ? storedMesa.trim() : undefined;
   }, [mesaAsignadaDesdeData]);
 
-  // === PRIORIDAD: datos reales del JSON; luego fallbacks ===
   const establecimientoAsignado = useMemo(() => {
     if (establecimientoDesdeData) return establecimientoDesdeData;
-
-    const fd = fiscalData as unknown as FDShape | undefined;
-    const nombre =
-      str(fd?.f_g_asignado?.nombre) ??
-      str(fd?.nombre_establecimiento) ??
-      str(fd?.establecimiento) ??
-      str(fd?.lugar);
-
-    if (nombre) return nombre;
-
     if (typeof window === 'undefined') return undefined;
+
     return readStoredAssignmentValue(
       [
         'nombre_establecimiento',
@@ -165,19 +166,10 @@ const FiscalizacionActions: React.FC = () => {
       ],
       ['nombre', 'name', 'descripcion', 'description', 'lugar'],
     );
-  }, [establecimientoDesdeData, fiscalData, readStoredAssignmentValue]);
-  
+  }, [establecimientoDesdeData, readStoredAssignmentValue]);
+
   const direccionAsignada = useMemo(() => {
     if (direccionDesdeData) return direccionDesdeData;
-
-    const fd = fiscalData as unknown as FDShape | undefined;
-    const dir =
-      str(fd?.establecimiento_fiscalizacion?.direccion) ??
-      str(fd?.direccion_establecimiento) ??
-      str(fd?.direccion);
-
-    if (dir) return dir;
-
     if (typeof window === 'undefined') return undefined;
 
     const fallback = readStoredAssignmentValue(
@@ -195,21 +187,26 @@ const FiscalizacionActions: React.FC = () => {
       ],
       ['direccion', 'domicilio', 'ubicacion', 'address', 'calle'],
     );
-    if (fallback) return fallback;
+
+    if (fallback) {
+      return fallback;
+    }
 
     const seccion = localStorage.getItem('seccion')?.trim();
     const circuito = localStorage.getItem('circuito')?.trim();
     const parts = [seccion ? `Sección ${seccion}` : null, circuito ? `Circuito ${circuito}` : null]
       .filter(Boolean)
       .join(' · ');
+
     return parts || undefined;
-  }, [direccionDesdeData, fiscalData, readStoredAssignmentValue]);
+  }, [direccionDesdeData, readStoredAssignmentValue]);
 
   const lugarAsignado = useMemo(() => {
     if (lugarAsignadoDesdeData) return lugarAsignadoDesdeData;
     if (typeof window === 'undefined') return undefined;
     const storedLugar = localStorage.getItem('lugar');
     if (storedLugar?.trim()) return storedLugar.trim();
+
     return establecimientoAsignado || undefined;
   }, [establecimientoAsignado, lugarAsignadoDesdeData]);
 
@@ -326,6 +323,11 @@ const mapsQuery = useMemo<string | undefined>(() => {
                 <p className={metadataLabelClass}>
                   Fiscal general:{' '}
                   <span className={metadataValueClass}>{fiscalGeneral}</span>
+                </p>
+              )}
+              {(establecimientoAsignado || direccionAsignada) && (
+                <p className="text-xs italic text-gray-500 mt-2">
+                  Sugerencia: agregá un mapa del establecimiento para facilitar la ubicación en el territorio.
                 </p>
               )}
               {(establecimientoAsignado ) }

@@ -22,6 +22,25 @@ interface MemberNameParts {
   displayName?: string;
 }
 
+const formatMemberNameParts = (parts: MemberNameParts): string | undefined => {
+  const { displayName, apellidos, nombres } = parts;
+
+  if (displayName && displayName.trim().length > 0) {
+    return displayName.trim();
+  }
+
+  const apellidosTrimmed = apellidos?.trim();
+  const nombresTrimmed = nombres?.trim();
+
+  if (apellidosTrimmed || nombresTrimmed) {
+    return `${apellidosTrimmed ?? ''}${
+      apellidosTrimmed && nombresTrimmed ? ', ' : ''
+    }${nombresTrimmed ?? ''}`.trim();
+  }
+
+  return undefined;
+};
+
 const getTrimmedString = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
@@ -116,6 +135,20 @@ const extractStringValue = (
 
   if (!isRecord(value)) {
     return undefined;
+  }
+
+  const nameFromValue = formatMemberNameParts(
+    getMemberNameParts(value as Record<string, unknown> & { persona?: unknown }),
+  );
+  if (nameFromValue) {
+    return nameFromValue;
+  }
+
+  if ('persona' in value) {
+    const personaName = formatMemberNameParts(deriveNamesFromPersona(value['persona']));
+    if (personaName) {
+      return personaName;
+    }
   }
 
   if (preferredNestedKeys) {
@@ -420,6 +453,56 @@ export function getFiscalAssignmentDetails(fd?: FiscalData): {
 }
 
 
+
+export const getFiscalAssignmentDetails = (
+  data?: FiscalData | null,
+): {
+  mesa?: string;
+  lugar?: string;
+  establecimiento?: string;
+  direccion?: string;
+  fiscalGeneral?: string;
+} => {
+  if (!data) {
+    return {};
+  }
+
+  const record = data as Record<string, unknown>;
+
+  const establecimiento = getFirstMatchingField(
+    record,
+    ESTABLECIMIENTO_FIELD_KEYS,
+    ['nombre', 'name', 'descripcion', 'description', 'lugar'],
+  );
+
+  const direccion =
+    getFirstMatchingField(record, DIRECCION_FIELD_KEYS, [
+      'direccion',
+      'domicilio',
+      'ubicacion',
+      'address',
+      'calle',
+    ]) ||
+    (typeof record['establecimiento'] === 'object' &&
+    record['establecimiento'] !== null &&
+    !Array.isArray(record['establecimiento'])
+      ? getFirstMatchingField(record['establecimiento'] as Record<string, unknown>, ['direccion', 'domicilio', 'ubicacion'], [
+          'direccion',
+          'domicilio',
+          'ubicacion',
+          'address',
+          'calle',
+        ])
+      : undefined);
+
+  return {
+    mesa: getFirstMatchingField(record, MESA_FIELD_KEYS),
+    lugar: getFirstMatchingField(record, LUGAR_FIELD_KEYS),
+    establecimiento,
+    direccion,
+    fiscalGeneral: getFirstMatchingField(record, FISCAL_GENERAL_FIELD_KEYS),
+  };
+};
 
 interface FiscalDataContextValue {
   fiscalData: FiscalData | null;
