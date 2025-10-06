@@ -15,6 +15,8 @@ import { useAuth } from '../AuthContext';
 import { getMemberNameParts, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
 
+
+
 interface LayoutProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -60,12 +62,16 @@ export function formatTitle(fd?: FiscalData | null) {
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
   const { logout } = useAuth();
   const history = useHistory();
-  const { fiscalData } = useFiscalData();
+  const { fiscalData, setFiscalData } = useFiscalData();
   const title = formatTitle(fiscalData);
 
   const handleLogout = async () => {
+    setFiscalData?.(null);
+    try { localStorage.removeItem('fiscalData'); } catch {
+      // Ignore errors removing fiscalData from localStorage
+    }
     await logout();
-    history.push('/login');
+    history.replace('/login');
   };
 
   return (
