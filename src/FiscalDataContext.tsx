@@ -453,7 +453,7 @@ export function getFiscalAssignmentDetails(fd?: FiscalData): {
 }
 
 
-
+/*
 export const getFiscalAssignmentDetails = (
   data?: FiscalData | null,
 ): {
@@ -502,7 +502,7 @@ export const getFiscalAssignmentDetails = (
     direccion,
     fiscalGeneral: getFirstMatchingField(record, FISCAL_GENERAL_FIELD_KEYS),
   };
-};
+};*/
 
 interface FiscalDataContextValue {
   fiscalData: FiscalData | null;
