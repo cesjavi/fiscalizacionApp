@@ -350,56 +350,76 @@ export const normalizeFiscalData = (value: unknown): FiscalData | null => {
 
   return normalized as FiscalData;
 };
+// En FiscalDataContext.ts
 
-export const getFiscalAssignmentDetails = (
-  data?: FiscalData | null,
-): {
+//import type { FiscalData } from "./FiscalDataContext";
+
+// Extendemos lo que ya tenés con los campos que llegan del API
+// ---- mapeo desde API real ----
+type FiscalDataAPI = FiscalData & {
+  mesa?: string | number;
+  mesa_nro?: string | number;                     // <— nuevo
+  fg_asignado?: Array<{ nombre?: string }>;       // <— nuevo (array)
+  f_g_asignado?: { nombre?: string };             // por si viniera así en otras respuestas
+  establecimiento_fiscalizacion?: { direccion?: string };
+  nombre?: string;                                // <— nombre a nivel raíz (escuela)
+  nombre_establecimiento?: string;
+  establecimiento?: string;
+  lugar?: string;
+  direccion_establecimiento?: string;
+  direccion?: string;
+};
+
+const asStr = (v: unknown): string | undefined =>
+  typeof v === "string" ? (v.trim() || undefined) : undefined;
+
+export function getFiscalAssignmentDetails(fd?: FiscalData): {
   mesa?: string;
   lugar?: string;
   establecimiento?: string;
   direccion?: string;
   fiscalGeneral?: string;
-} => {
-  if (!data) {
-    return {};
+} {
+  const data = fd as FiscalDataAPI | undefined;
+  if (!data) return {};
+
+  // Mesa: mesa | mesa_nro | primera de fg_asignado.mesas (si existiera)
+  let mesa: string | undefined;
+  const mesaRaw =
+    (typeof data.mesa === "number" || typeof data.mesa === "string") ? data.mesa :
+    (typeof data.mesa_nro === "number" || typeof data.mesa_nro === "string") ? data.mesa_nro :
+    undefined;
+  if (mesaRaw !== undefined) {
+    const s = String(mesaRaw).trim();
+    mesa = s || undefined;
   }
 
-  const record = data as Record<string, unknown>;
+  // Establecimiento: fg_asignado[0].nombre | f_g_asignado.nombre | nombre (root) | otros
+  const establecimiento =
+    asStr(data.fg_asignado?.[0]?.nombre) ??
+    asStr(data.f_g_asignado?.nombre) ??
+    asStr(data.nombre) ??
+    asStr(data.nombre_establecimiento) ??
+    asStr(data.establecimiento) ??
+    asStr(data.lugar);
 
-  const establecimiento = getFirstMatchingField(
-    record,
-    ESTABLECIMIENTO_FIELD_KEYS,
-    ['nombre', 'name', 'descripcion', 'description', 'lugar'],
-  );
-
+  // Dirección: establecimiento_fiscalizacion.direccion | otras variantes
   const direccion =
-    getFirstMatchingField(record, DIRECCION_FIELD_KEYS, [
-      'direccion',
-      'domicilio',
-      'ubicacion',
-      'address',
-      'calle',
-    ]) ||
-    (typeof record['establecimiento'] === 'object' &&
-    record['establecimiento'] !== null &&
-    !Array.isArray(record['establecimiento'])
-      ? getFirstMatchingField(record['establecimiento'] as Record<string, unknown>, ['direccion', 'domicilio', 'ubicacion'], [
-          'direccion',
-          'domicilio',
-          'ubicacion',
-          'address',
-          'calle',
-        ])
-      : undefined);
+    asStr(data.establecimiento_fiscalizacion?.direccion) ??
+    asStr(data.direccion_establecimiento) ??
+    asStr(data.direccion);
 
-  return {
-    mesa: getFirstMatchingField(record, MESA_FIELD_KEYS),
-    lugar: getFirstMatchingField(record, LUGAR_FIELD_KEYS),
-    establecimiento,
-    direccion,
-    fiscalGeneral: getFirstMatchingField(record, FISCAL_GENERAL_FIELD_KEYS),
-  };
-};
+  // Para la UI actual, usamos el mismo valor
+  const lugar = establecimiento;
+
+  // (opcional) “fiscalGeneral”: si querés mostrarlo
+  const fiscalGeneral =
+    asStr(data.fg_asignado?.[0]?.nombre) ?? asStr(data.f_g_asignado?.nombre);
+
+  return { mesa, lugar, establecimiento, direccion, fiscalGeneral };
+}
+
+
 
 interface FiscalDataContextValue {
   fiscalData: FiscalData | null;
