@@ -405,7 +405,7 @@ type FiscalDataAPI = FiscalData & {
 
 const asStr = (v: unknown): string | undefined =>
   typeof v === "string" ? (v.trim() || undefined) : undefined;
-
+/*
 export function getFiscalAssignmentDetails(fd?: FiscalData): {
   mesa?: string;
   lugar?: string;
@@ -451,7 +451,7 @@ export function getFiscalAssignmentDetails(fd?: FiscalData): {
 
   return { mesa, lugar, establecimiento, direccion, fiscalGeneral };
 }
-
+*/
 
 /*
 export const getFiscalAssignmentDetails = (
