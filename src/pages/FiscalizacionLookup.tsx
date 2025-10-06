@@ -158,8 +158,8 @@ const FiscalizacionLookup: React.FC = () => {
     <Layout backHref="/login">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
-          <IonItem>
-            <IonLabel position="stacked">DNI del miembro</IonLabel>
+          <IonItem className="flex flex-col items-start space-y-2">
+            <IonLabel position="stacked" className="mb-2 text-gray-700">DNI del miembro</IonLabel>
             <Input
               value={dni}
               onIonChange={(e) => setDni(e.detail.value!)}
