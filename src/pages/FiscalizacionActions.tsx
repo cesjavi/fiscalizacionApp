@@ -324,15 +324,13 @@ const mapsQuery = useMemo<string | undefined>(() => {
                   Fiscal general:{' '}
                   <span className={metadataValueClass}>{fiscalGeneral}</span>
                 </p>
-              )}
-              {(establecimientoAsignado || direccionAsignada) }
+              )}              
               {fiscalGeneral && (
                 <p className={metadataLabelClass}>
                   Fiscal general:{' '}
                   <span className={metadataValueClass}>{fiscalGeneral}</span>
                 </p>
-              )}              
-              {(establecimientoAsignado ) }
+              )}
             </IonLabel>
           </IonItem>
         )}
