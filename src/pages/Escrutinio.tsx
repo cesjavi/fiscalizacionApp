@@ -3,8 +3,13 @@ import { IonContent, IonItem, IonLabel, IonText } from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
 import { useHistory } from 'react-router-dom';
-import { useFiscalData } from '../FiscalDataContext';
+import {
+  getFiscalAssignmentDetails,
+  getMemberNameParts,
+  useFiscalData,
+} from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
+import { buildUrl, postJson } from '../utils/api';
 
 interface Lista {
   id: string;
@@ -18,34 +23,84 @@ function toErrorMessage(e: unknown): string {
 }
 
 
-const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULOS', 'IMPUGNADOS'] as const;
+const readStoredString = (
+  keys: string[],
+  preferredNestedKeys: readonly string[] = [],
+): string | undefined => {
+  for (const key of keys) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
 
-// ===== API helpers igual que en FiscalizacionLookup =====
-const API_BASE = (import.meta.env.VITE_API_BASE || '')
-  .replace(/\/api\/?$/, '')
-  .replace(/\/$/, '');
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
 
-type ApiResult<T = unknown> = { ok: boolean; status: number; payload: T | string };
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === 'string') {
+        const value = parsed.trim();
+        if (value) return value;
+      } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const record = parsed as Record<string, unknown>;
+        for (const nestedKey of preferredNestedKeys) {
+          const value = record[nestedKey];
+          if (typeof value === 'string' && value.trim()) {
+            return value.trim();
+          }
+        }
 
-async function postJson<T = unknown>(
-  path: string,
-  body: unknown,
-  headers: Record<string, string> = {}
-): Promise<ApiResult<T>> {
-  const url = path.startsWith('http')
-    ? path
-    : `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+        for (const value of Object.values(record)) {
+          if (typeof value === 'string' && value.trim()) {
+            return value.trim();
+          }
+        }
+      }
+    } catch {
+      // not JSON, fall back below
+    }
 
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
-    body: JSON.stringify(body),
-  });
+    if (trimmed) return trimmed;
+  }
 
-  const ct = resp.headers.get('content-type') || '';
-  const payload = ct.includes('application/json') ? await resp.json() : await resp.text();
-  return { ok: resp.ok, status: resp.status, payload };
-}
+  return undefined;
+};
+
+const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULO', 'IMPUGNADO'] as const;
+
+type EscrutinioItem = {
+  identificador: string;
+  nomenclatura: string;
+  nombre: string;
+  cantidad: number;
+};
+
+const ESPECIALES_DETALLE: Record<typeof CAMPOS_ESPECIALES[number], Omit<EscrutinioItem, 'cantidad'>> = {
+  BLANCO: {
+    identificador: 'BLANCO',
+    nomenclatura: 'BLANCO',
+    nombre: 'Voto en blanco',
+  },
+  IMPUGNADO: {
+    identificador: 'IMPUGNADO',
+    nomenclatura: 'IMPUGNADO',
+    nombre: 'Votos de Identidad Impugnada',
+  },
+  NULO: {
+    identificador: 'NULO',
+    nomenclatura: 'NULO',
+    nombre: 'Votos nulos',
+  },
+  RECURRIDOS: {
+    identificador: 'RECURRIDOS',
+    nomenclatura: 'RECURRIDOS',
+    nombre: 'Votos recurridos',
+  },
+};
+
+const TOTAL_ITEM: Omit<EscrutinioItem, 'cantidad'> = {
+  identificador: 'TOTAL',
+  nomenclatura: 'TOTAL',
+  nombre: 'Votos General',
+};
 
 // ===== Componente =====
 const Escrutinio: React.FC = () => {
@@ -117,11 +172,11 @@ const Escrutinio: React.FC = () => {
         }));
         setListas(mapped);
       } catch (e: unknown) {
-          const msg = toErrorMessage(e);
-          console.error('[escrutinio] submit error:', e);
-          setError(msg || 'Error al guardar escrutinio');
-          alert('[escrutinio]');
-        }
+        const msg = toErrorMessage(e);
+        console.error('[escrutinio] submit error:', e);
+        setError(msg || 'Error al guardar escrutinio');
+        alert('[escrutinio]');
+      }
     };
 
     fetchListas();
@@ -137,23 +192,135 @@ const Escrutinio: React.FC = () => {
 
     // Construir objeto de resultados
     const datos: Record<string, number> = {};
+    const escrutinioItems: EscrutinioItem[] = [];
+
     listas.forEach((l) => {
-      datos[l.lista] = Number.parseInt(valores[l.id] || '0', 10) || 0;
+      const cantidad = Number.parseInt(valores[l.id] || '0', 10) || 0;
+      datos[l.lista] = cantidad;
+      escrutinioItems.push({
+        identificador: l.id,
+        nomenclatura: l.nro_lista ?? l.id,
+        nombre: l.lista,
+        cantidad,
+      });
     });
+
     CAMPOS_ESPECIALES.forEach((key) => {
-      datos[key] = Number.parseInt(valores[key] || '0', 10) || 0;
+      const cantidad = Number.parseInt(valores[key] || '0', 10) || 0;
+      datos[key] = cantidad;
+      escrutinioItems.push({
+        ...ESPECIALES_DETALLE[key],
+        cantidad,
+      });
+    });
+
+    const total = escrutinioItems.reduce((acc, item) => acc + item.cantidad, 0);
+    datos['TOTAL'] = total;
+    escrutinioItems.push({
+      ...TOTAL_ITEM,
+      cantidad: total,
     });
 
     setResultado(datos);
 
-    const mesaId = Number(localStorage.getItem('mesaId'));
+    const mesaIdRaw = localStorage.getItem('mesaId');
+    const mesaIdNumber = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
+    const mesaId =
+      typeof mesaIdNumber === 'number' && Number.isFinite(mesaIdNumber) ? mesaIdNumber : undefined;
     const foto = localStorage.getItem('fotoActa');
-    const payload: Record<string, unknown> = {
-      mesa_id: mesaId,
-      datos,
-      fecha: new Date().toISOString(),
-    };
-    if (foto) payload.foto = foto;
+    const seccion = localStorage.getItem('seccion')?.trim() || '';
+    const circuito = localStorage.getItem('circuito')?.trim() || '';
+    const mesaStored = localStorage.getItem('mesa')?.trim() || '';
+    const mesaNumero = mesaStored || (typeof mesaId === 'number' ? String(mesaId) : '');
+
+    const { establecimiento: establecimientoNombre, direccion: establecimientoDireccion } =
+      getFiscalAssignmentDetails(fiscalData ?? undefined);
+
+    const establecimientoNombreFinal =
+      establecimientoNombre ||
+      readStoredString(
+        [
+          'nombre_establecimiento',
+          'nombreEstablecimiento',
+          'nombre_establecimiento_fiscalizacion',
+          'establecimiento_fiscalizacion',
+          'nombre_escuela',
+          'nombreEscuela',
+          'escuela',
+          'establecimiento',
+          'lugar',
+        ],
+        ['nombre', 'name', 'descripcion', 'description', 'lugar'],
+      ) ||
+      '';
+
+    const direccionNombreFinal =
+      establecimientoDireccion ||
+      readStoredString(
+        [
+          'direccion_establecimiento',
+          'direccionEstablecimiento',
+          'direccion_establecimiento_fiscalizacion',
+          'establecimiento_fiscalizacion',
+          'direccion_escuela',
+          'direccionEscuela',
+          'direccion',
+          'domicilio',
+          'ubicacion',
+        ],
+        ['direccion', 'domicilio', 'ubicacion', 'address', 'calle'],
+      ) ||
+      ([seccion ? `Sección ${seccion}` : null, circuito ? `Circuito ${circuito}` : null]
+        .filter(Boolean)
+        .join(' · ') ||
+        '');
+
+    const { apellidos, nombres, displayName } = getMemberNameParts(
+      fiscalData ?? undefined,
+    );
+
+    const personaRaw = (fiscalData as Record<string, unknown> | null)?.persona as
+      | Record<string, unknown>
+      | string
+      | undefined;
+
+    let personaDni = (() => {
+      if (!personaRaw) return undefined;
+      if (typeof personaRaw === 'string') {
+        const match = personaRaw.match(/\d+/);
+        return match ? Number(match[0]) : undefined;
+      }
+      const dniCandidate = personaRaw['dni'] ?? personaRaw['documento'] ?? personaRaw['dni_miembro'];
+      if (typeof dniCandidate === 'number') return dniCandidate;
+      if (typeof dniCandidate === 'string') {
+        const trimmed = dniCandidate.trim();
+        if (!trimmed) return undefined;
+        const parsed = Number(trimmed);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    })();
+
+    if (personaDni === undefined) {
+      const storedDni = readStoredString(['dni_miembro', 'dni', 'documento']);
+      if (storedDni) {
+        const parsed = Number(storedDni);
+        if (Number.isFinite(parsed)) {
+          personaDni = parsed;
+        }
+      }
+    }
+
+    let personaEmail = (() => {
+      if (!personaRaw || typeof personaRaw === 'string') return undefined;
+      const emailCandidate =
+        personaRaw['email'] || personaRaw['correo'] || personaRaw['correo_electronico'];
+      return typeof emailCandidate === 'string' ? emailCandidate.trim() || undefined : undefined;
+    })();
+
+    if (!personaEmail) {
+      personaEmail = readStoredString(['email', 'correo', 'correo_electronico']) || undefined;
+    }
 
     const token = localStorage.getItem('token') || '';
     if (!token) {
@@ -161,36 +328,58 @@ const Escrutinio: React.FC = () => {
       return;
     }
 
+    const payload: Record<string, unknown> = {
+      establecimiento: {
+        seccion,
+        circuito,
+        mesa: (() => {
+          if (!mesaNumero) return undefined;
+          const parsed = Number(mesaNumero);
+          return Number.isFinite(parsed) ? parsed : mesaNumero;
+        })(),
+        nombre: establecimientoNombreFinal,
+        direccion: direccionNombreFinal,
+      },
+      persona: {
+        dni: personaDni ?? null,
+        nombre: nombres || displayName || '',
+        apellido: apellidos || '',
+        email: personaEmail || '',
+      },
+      escrutinio: escrutinioItems,
+      fechaEnviado: new Date().toISOString(),
+    };
+
+    if (foto) {
+      payload['foto'] = foto;
+    }
+
     try {
-      // 1) Bearer
-      let r = await postJson('/api/actas/crear', payload, {
-        Authorization: `${token}`,
+      const res = await fetch(buildUrl('/crear'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: token,
+        },
+        body: JSON.stringify(payload),
       });
 
-      // 2) Reintento con token pelado si 401
-      if (!r.ok && r.status === 401) {
-        r = await postJson('/api/actas/crear', payload, {
-          Authorization: token,
-        });
-      }
-
-      if (!r.ok) {
-        const msg =
-          typeof r.payload === 'string'
-            ? r.payload
-            : (r.payload as { message?: string })?.message || `HTTP ${r.status}`;
-        throw new Error(msg);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
       }
 
       alert('Escrutinio enviado correctamente');
       localStorage.removeItem('fotoActa');
     } catch (e: unknown) {
-          const msg = toErrorMessage(e);
-          console.error('[escrutinio] submit error:', e);
-          setError(msg || 'Error al guardar escrutinio');
-          //alert('Error al guardar escrutinio');
-        }
-    };
+      const msg = toErrorMessage(e);
+      console.error('[escrutinio] submit error:', e);
+      setError(msg || 'Error al guardar escrutinio');
+      //alert('Error al guardar escrutinio');
+    }
+  };
+
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonContent className="ion-padding">
@@ -214,12 +403,12 @@ const Escrutinio: React.FC = () => {
         {/* Inputs para campos especiales */}
         {CAMPOS_ESPECIALES.map((key) => (
           <IonItem key={key}>
-            <IonLabel position="stacked">{key}</IonLabel>
+            <IonLabel position="stacked">{ESPECIALES_DETALLE[key].nombre}</IonLabel>
             <Input
               type="number"
               value={valores[key] || ''}
               onIonChange={(e) => handleChange(key, e.detail.value ?? '')}
-              placeholder={`Cantidad de votos ${key.toLowerCase()}`}
+              placeholder={`Cantidad - ${ESPECIALES_DETALLE[key].nombre}`}
             />
           </IonItem>
         ))}
