@@ -105,7 +105,7 @@ const TOTAL_ITEM: Omit<EscrutinioItem, 'cantidad'> = {
 // ===== Componente =====
 const Escrutinio: React.FC = () => {
   const history = useHistory();
-  const { hasFiscalData, setFiscalData } = useFiscalData();
+  const { fiscalData, hasFiscalData, setFiscalData } = useFiscalData();
 
   const [listas, setListas] = useState<Lista[]>([]);
   const [valores, setValores] = useState<Record<string, string>>({});
