@@ -11,7 +11,9 @@ export interface FiscalData {
   apellidos_miembro?: string | null;
   nombres_miembro?: string | null;
   nombre_tipo_miembro?: string | null;
+  tipo_fiscal?: string | null;
   nombre_zona?: string | null;
+  zonaEleccion?: unknown;
   persona?: unknown;
   [key: string]: unknown;
 }

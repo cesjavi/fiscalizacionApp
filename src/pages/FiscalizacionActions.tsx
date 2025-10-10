@@ -66,11 +66,44 @@ const FiscalizacionActions: React.FC = () => {
 
   const memberType = useMemo(() => {
     if (!fiscalData) return '';
-    const value =
-      typeof fiscalData.nombre_tipo_miembro === 'string'
-        ? fiscalData.nombre_tipo_miembro.trim()
-        : '';
-    return value;
+    const potentialValues = [fiscalData.nombre_tipo_miembro, fiscalData.tipo_fiscal];
+    for (const value of potentialValues) {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+          return trimmed;
+        }
+      }
+    }
+    return '';
+  }, [fiscalData]);
+
+  const isFiscalZonal = useMemo(() => {
+    if (!memberType) return false;
+    return memberType.trim().toUpperCase() === 'FISCAL ZONAL';
+  }, [memberType]);
+
+  const zonaEleccionNombre = useMemo(() => {
+    if (!fiscalData) return undefined;
+    const zonaEleccion = (fiscalData as Record<string, unknown>)['zonaEleccion'];
+
+    if (zonaEleccion && typeof zonaEleccion === 'object' && !Array.isArray(zonaEleccion)) {
+      const zonaRecord = zonaEleccion as Record<string, unknown>;
+      return (
+        str(zonaRecord['nombre']) ||
+        str(zonaRecord['descripcion']) ||
+        (() => {
+          const numero = zonaRecord['numero'];
+          if (typeof numero === 'number' || typeof numero === 'string') {
+            const formatted = `${numero}`.trim();
+            return formatted || undefined;
+          }
+          return undefined;
+        })()
+      );
+    }
+
+    return undefined;
   }, [fiscalData]);
 
   const memberZone = useMemo(() => {
@@ -310,7 +343,13 @@ const mapsQuery = useMemo<string | undefined>(() => {
                   <span className={metadataValueClass}>{establecimientoAsignado}</span>
                 </p>
               )}
-              {direccionAsignada && (
+              {isFiscalZonal && zonaEleccionNombre && (
+                <p className={metadataLabelClass}>
+                  Zona de elección:{' '}
+                  <span className={metadataValueClass}>{zonaEleccionNombre}</span>
+                </p>
+              )}
+              {!isFiscalZonal && direccionAsignada && (
                 <p className={metadataLabelClass}>
                   Dirección: <span className={metadataValueClass}>{direccionAsignada}</span>
                 </p>
