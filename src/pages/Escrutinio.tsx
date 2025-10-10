@@ -105,7 +105,7 @@ const TOTAL_ITEM: Omit<EscrutinioItem, 'cantidad'> = {
 // ===== Componente =====
 const Escrutinio: React.FC = () => {
   const history = useHistory();
-  const { fiscalData, hasFiscalData, setFiscalData } = useFiscalData();
+  const { hasFiscalData, setFiscalData, fiscalData } = useFiscalData();
 
   const [listas, setListas] = useState<Lista[]>([]);
   const [valores, setValores] = useState<Record<string, string>>({});
@@ -224,14 +224,17 @@ const Escrutinio: React.FC = () => {
     setResultado(datos);
 
     const mesaIdRaw = localStorage.getItem('mesaId');
+    console.log('mesaIdRaw', mesaIdRaw);
     const mesaIdNumber = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
-    const mesaId =
-      typeof mesaIdNumber === 'number' && Number.isFinite(mesaIdNumber) ? mesaIdNumber : undefined;
+    const mesaId = 3333;
+    
+      //typeof mesaIdNumber === 'number' && Number.isFinite(mesaIdNumber) ? mesaIdNumber : undefined;
     const foto = localStorage.getItem('fotoActa');
-    const seccion = localStorage.getItem('seccion')?.trim() || '';
-    const circuito = localStorage.getItem('circuito')?.trim() || '';
+    const seccion = 1112;//localStorage.getItem('seccion')?.trim() || '';
+    console.log('seccion', seccion);  
+    const circuito = 1234;//localStorage.getItem('circuito')?.trim() || '';
     const mesaStored = localStorage.getItem('mesa')?.trim() || '';
-    const mesaNumero = mesaStored || (typeof mesaId === 'number' ? String(mesaId) : '');
+    const mesaNumero = '1444';//mesaStored || (typeof mesaId === 'number' ? String(mesaId) : '');
 
     const { establecimiento: establecimientoNombre, direccion: establecimientoDireccion } =
       getFiscalAssignmentDetails(fiscalData ?? undefined);
@@ -283,14 +286,20 @@ const Escrutinio: React.FC = () => {
       | Record<string, unknown>
       | string
       | undefined;
-
-    let personaDni = (() => {
+    console.log('personaRaw from fiscalData:', personaRaw);
+    console.log('fiscalData:', fiscalData);
+    const personaDni = String(fiscalData?.dni_miembro);
+    console.log('dniCandidate from personaRaw:', personaDni)
+   /*let personaDni = (() => {
       if (!personaRaw) return undefined;
       if (typeof personaRaw === 'string') {
         const match = personaRaw.match(/\d+/);
         return match ? Number(match[0]) : undefined;
       }
-      const dniCandidate = personaRaw['dni'] ?? personaRaw['documento'] ?? personaRaw['dni_miembro'];
+      
+      
+        
+      //console.log('dniCandidate from personaRaw:', dniCandidate);
       if (typeof dniCandidate === 'number') return dniCandidate;
       if (typeof dniCandidate === 'string') {
         const trimmed = dniCandidate.trim();
@@ -300,7 +309,7 @@ const Escrutinio: React.FC = () => {
       }
       return undefined;
     })();
-
+    console.log('personaDni from personaRaw:', personaDni);
     if (personaDni === undefined) {
       const storedDni = readStoredString(['dni_miembro', 'dni', 'documento']);
       if (storedDni) {
@@ -310,7 +319,7 @@ const Escrutinio: React.FC = () => {
         }
       }
     }
-
+*/
     let personaEmail = (() => {
       if (!personaRaw || typeof personaRaw === 'string') return undefined;
       const emailCandidate =
@@ -332,11 +341,12 @@ const Escrutinio: React.FC = () => {
       establecimiento: {
         seccion,
         circuito,
-        mesa: (() => {
+        mesa: mesaId
+        /*(() => {
           if (!mesaNumero) return undefined;
           const parsed = Number(mesaNumero);
           return Number.isFinite(parsed) ? parsed : mesaNumero;
-        })(),
+        })(),*/,        
         nombre: establecimientoNombreFinal,
         direccion: direccionNombreFinal,
       },
@@ -349,13 +359,13 @@ const Escrutinio: React.FC = () => {
       escrutinio: escrutinioItems,
       fechaEnviado: new Date().toISOString(),
     };
-
+    console.log(payload);
     if (foto) {
       payload['foto'] = foto;
     }
 
     try {
-      const res = await fetch(buildUrl('/crear'), {
+      const res = await fetch(buildUrl('/api/actas/crear'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -367,7 +377,7 @@ const Escrutinio: React.FC = () => {
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
+        throw new Error(text || `HTTP ${res.status} + ${res.statusText}`);
       }
 
       alert('Escrutinio enviado correctamente');

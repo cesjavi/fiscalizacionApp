@@ -240,13 +240,19 @@ const coords = useMemo<{ lat: number; lng: number } | undefined>(() => {
 
 // Query de búsqueda para Maps (prefiere nombre+dirección, si no coords)
 const mapsQuery = useMemo<string | undefined>(() => {
+  //const q = [establecimientoAsignado, direccionAsignada].filter(Boolean).join(' ').trim();
+  //if (q) return encodeURIComponent(q);
+  if (coords) return `${coords.lat},${coords.lng}`;
+  return undefined;
+}, [ coords]);
+
+/*const mapsQuery = useMemo<string | undefined>(() => {
   const q = [establecimientoAsignado, direccionAsignada].filter(Boolean).join(' ').trim();
   if (q) return encodeURIComponent(q);
   if (coords) return `${coords.lat},${coords.lng}`;
   return undefined;
 }, [establecimientoAsignado, direccionAsignada, coords]);
-
-
+*/
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
