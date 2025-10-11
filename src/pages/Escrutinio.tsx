@@ -227,7 +227,9 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
     console.log('mesaIdRaw', mesaIdRaw);
     //const mesaIdNumber = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
     const mesaId = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
-    
+    console.log('mesaId', mesaId);
+    const mesa_nro = localStorage.getItem('mesa_nro');
+    console.log('mesa_nro', mesa_nro);
       //typeof mesaIdNumber === 'number' && Number.isFinite(mesaIdNumber) ? mesaIdNumber : undefined;
     //const foto = localStorage.getItem('fotoActa');
     const seccion = localStorage.getItem('seccion')?.trim() || '';
@@ -361,13 +363,13 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
 
   return (
     <Layout backHref="/fiscalizacion-acciones">
-      <IonContent className="ion-padding">
+      <IonContent >
         {error && <p className="text-red-600 ion-ion-margin-start">{error}</p>}
 
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
           <IonItem key={l.id} className="form-field">
-            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            <IonLabel position="stacked" className="text-gray-100 font-semibold">
               {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
             </IonLabel>
             <div style={{ height: 6 }} />

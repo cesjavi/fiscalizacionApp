@@ -5,15 +5,15 @@
 ion-item.form-field {
   --inner-padding-start: 0;
   --inner-padding-end: 0;
-  --inner-padding-top: 0.75rem;
-  --inner-padding-bottom: 0.75rem;
+  --inner-padding-top: 0.15rem;
+  --inner-padding-bottom: 0.15rem;
   --highlight-height: 0;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 ion-item.form-field ion-label {
   display: block;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.15rem;
   font-weight: 600;
   color: var(--ion-text-color, #374151);
 }
