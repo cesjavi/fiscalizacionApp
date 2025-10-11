@@ -168,10 +168,12 @@ const FiscalizacionLookup: React.FC = () => {
       <IonContent className="ion-padding">
         <form ref={formRef} onSubmit={handleSubmit}>
           <IonItem className="form-field">
-            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold mt-2">
               DNI del miembro
             </IonLabel>
+            <div style={{ height: 8 }} />
             <Input
+              className="mt-2"
               id="dni-input"
               value={dni}
               inputMode="numeric"

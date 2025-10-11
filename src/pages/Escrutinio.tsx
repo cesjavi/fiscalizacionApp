@@ -186,7 +186,7 @@ const Escrutinio: React.FC = () => {
   const handleChange = (id: string, value: string) => {
     setValores((prev) => ({ ...prev, [id]: value }));
   };
-
+const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} />;
   const handleSubmit = async () => {
     setError(null);
 
@@ -362,7 +362,7 @@ const Escrutinio: React.FC = () => {
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonContent className="ion-padding">
-        {error && <p className="text-red-600 ion-margin-bottom">{error}</p>}
+        {error && <p className="text-red-600 ion-ion-margin-start">{error}</p>}
 
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
@@ -370,6 +370,7 @@ const Escrutinio: React.FC = () => {
             <IonLabel position="stacked" className="text-gray-700 font-semibold">
               {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
             </IonLabel>
+            <div style={{ height: 6 }} />
             <Input
               type="number"
               value={valores[l.id] || ''}
@@ -385,6 +386,7 @@ const Escrutinio: React.FC = () => {
             <IonLabel position="stacked" className="text-gray-700 font-semibold">
               {ESPECIALES_DETALLE[key].nombre}
             </IonLabel>
+             <Gap h={6} />   {/* <--- separador */}
             <Input
               type="number"
               value={valores[key] || ''}
