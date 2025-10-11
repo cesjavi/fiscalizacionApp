@@ -1,6 +1,6 @@
-import { IonContent, IonItem, IonLabel } from '@ionic/react';
+import { IonContent, IonItem, IonLabel, IonModal } from '@ionic/react';
 import Layout from '../components/Layout';
-import { Button } from '../components';
+import { Button, Input } from '../components';
 import {
   getFiscalAssignmentDetails,
   getMemberNameParts,
@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import type { ChangeEvent } from 'react';
+import { useAuth } from '../AuthContext';
 
 // ==== Tipos auxiliares para leer el shape real que llega del API ====
 type FDAsignado = { nombre?: string; mesas?: Array<{ numero?: string | number }> };
@@ -50,19 +51,33 @@ const toNumber = (v: unknown): number | undefined => {
 };
 
 
+type MemberNameParts = ReturnType<typeof getMemberNameParts>;
+
+type EstablecimientoFormState = {
+  seccion: string;
+  circuito: string;
+  mesa: string;
+  nombre: string;
+};
+
 const FiscalizacionActions: React.FC = () => {
   const history = useHistory();
   const { fiscalData, hasFiscalData, setFiscalData } = useFiscalData();
   const [foto, setFoto] = useState<string>(localStorage.getItem('fotoActa') || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+
+  const memberNameParts: MemberNameParts = useMemo(
+    () => getMemberNameParts(fiscalData ?? undefined),
+    [fiscalData],
+  );
 
   const memberName = useMemo(() => {
-    if (!fiscalData) return '';
-    const { apellidos, nombres, displayName } = getMemberNameParts(fiscalData);
+    const { apellidos, nombres, displayName } = memberNameParts;
     if (displayName) return displayName;
     if (apellidos && nombres) return `${apellidos}, ${nombres}`;
     return apellidos || nombres || '';
-  }, [fiscalData]);
+  }, [memberNameParts]);
 
   const memberType = useMemo(() => {
     if (!fiscalData) return '';
@@ -111,6 +126,99 @@ const FiscalizacionActions: React.FC = () => {
     const value = typeof fiscalData.nombre_zona === 'string' ? fiscalData.nombre_zona.trim() : '';
     return value;
   }, [fiscalData]);
+
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [establecimientoForm, setEstablecimientoForm] = useState<EstablecimientoFormState>({
+    seccion: '',
+    circuito: '',
+    mesa: '',
+    nombre: '',
+  });
+  const [isSendingPhoto, setIsSendingPhoto] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendSuccess, setSendSuccess] = useState(false);
+
+  const fechaEnvio = '2025-10-07T15:10:00-03:00';
+  const fileDescriptor = 'archivo subido (acta.png)';
+
+  const personaRecord = useMemo(() => {
+    if (!fiscalData) return undefined;
+    const record = fiscalData as unknown as Record<string, unknown>;
+    const nested = record['persona'];
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      return nested as Record<string, unknown>;
+    }
+    return undefined;
+  }, [fiscalData]);
+
+  const personaDni = useMemo(() => {
+    const fiscalRecord = (fiscalData ?? undefined) as Record<string, unknown> | undefined;
+    const candidates: unknown[] = [
+      user?.dni,
+      fiscalRecord?.['dni_miembro'],
+      fiscalRecord?.['dni'],
+      personaRecord?.['dni'],
+      personaRecord?.['documento'],
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'number' || typeof candidate === 'string') {
+        const asString = `${candidate}`.trim();
+        if (asString) {
+          return asString;
+        }
+      }
+    }
+
+    return '';
+  }, [fiscalData, personaRecord, user]);
+
+  const personaEmail = useMemo(() => {
+    const fiscalRecord = (fiscalData ?? undefined) as Record<string, unknown> | undefined;
+    const candidates: unknown[] = [
+      user?.email,
+      fiscalRecord?.['email'],
+      fiscalRecord?.['correo'],
+      fiscalRecord?.['mail'],
+      personaRecord?.['email'],
+      personaRecord?.['correo'],
+      personaRecord?.['mail'],
+    ];
+
+    for (const candidate of candidates) {
+      const value = str(candidate);
+      if (value) {
+        return value;
+      }
+    }
+
+    return '';
+  }, [fiscalData, personaRecord, user]);
+
+  const personaPayload = useMemo(
+    () => ({
+      dni: personaDni,
+      nombre: memberNameParts.nombres ?? '',
+      apellido: memberNameParts.apellidos ?? '',
+      email: personaEmail ?? '',
+    }),
+    [memberNameParts, personaDni, personaEmail],
+  );
+
+  const payloadPreview = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          file: fileDescriptor,
+          fecha: fechaEnvio,
+          establecimiento: establecimientoForm,
+          persona: personaPayload,
+        },
+        null,
+        2,
+      ),
+    [establecimientoForm, fechaEnvio, fileDescriptor, personaPayload],
+  );
 
   const {
     mesa: mesaAsignadaDesdeData,
@@ -243,6 +351,88 @@ const FiscalizacionActions: React.FC = () => {
     return establecimientoAsignado || undefined;
   }, [establecimientoAsignado, lugarAsignadoDesdeData]);
 
+  const handleOpenModal = () => {
+    const storedSeccion = localStorage.getItem('seccion')?.trim() ?? '';
+    const storedCircuito = localStorage.getItem('circuito')?.trim() ?? '';
+    setEstablecimientoForm({
+      seccion: storedSeccion,
+      circuito: storedCircuito,
+      mesa: mesaAsignada ?? '',
+      nombre: establecimientoAsignado ?? '',
+    });
+    setSendError(null);
+    setSendSuccess(false);
+    setShowPhotoModal(true);
+  };
+
+  const handleCloseModal = () => {
+    if (isSendingPhoto) return;
+    setShowPhotoModal(false);
+  };
+
+  const enviarFoto = useCallback(async () => {
+    if (!foto) {
+      setSendError('Debes tomar o subir una foto antes de enviarla.');
+      return;
+    }
+
+    const establecimientoPayload = {
+      seccion: establecimientoForm.seccion.trim(),
+      circuito: establecimientoForm.circuito.trim(),
+      mesa: establecimientoForm.mesa.trim(),
+      nombre: establecimientoForm.nombre.trim(),
+    };
+
+    const payload = {
+      fileName: 'acta.png',
+      file: foto,
+      fecha: fechaEnvio,
+      establecimiento: establecimientoPayload,
+      persona: personaPayload,
+    };
+
+    try {
+      setIsSendingPhoto(true);
+      setSendError(null);
+
+      const response = await fetch(
+        'https://api.lalibertadavanzacomuna7.com/api/actasFoto/enviar-foto',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          errorText ||
+            `No se pudo enviar la foto (código ${response.status} ${response.statusText}).`,
+        );
+      }
+
+      setSendSuccess(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido al enviar la foto.';
+      setSendError(message);
+      setSendSuccess(false);
+    } finally {
+      setIsSendingPhoto(false);
+    }
+  }, [establecimientoForm, fechaEnvio, foto, personaPayload]);
+
+  const handleConfirmModal = () => {
+    if (sendSuccess) {
+      setShowPhotoModal(false);
+      return;
+    }
+
+    void enviarFoto();
+  };
+
   const metadataLabelClass = 'text-sm text-gray-600';
   const metadataValueClass = 'font-medium text-gray-700';
 
@@ -262,22 +452,22 @@ const FiscalizacionActions: React.FC = () => {
   };
 
   // Coords desde fiscalData (ubicacion o establecimiento_fiscalizacion.ubicacion)
-const coords = useMemo<{ lat: number; lng: number } | undefined>(() => {
-  const fd = (fiscalData as unknown as FiscalDataGeo) || null;
-  if (!fd) return undefined;
-  const u = fd.ubicacion ?? fd.establecimiento_fiscalizacion?.ubicacion;
-  const lat = toNumber(u?.lat);
-  const lng = toNumber(u?.lng);
-  return lat !== undefined && lng !== undefined ? { lat, lng } : undefined;
-}, [fiscalData]);
+  const coords = useMemo<{ lat: number; lng: number } | undefined>(() => {
+    const fd = (fiscalData as unknown as FiscalDataGeo) || null;
+    if (!fd) return undefined;
+    const u = fd.ubicacion ?? fd.establecimiento_fiscalizacion?.ubicacion;
+    const lat = toNumber(u?.lat);
+    const lng = toNumber(u?.lng);
+    return lat !== undefined && lng !== undefined ? { lat, lng } : undefined;
+  }, [fiscalData]);
 
-// Query de búsqueda para Maps (prefiere nombre+dirección, si no coords)
-const mapsQuery = useMemo<string | undefined>(() => {
-  //const q = [establecimientoAsignado, direccionAsignada].filter(Boolean).join(' ').trim();
-  //if (q) return encodeURIComponent(q);
-  if (coords) return `${coords.lat},${coords.lng}`;
-  return undefined;
-}, [ coords]);
+  // Query de búsqueda para Maps (prefiere nombre+dirección, si no coords)
+  const mapsQuery = useMemo<string | undefined>(() => {
+    //const q = [establecimientoAsignado, direccionAsignada].filter(Boolean).join(' ').trim();
+    //if (q) return encodeURIComponent(q);
+    if (coords) return `${coords.lat},${coords.lng}`;
+    return undefined;
+  }, [coords]);
 
 /*const mapsQuery = useMemo<string | undefined>(() => {
   const q = [establecimientoAsignado, direccionAsignada].filter(Boolean).join(' ').trim();
@@ -435,12 +625,125 @@ const mapsQuery = useMemo<string | undefined>(() => {
               <Button size="small" color="danger" className="mt-2 w-4/5" onClick={handleClearFoto}>
                 Borrar foto
               </Button>
+              <Button
+                size="small"
+                color="success"
+                className="mt-2 w-4/5"
+                disabled={!foto || isSendingPhoto}
+                onClick={handleOpenModal}
+              >
+                Enviar foto
+              </Button>
             </div>
           )}
           <Button routerLink="/voters" className="flex flex-col items-center w-4/5">Votación</Button>
           <Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">Escrutinio</Button>
         </div>
       </IonContent>
+      <IonModal
+        isOpen={showPhotoModal}
+        onDidDismiss={handleCloseModal}
+        backdropDismiss={!isSendingPhoto}
+      >
+        <IonContent className="ion-padding">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">Confirmar envío de foto</h2>
+            <div>
+              <p className="text-sm text-gray-600">Archivo</p>
+              <p className="text-base text-gray-800 font-medium">{fileDescriptor}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Fecha</p>
+              <p className="text-base text-gray-800">{fechaEnvio}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Establecimiento</p>
+              <div className="space-y-3">
+                <IonItem lines="full">
+                  <IonLabel position="stacked">Sección</IonLabel>
+                  <Input
+                    value={establecimientoForm.seccion}
+                    onIonChange={e =>
+                      setEstablecimientoForm(prev => ({
+                        ...prev,
+                        seccion: e.detail.value ?? '',
+                      }))
+                    }
+                  />
+                </IonItem>
+                <IonItem lines="full">
+                  <IonLabel position="stacked">Circuito</IonLabel>
+                  <Input
+                    value={establecimientoForm.circuito}
+                    onIonChange={e =>
+                      setEstablecimientoForm(prev => ({
+                        ...prev,
+                        circuito: e.detail.value ?? '',
+                      }))
+                    }
+                  />
+                </IonItem>
+                <IonItem lines="full">
+                  <IonLabel position="stacked">Mesa</IonLabel>
+                  <Input
+                    value={establecimientoForm.mesa}
+                    onIonChange={e =>
+                      setEstablecimientoForm(prev => ({
+                        ...prev,
+                        mesa: e.detail.value ?? '',
+                      }))
+                    }
+                  />
+                </IonItem>
+                <IonItem lines="full">
+                  <IonLabel position="stacked">Nombre</IonLabel>
+                  <Input
+                    value={establecimientoForm.nombre}
+                    onIonChange={e =>
+                      setEstablecimientoForm(prev => ({
+                        ...prev,
+                        nombre: e.detail.value ?? '',
+                      }))
+                    }
+                  />
+                </IonItem>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Persona</p>
+              <pre className="bg-gray-100 text-xs font-mono p-3 rounded-lg overflow-x-auto">
+                {JSON.stringify(personaPayload, null, 2)}
+              </pre>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Resumen a enviar</p>
+              <pre className="bg-gray-100 text-xs font-mono p-3 rounded-lg overflow-x-auto">
+                {payloadPreview}
+              </pre>
+            </div>
+            {sendError && <p className="text-sm text-red-600">{sendError}</p>}
+            {sendSuccess && (
+              <p className="text-sm text-green-600">Foto enviada correctamente.</p>
+            )}
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button
+                color="medium"
+                fill="outline"
+                onClick={handleCloseModal}
+                disabled={isSendingPhoto}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmModal}
+                disabled={isSendingPhoto}
+              >
+                {sendSuccess ? 'Cerrar' : isSendingPhoto ? 'Enviando...' : 'Confirmar envío'}
+              </Button>
+            </div>
+          </div>
+        </IonContent>
+      </IonModal>
     </Layout>
   );
 };
