@@ -84,8 +84,10 @@ const SelectMesa: React.FC = () => {
   return (
     <Layout backHref="/login">
       <IonContent className="ion-padding">
-        <IonItem>
-          <IonLabel position="stacked">Sección</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Sección
+          </IonLabel>
           <Input
             value={seccion}
             inputmode="numeric"
@@ -94,8 +96,10 @@ const SelectMesa: React.FC = () => {
             onIonChange={(e) => setSeccion(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Circuito</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Circuito
+          </IonLabel>
           <Input
             value={circuito}
             inputmode="numeric"
@@ -104,8 +108,10 @@ const SelectMesa: React.FC = () => {
             onIonChange={(e) => setCircuito(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Mesa</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Mesa
+          </IonLabel>
           <Input
             value={mesa}
             inputmode="numeric"

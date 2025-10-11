@@ -17,12 +17,16 @@ const VoterDetails: React.FC = () => {
     <Layout backHref="/vote">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
-          <IonItem>
-            <IonLabel position="stacked">Name</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Name
+            </IonLabel>
             <Input value={name} onIonChange={e => setName(e.detail.value!)} required />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">ID</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              ID
+            </IonLabel>
             <Input value={id} onIonChange={e => setId(e.detail.value!)} required />
           </IonItem>
           <Button expand="block" type="submit" className="ion-margin-top">Save Details</Button>

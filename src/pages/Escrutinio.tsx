@@ -366,8 +366,8 @@ const Escrutinio: React.FC = () => {
 
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
-          <IonItem key={l.id}>
-            <IonLabel position="stacked">
+          <IonItem key={l.id} className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
               {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
             </IonLabel>
             <Input
@@ -381,8 +381,10 @@ const Escrutinio: React.FC = () => {
 
         {/* Inputs para campos especiales */}
         {CAMPOS_ESPECIALES.map((key) => (
-          <IonItem key={key}>
-            <IonLabel position="stacked">{ESPECIALES_DETALLE[key].nombre}</IonLabel>
+          <IonItem key={key} className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              {ESPECIALES_DETALLE[key].nombre}
+            </IonLabel>
             <Input
               type="number"
               value={valores[key] || ''}

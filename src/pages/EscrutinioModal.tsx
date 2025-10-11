@@ -66,32 +66,40 @@ const EscrutinioModal: React.FC<EscrutinioModalProps> = ({ onClose }) => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <IonItem>
-          <IonLabel position="stacked">Lista 100</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Lista 100
+          </IonLabel>
           <Input
             type="number"
             value={lista100}
             onIonChange={e => setLista100(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Voto en blanco</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Voto en blanco
+          </IonLabel>
           <Input
             type="number"
             value={votoEnBlanco}
             onIonChange={e => setVotoEnBlanco(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Nulo</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Nulo
+          </IonLabel>
           <Input
             type="number"
             value={nulo}
             onIonChange={e => setNulo(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Recurrido</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Recurrido
+          </IonLabel>
           <Input
             type="number"
             value={recurrido}

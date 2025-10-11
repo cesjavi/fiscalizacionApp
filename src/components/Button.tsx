@@ -9,11 +9,18 @@ const Button: React.FC<ButtonProps> = ({
   style,
   ...rest
 }) => {
+  const radius = '12px';
+  const mergedStyle = {
+    '--border-radius': radius,
+    borderRadius: radius,
+    ...style,
+  } as React.CSSProperties;
+
   return (
     <IonButton
       color={color}
-      className={`px-4 py-2 rounded ${className}`}
-      style={style}
+      className={`rounded-button px-4 py-2 ${className}`}
+      style={mergedStyle}
       {...rest}
     />
   );

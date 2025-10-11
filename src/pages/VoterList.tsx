@@ -194,16 +194,20 @@ const toggleVoto = async (id: number) => {
     </div>
   )}
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-    <IonItem>
-      <IonLabel position="stacked">Buscar por DNI</IonLabel>
+    <IonItem className="form-field">
+      <IonLabel position="stacked" className="text-gray-700 font-semibold">
+        Buscar por DNI
+      </IonLabel>
       <Input
         value={searchDni}
         onIonChange={e => setSearchDni(e.detail.value ?? '')}
         placeholder="DNI"
       />
     </IonItem>
-    <IonItem>
-      <IonLabel position="stacked">Buscar por Orden</IonLabel>
+    <IonItem className="form-field">
+      <IonLabel position="stacked" className="text-gray-700 font-semibold">
+        Buscar por Orden
+      </IonLabel>
       <Input
         value={searchOrden}
         onIonChange={e => setSearchOrden(e.detail.value ?? '')}

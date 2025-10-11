@@ -86,42 +86,57 @@ const AddVoter: React.FC = () => {
     <Layout backHref="/voters">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
-          <IonItem>
-            <IonLabel position="stacked">Nombre</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Nombre
+            </IonLabel>
             <IonInput
+              className="rounded-input"
               value={nombre}
               onIonChange={e => setNombre(e.detail.value ?? '')}
               required
             />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Apellido</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Apellido
+            </IonLabel>
             <IonInput
+              className="rounded-input"
               value={apellido}
               onIonChange={e => setApellido(e.detail.value ?? '')}
               required
             />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Número de Orden</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Número de Orden
+            </IonLabel>
             <IonInput
+              className="rounded-input"
               value={orden}
               type="number"
               onIonChange={e => setOrden(e.detail.value ?? '')}
               required
             />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">DNI Votante</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              DNI Votante
+            </IonLabel>
             <IonInput
+              className="rounded-input"
               value={votanteDni}
               onIonChange={e => setVotanteDni(e.detail.value ?? '')}
               required
             />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Género</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Género
+            </IonLabel>
             <IonInput
+              className="rounded-input"
               value={genero}
               onIonChange={e => setGenero(e.detail.value ?? '')}
             />

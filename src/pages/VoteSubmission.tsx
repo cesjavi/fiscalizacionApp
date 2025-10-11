@@ -18,9 +18,16 @@ const VoteSubmission: React.FC = () => {
     <Layout backHref="/mesas">
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
-          <IonItem>
-            <IonLabel>Candidate</IonLabel>
-            <IonSelect value={candidate} onIonChange={e => setCandidate(e.detail.value)} required>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Candidate
+            </IonLabel>
+            <IonSelect
+              className="rounded-select"
+              value={candidate}
+              onIonChange={e => setCandidate(e.detail.value)}
+              required
+            >
               <IonSelectOption value="A">Candidate A</IonSelectOption>
               <IonSelectOption value="B">Candidate B</IonSelectOption>
             </IonSelect>
