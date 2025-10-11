@@ -225,17 +225,15 @@ const Escrutinio: React.FC = () => {
 
     const mesaIdRaw = localStorage.getItem('mesaId');
     console.log('mesaIdRaw', mesaIdRaw);
-    const mesaIdNumber = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
-    const mesaId = 3333;
+    //const mesaIdNumber = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
+    const mesaId = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
     
       //typeof mesaIdNumber === 'number' && Number.isFinite(mesaIdNumber) ? mesaIdNumber : undefined;
-    const foto = localStorage.getItem('fotoActa');
-    const seccion = 1112;//localStorage.getItem('seccion')?.trim() || '';
+    //const foto = localStorage.getItem('fotoActa');
+    const seccion = localStorage.getItem('seccion')?.trim() || '';
     console.log('seccion', seccion);  
-    const circuito = 1234;//localStorage.getItem('circuito')?.trim() || '';
-    const mesaStored = localStorage.getItem('mesa')?.trim() || '';
-    const mesaNumero = '1444';//mesaStored || (typeof mesaId === 'number' ? String(mesaId) : '');
-
+    const circuito = localStorage.getItem('circuito')?.trim() || '';
+    
     const { establecimiento: establecimientoNombre, direccion: establecimientoDireccion } =
       getFiscalAssignmentDetails(fiscalData ?? undefined);
 
@@ -289,37 +287,7 @@ const Escrutinio: React.FC = () => {
     console.log('personaRaw from fiscalData:', personaRaw);
     console.log('fiscalData:', fiscalData);
     const personaDni = String(fiscalData?.dni_miembro);
-    console.log('dniCandidate from personaRaw:', personaDni)
-   /*let personaDni = (() => {
-      if (!personaRaw) return undefined;
-      if (typeof personaRaw === 'string') {
-        const match = personaRaw.match(/\d+/);
-        return match ? Number(match[0]) : undefined;
-      }
-      
-      
-        
-      //console.log('dniCandidate from personaRaw:', dniCandidate);
-      if (typeof dniCandidate === 'number') return dniCandidate;
-      if (typeof dniCandidate === 'string') {
-        const trimmed = dniCandidate.trim();
-        if (!trimmed) return undefined;
-        const parsed = Number(trimmed);
-        return Number.isFinite(parsed) ? parsed : undefined;
-      }
-      return undefined;
-    })();
-    console.log('personaDni from personaRaw:', personaDni);
-    if (personaDni === undefined) {
-      const storedDni = readStoredString(['dni_miembro', 'dni', 'documento']);
-      if (storedDni) {
-        const parsed = Number(storedDni);
-        if (Number.isFinite(parsed)) {
-          personaDni = parsed;
-        }
-      }
-    }
-*/
+    console.log('dniCandidate from personaRaw:', personaDni)   
     let personaEmail = (() => {
       if (!personaRaw || typeof personaRaw === 'string') return undefined;
       const emailCandidate =
@@ -360,11 +328,12 @@ const Escrutinio: React.FC = () => {
       fechaEnviado: new Date().toISOString(),
     };
     console.log(payload);
-    if (foto) {
-      payload['foto'] = foto;
-    }
+    //if (foto) {
+      //payload['foto'] = foto;
+    //}
 
     try {
+      console.log('Submitting escrutinio payload:', payload); 
       const res = await fetch(buildUrl('/api/actas/crear'), {
         method: 'POST',
         headers: {
@@ -379,7 +348,7 @@ const Escrutinio: React.FC = () => {
         const text = await res.text();
         throw new Error(text || `HTTP ${res.status} + ${res.statusText}`);
       }
-
+      console.log('res', res);
       alert('Escrutinio enviado correctamente');
       localStorage.removeItem('fotoActa');
     } catch (e: unknown) {
@@ -429,7 +398,7 @@ const Escrutinio: React.FC = () => {
 
         {resultado && (
           <IonText className="ion-margin-top">
-            <pre>{JSON.stringify(resultado, null, 2)}</pre>
+            {/* <pre>ZZ{JSON.stringify(resultado, null, 2)}</pre> */}
           </IonText>
         )}
       </IonContent>
