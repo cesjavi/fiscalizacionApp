@@ -167,8 +167,10 @@ const FiscalizacionLookup: React.FC = () => {
     <Layout backHref="/login">
       <IonContent className="ion-padding">
         <form ref={formRef} onSubmit={handleSubmit}>
-          <IonItem className="flex flex-col items-start space-y-2">
-            <IonLabel position="stacked" className="mb-2 text-gray-700">DNI del miembro</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              DNI del miembro
+            </IonLabel>
             <Input
               id="dni-input"
               value={dni}

@@ -33,16 +33,22 @@ const Register: React.FC = () => {
     <Layout backHref="/login">
       <IonContent className="ion-padding">
         <form onSubmit={handleRegister}>
-          <IonItem>
-            <IonLabel position="stacked">Email</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Email
+            </IonLabel>
             <Input type="email" value={email} onIonChange={e => setEmail(e.detail.value!)} required />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">DNI</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              DNI
+            </IonLabel>
             <Input value={dni} onIonChange={e => setDni(e.detail.value!)} required />
           </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Clave</IonLabel>
+          <IonItem className="form-field">
+            <IonLabel position="stacked" className="text-gray-700 font-semibold">
+              Clave
+            </IonLabel>
             <Input type="password" value={password} onIonChange={e => setPassword(e.detail.value!)} required />
           </IonItem>
           <Button expand="block" type="submit" className="ion-margin-top">Registrarse</Button>

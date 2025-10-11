@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+ion-item.form-field {
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+  --inner-padding-top: 0.75rem;
+  --inner-padding-bottom: 0.75rem;
+  --highlight-height: 0;
+  margin-bottom: 1.25rem;
+}
+
+ion-item.form-field ion-label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--ion-text-color, #374151);
+}
+
+ion-item.form-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.rounded-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ion-color-step-300, #d1d5db);
+  border-radius: 0.75rem;
+  --border-radius: 0.75rem;
+  --background: var(--ion-item-background, #ffffff);
+}
+
+.rounded-select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ion-color-step-300, #d1d5db);
+  border-radius: 0.75rem;
+  --border-radius: 0.75rem;
+  --background: var(--ion-item-background, #ffffff);
+  --padding-start: 0.75rem;
+  --padding-end: 0.75rem;
+  --padding-top: 0.75rem;
+  --padding-bottom: 0.75rem;
+}
+
+.rounded-button {
+  --border-radius: 0.75rem;
+  border-radius: 0.75rem;
+}

@@ -17,29 +17,37 @@ const VoterCount: React.FC = () => {
   return (
     <Layout backHref="/home">
       <IonContent className="ion-padding">
-        <IonItem>
-          <IonLabel position="stacked">Session</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Session
+          </IonLabel>
           <Input
             value={session}
             onIonChange={(e) => setSession(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Circuit</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Circuit
+          </IonLabel>
           <Input
             value={circuit}
             onIonChange={(e) => setCircuit(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Mesa</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Mesa
+          </IonLabel>
           <Input
             value={mesa}
             onIonChange={(e) => setMesa(e.detail.value ?? '')}
           />
         </IonItem>
-        <IonItem>
-          <IonLabel position="stacked">Count</IonLabel>
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Count
+          </IonLabel>
           <Input
             type="number"
             min="0"
