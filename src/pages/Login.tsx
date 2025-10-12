@@ -29,8 +29,7 @@ const Login: React.FC = () => {
   return (
     <Layout>
       <IonHeader>
-        <IonToolbar>
-          <IonTitle>Ingreso</IonTitle>
+        <IonToolbar>          
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">        

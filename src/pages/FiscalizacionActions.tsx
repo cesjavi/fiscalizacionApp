@@ -12,6 +12,15 @@ import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '../AuthContext';
+import type { CSSProperties } from 'react';
+
+const labelStyle: CSSProperties = { display: 'block', marginBottom: 10 };
+const inputStyle: CSSProperties = { marginTop: 8, width: '100%' };
+const itemStyle: CSSProperties = {
+  // más alto y con aire en el contenedor
+  ['--inner-padding-top' as unknown as string]: '10px',
+  ['--inner-padding-bottom' as unknown as string]: '10px',
+};
 
 // ==== Tipos auxiliares para leer el shape real que llega del API ====
 type FDAsignado = { nombre?: string; mesas?: Array<{ numero?: string | number }> };
@@ -487,7 +496,16 @@ const FiscalizacionActions: React.FC = () => {
     };
     reader.readAsDataURL(file);
   };
+const SHOW_DEBUG = false;
 
+// estilo tipado correctamente
+const ionItemStyle: CSSProperties = {
+  // variables de Ionic tipadas como string
+  ['--inner-padding-top' as unknown as string]: '12px',
+  ['--inner-padding-bottom' as unknown as string]: '12px',
+  ['--min-height' as unknown as string]: '64px',
+  borderRadius: '8px',
+};
   const handleClearFoto = () => {
     setFoto('');
     localStorage.removeItem('fotoActa');
@@ -651,16 +669,12 @@ const FiscalizacionActions: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Archivo</p>
               <p className="text-base text-gray-800 font-medium">{fileDescriptor}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Fecha</p>
-              <p className="text-base text-gray-800">{fechaEnvio}</p>
-            </div>
+            </div>            
             <div>
               <p className="text-sm text-gray-600 mb-2">Establecimiento</p>
               <div className="space-y-3">
-                <IonItem lines="full">
-                  <IonLabel position="stacked">Sección</IonLabel>
+                <IonItem lines="full" style={itemStyle}>
+                  <IonLabel position="stacked" style={labelStyle}>Sección</IonLabel>
                   <Input
                     value={establecimientoForm.seccion}
                     onIonChange={e =>
@@ -671,8 +685,8 @@ const FiscalizacionActions: React.FC = () => {
                     }
                   />
                 </IonItem>
-                <IonItem lines="full">
-                  <IonLabel position="stacked">Circuito</IonLabel>
+                <IonItem lines="full" style={labelStyle}>
+                  <IonLabel position="stacked" style={labelStyle}>Circuito</IonLabel>
                   <Input
                     value={establecimientoForm.circuito}
                     onIonChange={e =>
@@ -683,20 +697,22 @@ const FiscalizacionActions: React.FC = () => {
                     }
                   />
                 </IonItem>
-                <IonItem lines="full">
-                  <IonLabel position="stacked">Mesa</IonLabel>
-                  <Input
-                    value={establecimientoForm.mesa}
-                    onIonChange={e =>
-                      setEstablecimientoForm(prev => ({
+                <IonItem lines="full" style={labelStyle}>
+                  <div className="mt-2 w-full">
+                    <IonLabel position="stacked" style={labelStyle} >Mesa</IonLabel>                  
+                    <Input
+                      value={establecimientoForm.mesa}
+                      onIonChange={e =>
+                        setEstablecimientoForm(prev => ({
                         ...prev,
                         mesa: e.detail.value ?? '',
                       }))
                     }
                   />
+                  </div>
                 </IonItem>
-                <IonItem lines="full">
-                  <IonLabel position="stacked">Nombre</IonLabel>
+                <IonItem lines="full" style={labelStyle}>
+                  <IonLabel position="stacked" style={labelStyle}>Nombre</IonLabel>
                   <Input
                     value={establecimientoForm.nombre}
                     onIonChange={e =>
@@ -708,19 +724,7 @@ const FiscalizacionActions: React.FC = () => {
                   />
                 </IonItem>
               </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Persona</p>
-              <pre className="bg-gray-100 text-xs font-mono p-3 rounded-lg overflow-x-auto">
-                {JSON.stringify(personaPayload, null, 2)}
-              </pre>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Resumen a enviar</p>
-              <pre className="bg-gray-100 text-xs font-mono p-3 rounded-lg overflow-x-auto">
-                {payloadPreview}
-              </pre>
-            </div>
+            </div>                       
             {sendError && <p className="text-sm text-red-600">{sendError}</p>}
             {sendSuccess && (
               <p className="text-sm text-green-600">Foto enviada correctamente.</p>
