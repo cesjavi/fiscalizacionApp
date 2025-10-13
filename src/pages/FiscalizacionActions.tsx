@@ -621,10 +621,7 @@ const ionItemStyle: CSSProperties = {
     </IonLabel>
   </IonItem>
 )}
-
-        <IonItem>
-          <IonLabel position="stacked">Foto del acta</IonLabel>
-        </IonItem>
+        
         <div className="flex flex-col items-center gap-4  w-4/5 mx-auto mt-4">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
@@ -669,7 +666,8 @@ const ionItemStyle: CSSProperties = {
             <div>
               <p className="text-sm text-gray-600">Archivo</p>
               <p className="text-base text-gray-800 font-medium">{fileDescriptor}</p>
-            </div>            
+            </div>
+            
             <div>
               <p className="text-sm text-gray-600 mb-2">Establecimiento</p>
               <div className="space-y-3">
