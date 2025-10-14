@@ -30,8 +30,10 @@ const joinMemberName = (apellidos?: string, nombres?: string) => {
   return apellidos || nombres || '';
 };
 
+const APP_TITLE = 'Fiscalizacion Comuna 7';
+
 export function formatTitle(fd?: FiscalData | null) {
-  const baseTitle = 'Fiscalizacion App';
+  const baseTitle = APP_TITLE;
   if (!fd) return baseTitle;
 
   const normalizedApellidos =
@@ -60,7 +62,7 @@ export function formatTitle(fd?: FiscalData | null) {
   return baseTitle;
 }
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
-  const { logout } = useAuth();
+  const { logout, isAuthenticated } = useAuth();
   const history = useHistory();
   const { fiscalData, setFiscalData } = useFiscalData();
   //const title = formatTitle(fiscalData);
@@ -70,7 +72,11 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
     location.pathname === r || location.pathname.startsWith(`${r}/`)
   );
 
-  const title = isHideName ? 'Fiscalizacion App' : formatTitle(fiscalData);  // ⬅️
+  const HIDE_LOGOUT_ROUTES = ['/login'];
+  const shouldHideLogout = HIDE_LOGOUT_ROUTES.some((r) => location.pathname === r);
+
+  const title = isHideName ? APP_TITLE : formatTitle(fiscalData);  // ⬅️
+  const showLogout = isAuthenticated && !shouldHideLogout;
 
   const handleLogout = async () => {
     setFiscalData?.(null);
@@ -98,9 +104,11 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
             </IonButtons>
           )}
           <IonTitle className="font-bold text-lg">{title}</IonTitle>
-          <IonButtons slot="end">
-            <IonButton color="primary" onClick={handleLogout}>Desloguearse</IonButton>
-          </IonButtons>
+          {showLogout && (
+            <IonButtons slot="end">
+              <IonButton color="primary" onClick={handleLogout}>Desloguearse</IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
       {children}
