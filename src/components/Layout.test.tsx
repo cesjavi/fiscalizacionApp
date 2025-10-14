@@ -10,6 +10,7 @@ import {
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
     logout: vi.fn(),
+    isAuthenticated: true,
   }),
 }));
 
@@ -25,7 +26,7 @@ vi.mock('react-router-dom', async () => {
 
 describe('formatTitle', () => {
   it('renders the base title when no fiscal data is provided', () => {
-    expect(formatTitle()).toBe('Fiscalizacion App');
+    expect(formatTitle()).toBe('Fiscalizacion Comuna 7');
   });
 
   it('uses the new fields when available', () => {
