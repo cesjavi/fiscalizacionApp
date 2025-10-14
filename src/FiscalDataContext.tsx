@@ -79,6 +79,7 @@ const MESA_FIELD_KEYS = [
   'numero_mesa',
   'mesa_numero',
   'mesaNumero',
+  'mesa_nro',
 ] as const;
 const ESTABLECIMIENTO_FIELD_KEYS = [
   'nombre_establecimiento',
@@ -518,7 +519,7 @@ export const getFiscalAssignmentDetails = (
   if (!data) {
     return {};
   }
-
+  console.log('Datos fiscales recibidos para detalles:', data);
   const record = data as Record<string, unknown>;
 
   const establecimiento = getFirstMatchingField(
@@ -548,7 +549,7 @@ export const getFiscalAssignmentDetails = (
       : undefined);
 
   return {
-    mesa: getFirstMatchingField(record, MESA_FIELD_KEYS),
+    mesa: getFirstMatchingField(record, 'mesa_nro' in record ? ['mesa_nro'] : MESA_FIELD_KEYS),
     lugar: getFirstMatchingField(record, LUGAR_FIELD_KEYS),
     establecimiento,
     direccion,
