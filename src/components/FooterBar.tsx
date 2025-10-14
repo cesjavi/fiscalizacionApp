@@ -5,7 +5,7 @@ const FooterBar: React.FC = () => {
   const year = new Date().getFullYear();
   return (
     <IonToolbar className="bg-primary-500 text-white">
-      <IonTitle className="text-center text-sm">&copy; {year} Fiscalizacion App</IonTitle>
+      <IonTitle className="text-center text-sm">&copy; {year} Fiscalizacion Comuna 7</IonTitle>
     </IonToolbar>
   );
 };
