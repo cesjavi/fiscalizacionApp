@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import Layout, { formatTitle } from './Layout';
 import {
@@ -7,9 +7,16 @@ import {
   type FiscalData,
 } from '../FiscalDataContext';
 
+const logoutMock = vi.fn();
+const pushMock = vi.fn();
+const replaceMock = vi.fn();
+let isAuthenticatedMock = true;
+let mockPathname = '/';
+
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
-    logout: vi.fn(),
+    logout: logoutMock,
+    isAuthenticated: isAuthenticatedMock,
   }),
 }));
 
@@ -19,13 +26,14 @@ vi.mock('react-router-dom', async () => {
   );
   return {
     ...actual,
-    useHistory: () => ({ push: vi.fn() }),
+    useHistory: () => ({ push: pushMock, replace: replaceMock }),
+    useLocation: () => ({ pathname: mockPathname }),
   };
 });
 
 describe('formatTitle', () => {
   it('renders the base title when no fiscal data is provided', () => {
-    expect(formatTitle()).toBe('Fiscalizacion App');
+    expect(formatTitle()).toBe('Fiscalizacion Comuna 7');
   });
 
   it('uses the new fields when available', () => {
@@ -49,6 +57,11 @@ describe('formatTitle', () => {
 describe('Layout title rendering', () => {
   beforeEach(() => {
     localStorage.clear();
+    logoutMock.mockReset();
+    pushMock.mockReset();
+    replaceMock.mockReset();
+    isAuthenticatedMock = true;
+    mockPathname = '/';
   });
 
   it('renders title for data already normalized', () => {
@@ -84,5 +97,18 @@ describe('Layout title rendering', () => {
     );
 
     expect(screen.getByText('Doe, Jane')).toBeInTheDocument();
+  });
+
+  it('logs out automatically when visiting the login route while authenticated', async () => {
+    mockPathname = '/login';
+
+    render(
+      <FiscalDataProvider>
+        <Layout>Children</Layout>
+      </FiscalDataProvider>,
+    );
+
+    await waitFor(() => expect(logoutMock).toHaveBeenCalledTimes(1));
+    expect(replaceMock).toHaveBeenCalledWith('/login');
   });
 });
