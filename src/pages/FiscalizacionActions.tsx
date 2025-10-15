@@ -710,12 +710,9 @@ const FiscalizacionActions: React.FC = () => {
             </div>
           )}
 
-          <Button routerLink="/voters" className="flex flex-col items-center w-4/5">
-            Votación
-          </Button>
-          <Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">
-            Escrutinio
-          </Button>
+<Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">
+  Escrutinio
+</Button>
         </div>
       </IonContent>
 
