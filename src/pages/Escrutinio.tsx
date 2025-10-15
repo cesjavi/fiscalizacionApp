@@ -6,6 +6,7 @@ import {
   IonSelect,
   IonSelectOption,
   IonText,
+  IonNote,
 } from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
@@ -511,8 +512,13 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
           <IonItem key={l.id} className="form-field">
-            <IonLabel position="stacked" className="text-gray-100 font-semibold">
-              {l.nro_lista ? `${l.nro_lista} - ${l.lista}` : l.lista}
+            <IonLabel position="stacked" className="text-gray-700 font-semibold space-y-1">
+              <span>{l.lista}</span>
+              {l.nro_lista && (
+                <IonNote color="medium" className="block text-xs uppercase tracking-wide">
+                  Nº de lista: {l.nro_lista}
+                </IonNote>
+              )}
             </IonLabel>
             <div style={{ height: 6 }} />
             <Input
