@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { IonContent, IonItem, IonLabel, IonText } from '@ionic/react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  IonContent,
+  IonItem,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+} from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
 import { useHistory } from 'react-router-dom';
@@ -107,10 +114,95 @@ const Escrutinio: React.FC = () => {
   const history = useHistory();
   const { hasFiscalData, setFiscalData, fiscalData } = useFiscalData();
 
+  const assignmentDetails = useMemo(
+    () => getFiscalAssignmentDetails(fiscalData ?? undefined),
+    [fiscalData],
+  );
+
   const [listas, setListas] = useState<Lista[]>([]);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const mesaOptions = useMemo(() => {
+    const values = new Set<string>();
+    const addValue = (value: unknown) => {
+      if (value === null || value === undefined) return;
+      const trimmed = `${value}`.trim();
+      if (trimmed) values.add(trimmed);
+    };
+
+    addValue(assignmentDetails.mesa);
+
+    const record = fiscalData as
+      | ({ f_g_asignado?: { mesas?: Array<{ numero?: string | number }> } } &
+          Record<string, unknown>)
+      | null
+      | undefined;
+    const mesas = record?.f_g_asignado?.mesas;
+    if (Array.isArray(mesas)) {
+      mesas.forEach((mesa) => addValue(mesa?.numero));
+    }
+
+    if (typeof window !== 'undefined') {
+      addValue(localStorage.getItem('mesa_nro'));
+      addValue(localStorage.getItem('mesaId'));
+    }
+
+    return Array.from(values);
+  }, [assignmentDetails.mesa, fiscalData]);
+
+  const [mesaSeleccionada, setMesaSeleccionada] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const storedMesa = localStorage.getItem('mesa_nro')?.trim();
+      if (storedMesa) return storedMesa;
+      const storedMesaId = localStorage.getItem('mesaId')?.trim();
+      if (storedMesaId) return storedMesaId;
+    }
+    const mesa = assignmentDetails.mesa;
+    if (mesa !== undefined && mesa !== null) {
+      const trimmed = `${mesa}`.trim();
+      if (trimmed) return trimmed;
+    }
+    return '';
+  });
+  const [usarMesaPersonalizada, setUsarMesaPersonalizada] = useState(false);
+
+  useEffect(() => {
+    if (mesaOptions.length === 0) {
+      setUsarMesaPersonalizada(true);
+      return;
+    }
+    if (!mesaSeleccionada) {
+      return;
+    }
+    setUsarMesaPersonalizada(!mesaOptions.includes(mesaSeleccionada));
+  }, [mesaOptions, mesaSeleccionada]);
+
+  useEffect(() => {
+    if (!mesaSeleccionada && mesaOptions.length > 0 && !usarMesaPersonalizada) {
+      setMesaSeleccionada(mesaOptions[0]);
+    }
+  }, [mesaOptions, mesaSeleccionada, usarMesaPersonalizada]);
+
+  const mesaSelectValue = usarMesaPersonalizada ? '__custom__' : mesaSeleccionada;
+
+  const handleMesaSelectChange = useCallback((value: string | null | undefined) => {
+    if (value === '__custom__') {
+      setUsarMesaPersonalizada(true);
+      setMesaSeleccionada('');
+      return;
+    }
+    const formatted = value ? `${value}`.trim() : '';
+    setUsarMesaPersonalizada(false);
+    setMesaSeleccionada(formatted);
+  }, []);
+
+  const handleMesaInputChange = useCallback((value: string) => {
+    setMesaSeleccionada(value);
+  }, []);
+
+  const puedeEnviar = mesaSeleccionada.trim().length > 0;
 
   // Cargar listas al iniciar (requiere token)
   useEffect(() => {
@@ -223,21 +315,28 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
 
     setResultado(datos);
 
-    const mesaIdRaw = localStorage.getItem('mesaId');
-    console.log('mesaIdRaw', mesaIdRaw);
-    //const mesaIdNumber = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
-    const mesaId = mesaIdRaw !== null ? Number(mesaIdRaw) : undefined;
-    console.log('mesaId', mesaId);
-    const mesa_nro = localStorage.getItem('mesa_nro');
-    console.log('mesa_nro', mesa_nro);
-      //typeof mesaIdNumber === 'number' && Number.isFinite(mesaIdNumber) ? mesaIdNumber : undefined;
+    const mesaSeleccionadaNormalizada = mesaSeleccionada.trim();
+    if (!mesaSeleccionadaNormalizada) {
+      setError('Debes seleccionar una mesa antes de enviar el escrutinio.');
+      return;
+    }
+
+    localStorage.setItem('mesaId', mesaSeleccionadaNormalizada);
+    localStorage.setItem('mesa_nro', mesaSeleccionadaNormalizada);
+    localStorage.setItem('mesa', mesaSeleccionadaNormalizada);
+
+    const mesaIdNumero = Number.parseInt(mesaSeleccionadaNormalizada, 10);
+    const mesaParaPayload = Number.isNaN(mesaIdNumero)
+      ? mesaSeleccionadaNormalizada
+      : mesaIdNumero;
+
     //const foto = localStorage.getItem('fotoActa');
     const seccion = localStorage.getItem('seccion')?.trim() || '';
     console.log('seccion', seccion);  
     const circuito = localStorage.getItem('circuito')?.trim() || '';
     
     const { establecimiento: establecimientoNombre, direccion: establecimientoDireccion } =
-      getFiscalAssignmentDetails(fiscalData ?? undefined);
+      assignmentDetails;
 
     const establecimientoNombreFinal =
       establecimientoNombre ||
@@ -311,12 +410,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
       establecimiento: {
         seccion,
         circuito,
-        mesa: mesaId
-        /*(() => {
-          if (!mesaNumero) return undefined;
-          const parsed = Number(mesaNumero);
-          return Number.isFinite(parsed) ? parsed : mesaNumero;
-        })(),*/,        
+        mesa: mesaParaPayload,        
         nombre: establecimientoNombreFinal,
         direccion: direccionNombreFinal,
       },
@@ -366,6 +460,43 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
       <IonContent >
         {error && <p className="text-red-600 ion-ion-margin-start">{error}</p>}
 
+        <IonItem className="form-field">
+          <IonLabel position="stacked" className="text-gray-700 font-semibold">
+            Mesa
+          </IonLabel>
+          {mesaOptions.length > 0 && (
+            <IonSelect
+              value={mesaSelectValue}
+              interface="popover"
+              placeholder="Seleccioná una mesa"
+              onIonChange={(e) => handleMesaSelectChange(e.detail.value)}
+            >
+              {mesaOptions.map((mesa) => (
+                <IonSelectOption key={mesa} value={mesa}>
+                  {mesa}
+                </IonSelectOption>
+              ))}
+              <IonSelectOption value="__custom__">Otra mesa...</IonSelectOption>
+            </IonSelect>
+          )}
+          {(usarMesaPersonalizada || mesaOptions.length === 0) && (
+            <div className="w-full mt-2">
+              <Input
+                value={mesaSeleccionada}
+                inputmode="numeric"
+                placeholder="Número de mesa"
+                onIonChange={(e) => handleMesaInputChange(e.detail.value ?? '')}
+              />
+            </div>
+          )}
+        </IonItem>
+
+        {usarMesaPersonalizada && mesaOptions.length > 0 && (
+          <p className="text-xs text-gray-500 ion-padding-start">
+            Escribí el número de mesa si no aparece en la lista.
+          </p>
+        )}
+
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
           <IonItem key={l.id} className="form-field">
@@ -398,7 +529,12 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
           </IonItem>
         ))}
 
-        <Button expand="block" className="ion-margin-top" onClick={handleSubmit}>
+        <Button
+          expand="block"
+          className="ion-margin-top"
+          onClick={handleSubmit}
+          disabled={!puedeEnviar}
+        >
           Enviar
         </Button>
 

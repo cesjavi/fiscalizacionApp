@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -10,7 +10,7 @@ import {
   IonIcon
 } from '@ionic/react';
 import { chevronBackOutline } from 'ionicons/icons';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getMemberNameParts, useFiscalData } from '../FiscalDataContext';
 import type { FiscalData } from '../FiscalDataContext';
@@ -30,8 +30,10 @@ const joinMemberName = (apellidos?: string, nombres?: string) => {
   return apellidos || nombres || '';
 };
 
+const APP_TITLE = 'Fiscalizacion Comuna 7';
+
 export function formatTitle(fd?: FiscalData | null) {
-  const baseTitle = 'Fiscalizacion App';
+  const baseTitle = APP_TITLE;
   if (!fd) return baseTitle;
 
   const normalizedApellidos =
@@ -60,26 +62,46 @@ export function formatTitle(fd?: FiscalData | null) {
   return baseTitle;
 }
 const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
-  const { logout } = useAuth();
+  const { logout, isAuthenticated } = useAuth();
   const history = useHistory();
+  const location = useLocation();
   const { fiscalData, setFiscalData } = useFiscalData();
-  //const title = formatTitle(fiscalData);
 
   const HIDE_NAME_ROUTES = ['/login', '/fiscalizacion-lookup'];
   const isHideName = HIDE_NAME_ROUTES.some((r) =>
     location.pathname === r || location.pathname.startsWith(`${r}/`)
   );
 
-  const title = isHideName ? 'Fiscalizacion App' : formatTitle(fiscalData);  // ⬅️
+  const HIDE_LOGOUT_ROUTES = ['/login'];
+  const shouldHideLogout = HIDE_LOGOUT_ROUTES.some((r) => location.pathname === r);
 
-  const handleLogout = async () => {
+  const title = isHideName ? APP_TITLE : formatTitle(fiscalData);
+  const showLogout = isAuthenticated && !shouldHideLogout;
+
+  const handleLogout = useCallback(async () => {
     setFiscalData?.(null);
-    try { localStorage.removeItem('fiscalData'); } catch {
+    try {
+      localStorage.removeItem('fiscalData');
+    } catch {
       // Ignore errors removing fiscalData from localStorage
     }
     await logout();
     history.replace('/login');
-  };
+  }, [history, logout, setFiscalData]);
+
+  const hasLoggedOutRef = useRef(false);
+
+  useEffect(() => {
+    if (shouldHideLogout && isAuthenticated && !hasLoggedOutRef.current) {
+      hasLoggedOutRef.current = true;
+      void handleLogout();
+      return;
+    }
+
+    if (!shouldHideLogout) {
+      hasLoggedOutRef.current = false;
+    }
+  }, [handleLogout, isAuthenticated, shouldHideLogout]);
 
   return (
     <IonPage className="flex flex-col min-h-screen">
@@ -98,9 +120,11 @@ const Layout: React.FC<LayoutProps> = ({ children, footer, backHref }) => {
             </IonButtons>
           )}
           <IonTitle className="font-bold text-lg">{title}</IonTitle>
-          <IonButtons slot="end">
-            <IonButton color="primary" onClick={handleLogout}>Desloguearse</IonButton>
-          </IonButtons>
+          {showLogout && (
+            <IonButtons slot="end">
+              <IonButton color="primary" onClick={handleLogout}>Desloguearse</IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
       {children}
