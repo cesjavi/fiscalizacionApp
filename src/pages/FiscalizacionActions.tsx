@@ -1,4 +1,11 @@
-import { IonContent, IonItem, IonLabel, IonModal } from '@ionic/react';
+import {
+  IonContent,
+  IonItem,
+  IonLabel,
+  IonModal,
+  IonSelect,
+  IonSelectOption,
+} from '@ionic/react';
 import Layout from '../components/Layout';
 import { Button, Input } from '../components';
 import {
@@ -10,6 +17,7 @@ import type { FiscalData } from '../FiscalDataContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '../AuthContext';
 import type { CSSProperties } from 'react';
@@ -22,8 +30,9 @@ const itemStyle: CSSProperties = {
 };
 
 // ==== Tipos auxiliares para leer el shape real que llega del API ====
-type FDAsignado = { nombre?: string; mesas?: Array<{ numero?: string | number }> };
-type FDEstablecimiento = { direccion?: string };
+type FDMesa = { numero?: string | number };
+type FDAsignado = { nombre?: string; mesas?: Array<FDMesa> };
+type FDEstablecimiento = { direccion?: string; mesas?: Array<FDMesa> };
 type FDShape = {
   f_g_asignado?: FDAsignado;
   establecimiento_fiscalizacion?: FDEstablecimiento;
@@ -149,7 +158,7 @@ const FiscalizacionActions: React.FC = () => {
   });
   const [isSendingPhoto, setIsSendingPhoto] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [sendSuccess, setSendSuccess] = useState(false);
+  const [useCustomMesa, setUseCustomMesa] = useState(false);
 
   const fechaEnvio = new Date().toISOString();
   const fileDescriptor = 'archivo subido (acta.jpg)';
@@ -324,17 +333,97 @@ const FiscalizacionActions: React.FC = () => {
     return establecimientoAsignado || undefined;
   }, [establecimientoAsignado, lugarAsignadoDesdeData]);
 
+  const mesaOptions = useMemo(() => {
+    const values = new Set<string>();
+    const addValue = (value: unknown) => {
+      if (value === null || value === undefined) return;
+      const trimmed = `${value}`.trim();
+      if (trimmed) values.add(trimmed);
+    };
+
+    addValue(mesaAsignada);
+
+    const record = fiscalData as
+      | ({
+          f_g_asignado?: { mesas?: Array<FDMesa> };
+          establecimiento_fiscalizacion?: FDEstablecimiento | null;
+        } & Record<string, unknown>)
+      | null
+      | undefined;
+    const mesas = record?.f_g_asignado?.mesas;
+    if (Array.isArray(mesas)) {
+      mesas.forEach((mesa) => {
+        addValue(mesa?.numero);
+      });
+    }
+
+    const establecimiento = record?.establecimiento_fiscalizacion;
+    if (establecimiento && typeof establecimiento === 'object' && !Array.isArray(establecimiento)) {
+      const mesasEstablecimiento = establecimiento.mesas;
+      if (Array.isArray(mesasEstablecimiento)) {
+        mesasEstablecimiento.forEach((mesa) => {
+          addValue(mesa?.numero);
+        });
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      addValue(localStorage.getItem('mesa_nro'));
+      addValue(localStorage.getItem('mesaId'));
+    }
+
+    return Array.from(values).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [fiscalData, mesaAsignada]);
+
+  const clearFotoState = useCallback(() => {
+    setFotoBlob(null);
+    setFotoPreview('');
+    localStorage.removeItem('fotoActa');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const handleMesaSelectChange = useCallback((value: string | null | undefined) => {
+    if (value === '__custom__') {
+      setUseCustomMesa(true);
+      setEstablecimientoForm((prev) => ({
+        ...prev,
+        mesa: '',
+      }));
+      return;
+    }
+
+    const formatted = value ? `${value}`.trim() : '';
+    setUseCustomMesa(false);
+    setEstablecimientoForm((prev) => ({
+      ...prev,
+      mesa: formatted,
+    }));
+  }, []);
+
+  const handleMesaInputChange = useCallback((value: string) => {
+    setEstablecimientoForm((prev) => ({
+      ...prev,
+      mesa: value,
+    }));
+  }, []);
+
   const handleOpenModal = () => {
     const storedSeccion = localStorage.getItem('seccion')?.trim() ?? '';
     const storedCircuito = localStorage.getItem('circuito')?.trim() ?? '';
+    const storedMesa = localStorage.getItem('mesa_nro')?.trim();
+    const defaultMesa = storedMesa || mesaAsignada || mesaOptions[0] || '';
     setEstablecimientoForm({
       seccion: storedSeccion,
       circuito: storedCircuito,
-      mesa: mesaAsignada ?? '',
+      mesa: defaultMesa,
       nombre: establecimientoAsignado ?? '',
     });
+    setUseCustomMesa(
+      !defaultMesa || (defaultMesa ? !mesaOptions.includes(defaultMesa) : mesaOptions.length === 0),
+    );
     setSendError(null);
-    setSendSuccess(false);
     setShowPhotoModal(true);
   };
 
@@ -350,10 +439,16 @@ const FiscalizacionActions: React.FC = () => {
       return;
     }
 
+    const mesaSeleccionada = establecimientoForm.mesa.trim();
+    if (!mesaSeleccionada) {
+      setSendError('Debes seleccionar una mesa antes de enviar la foto.');
+      return;
+    }
+
     const establecimientoPayload = {
       seccion: establecimientoForm.seccion.trim(),
       circuito: establecimientoForm.circuito.trim(),
-      mesa: establecimientoForm.mesa.trim(),
+      mesa: mesaSeleccionada,
       nombre: establecimientoForm.nombre.trim(),
     };
 
@@ -395,22 +490,29 @@ const FiscalizacionActions: React.FC = () => {
         throw new Error(`No se pudo enviar la foto (${response.status}): ${msg}`);
       }
 
-      setSendSuccess(true);
+      localStorage.setItem('mesa_nro', mesaSeleccionada);
+      localStorage.setItem('mesaId', mesaSeleccionada);
+      setSendError(null);
+      clearFotoState();
+      setShowPhotoModal(false);
+      history.replace('/fiscalizacion-acciones');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Error desconocido al enviar la foto.';
       setSendError(message);
-      setSendSuccess(false);
     } finally {
       setIsSendingPhoto(false);
     }
-  }, [establecimientoForm, fechaEnvio, fotoBlob, personaPayload]);
+  }, [
+    clearFotoState,
+    establecimientoForm,
+    fechaEnvio,
+    fotoBlob,
+    history,
+    personaPayload,
+  ]);
 
   const handleConfirmModal = () => {
-    if (sendSuccess) {
-      setShowPhotoModal(false);
-      return;
-    }
     void enviarFoto();
   };
 
@@ -419,6 +521,12 @@ const FiscalizacionActions: React.FC = () => {
 
   // Tomar foto con Camera -> Blob real + preview
   const handleFoto = async () => {
+    const platform = Capacitor.getPlatform();
+    if (platform === 'web') {
+      fileInputRef.current?.click();
+      return;
+    }
+
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.Uri, // URI -> podemos fetchear el Blob real
@@ -470,10 +578,10 @@ const FiscalizacionActions: React.FC = () => {
   };
 
   const handleClearFoto = () => {
-    setFotoBlob(null);
-    setFotoPreview('');
-    localStorage.removeItem('fotoActa');
+    clearFotoState();
   };
+
+  const mesaSelectValue = useCustomMesa ? '__custom__' : establecimientoForm.mesa;
 
   useEffect(() => {
     if (!hasFiscalData) {
@@ -624,79 +732,78 @@ const FiscalizacionActions: React.FC = () => {
               <p className="text-base text-gray-800 font-medium">{fileDescriptor}</p>
             </div>
 
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Establecimiento</p>
-              <div className="space-y-3">
-                <IonItem lines="full" style={itemStyle}>
-                  <IonLabel position="stacked" style={labelStyle}>
-                    Sección
-                  </IonLabel>
-                  <Input
-                    value={establecimientoForm.seccion}
-                    onIonChange={(e) =>
-                      setEstablecimientoForm((prev) => ({
-                        ...prev,
-                        seccion: e.detail.value ?? '',
-                      }))
-                    }
-                  />
-                </IonItem>
-                <IonItem lines="full" style={labelStyle}>
-                  <IonLabel position="stacked" style={labelStyle}>
-                    Circuito
-                  </IonLabel>
-                  <Input
-                    value={establecimientoForm.circuito}
-                    onIonChange={(e) =>
-                      setEstablecimientoForm((prev) => ({
-                        ...prev,
-                        circuito: e.detail.value ?? '',
-                      }))
-                    }
-                  />
-                </IonItem>
-                <IonItem lines="full" style={labelStyle}>
-                  <div className="mt-2 w-full">
-                    <IonLabel position="stacked" style={labelStyle}>
-                      Mesa
-                    </IonLabel>
-                    <Input
-                      value={establecimientoForm.mesa}
-                      onIonChange={(e) =>
-                        setEstablecimientoForm((prev) => ({
-                          ...prev,
-                          mesa: e.detail.value ?? '',
-                        }))
-                      }
-                    />
-                  </div>
-                </IonItem>
-                <IonItem lines="full" style={labelStyle}>
-                  <IonLabel position="stacked" style={labelStyle}>
-                    Nombre
-                  </IonLabel>
-                  <Input
-                    value={establecimientoForm.nombre}
-                    onIonChange={(e) =>
-                      setEstablecimientoForm((prev) => ({
-                        ...prev,
-                        nombre: e.detail.value ?? '',
-                      }))
-                    }
-                  />
-                </IonItem>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">Datos del establecimiento</p>
+              <div className="space-y-1 rounded-lg bg-gray-100 p-3 text-sm text-gray-700">
+                {establecimientoForm.nombre && (
+                  <p>
+                    <span className="font-medium text-gray-800">Nombre:</span>{' '}
+                    {establecimientoForm.nombre}
+                  </p>
+                )}
+                {establecimientoForm.seccion && (
+                  <p>
+                    <span className="font-medium text-gray-800">Sección:</span>{' '}
+                    {establecimientoForm.seccion}
+                  </p>
+                )}
+                {establecimientoForm.circuito && (
+                  <p>
+                    <span className="font-medium text-gray-800">Circuito:</span>{' '}
+                    {establecimientoForm.circuito}
+                  </p>
+                )}
+                {!establecimientoForm.nombre &&
+                  !establecimientoForm.seccion &&
+                  !establecimientoForm.circuito && (
+                    <p>No hay datos adicionales guardados.</p>
+                  )}
               </div>
             </div>
+
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">Seleccioná la mesa antes de enviar</p>
+              {mesaOptions.length > 0 && (
+                <IonItem lines="full" style={itemStyle}>
+                  <IonLabel position="stacked" style={labelStyle}>
+                    Mesas asignadas
+                  </IonLabel>
+                  <IonSelect
+                    value={mesaSelectValue}
+                    interface="popover"
+                    placeholder="Elegí una mesa"
+                    onIonChange={(e) => handleMesaSelectChange(e.detail.value)}
+                  >
+                    {mesaOptions.map((mesa) => (
+                      <IonSelectOption key={mesa} value={mesa}>
+                        {mesa}
+                      </IonSelectOption>
+                    ))}
+                    <IonSelectOption value="__custom__">Otra mesa...</IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+              )}
+              {(useCustomMesa || mesaOptions.length === 0) && (
+                <IonItem lines="full" style={itemStyle}>
+                  <IonLabel position="stacked" style={labelStyle}>
+                    Número de mesa
+                  </IonLabel>
+                  <Input
+                    value={establecimientoForm.mesa}
+                    inputmode="numeric"
+                    onIonChange={(e) => handleMesaInputChange(e.detail.value ?? '')}
+                    placeholder="Ingresa el número de mesa"
+                  />
+                </IonItem>
+              )}
+            </div>
             {sendError && <p className="text-sm text-red-600">{sendError}</p>}
-            {sendSuccess && (
-              <p className="text-sm text-green-600">Foto enviada correctamente.</p>
-            )}
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button color="medium" fill="outline" onClick={handleCloseModal} disabled={isSendingPhoto}>
                 Cancelar
               </Button>
               <Button onClick={handleConfirmModal} disabled={isSendingPhoto}>
-                {sendSuccess ? 'Cerrar' : isSendingPhoto ? 'Enviando...' : 'Confirmar envío'}
+                {isSendingPhoto ? 'Enviando...' : 'Confirmar envío'}
               </Button>
             </div>
           </div>
