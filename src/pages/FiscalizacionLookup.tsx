@@ -197,11 +197,7 @@ const FiscalizacionLookup: React.FC = () => {
 
         {error && <p className="text-red-600 ion-margin-top">{error}</p>}
 
-        {result !== null && (
-          <pre className="ion-margin-top whitespace-pre-wrap">
-            {typeof result === 'string' ? result : JSON.stringify(result, null, 2)}
-          </pre>
-        )}
+        {result !== null}
       </IonContent>
     </Layout>
   );
