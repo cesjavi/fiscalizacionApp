@@ -30,8 +30,9 @@ const itemStyle: CSSProperties = {
 };
 
 // ==== Tipos auxiliares para leer el shape real que llega del API ====
-type FDAsignado = { nombre?: string; mesas?: Array<{ numero?: string | number }> };
-type FDEstablecimiento = { direccion?: string };
+type FDMesa = { numero?: string | number };
+type FDAsignado = { nombre?: string; mesas?: Array<FDMesa> };
+type FDEstablecimiento = { direccion?: string; mesas?: Array<FDMesa> };
 type FDShape = {
   f_g_asignado?: FDAsignado;
   establecimiento_fiscalizacion?: FDEstablecimiento;
@@ -344,7 +345,8 @@ const FiscalizacionActions: React.FC = () => {
 
     const record = fiscalData as
       | ({
-          f_g_asignado?: { mesas?: Array<{ numero?: string | number }> };
+          f_g_asignado?: { mesas?: Array<FDMesa> };
+          establecimiento_fiscalizacion?: FDEstablecimiento | null;
         } & Record<string, unknown>)
       | null
       | undefined;
@@ -355,12 +357,22 @@ const FiscalizacionActions: React.FC = () => {
       });
     }
 
+    const establecimiento = record?.establecimiento_fiscalizacion;
+    if (establecimiento && typeof establecimiento === 'object' && !Array.isArray(establecimiento)) {
+      const mesasEstablecimiento = establecimiento.mesas;
+      if (Array.isArray(mesasEstablecimiento)) {
+        mesasEstablecimiento.forEach((mesa) => {
+          addValue(mesa?.numero);
+        });
+      }
+    }
+
     if (typeof window !== 'undefined') {
       addValue(localStorage.getItem('mesa_nro'));
       addValue(localStorage.getItem('mesaId'));
     }
 
-    return Array.from(values);
+    return Array.from(values).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [fiscalData, mesaAsignada]);
 
   const clearFotoState = useCallback(() => {

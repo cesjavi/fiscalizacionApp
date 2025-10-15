@@ -135,7 +135,10 @@ const Escrutinio: React.FC = () => {
     addValue(assignmentDetails.mesa);
 
     const record = fiscalData as
-      | ({ f_g_asignado?: { mesas?: Array<{ numero?: string | number }> } } &
+      | ({
+          f_g_asignado?: { mesas?: Array<{ numero?: string | number }> };
+          establecimiento_fiscalizacion?: { mesas?: Array<{ numero?: string | number }> } | null;
+        } &
           Record<string, unknown>)
       | null
       | undefined;
@@ -144,12 +147,20 @@ const Escrutinio: React.FC = () => {
       mesas.forEach((mesa) => addValue(mesa?.numero));
     }
 
+    const establecimiento = record?.establecimiento_fiscalizacion;
+    if (establecimiento && typeof establecimiento === 'object' && !Array.isArray(establecimiento)) {
+      const mesasEstablecimiento = establecimiento.mesas;
+      if (Array.isArray(mesasEstablecimiento)) {
+        mesasEstablecimiento.forEach((mesa) => addValue(mesa?.numero));
+      }
+    }
+
     if (typeof window !== 'undefined') {
       addValue(localStorage.getItem('mesa_nro'));
       addValue(localStorage.getItem('mesaId'));
     }
 
-    return Array.from(values);
+    return Array.from(values).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [assignmentDetails.mesa, fiscalData]);
 
   const [mesaSeleccionada, setMesaSeleccionada] = useState(() => {
