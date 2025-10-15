@@ -17,6 +17,7 @@ import type { FiscalData } from '../FiscalDataContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Camera, CameraResultType } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '../AuthContext';
 import type { CSSProperties } from 'react';
@@ -508,6 +509,12 @@ const FiscalizacionActions: React.FC = () => {
 
   // Tomar foto con Camera -> Blob real + preview
   const handleFoto = async () => {
+    const platform = Capacitor.getPlatform();
+    if (platform === 'web') {
+      fileInputRef.current?.click();
+      return;
+    }
+
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.Uri, // URI -> podemos fetchear el Blob real
