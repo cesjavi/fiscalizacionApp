@@ -7,6 +7,10 @@ import {
   IonSelectOption,
   IonText,
   IonNote,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
 } from '@ionic/react';
 import { Button, Input } from '../components';
 import Layout from '../components/Layout';
@@ -568,12 +572,17 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
 
         {/* Inputs para todas las listas */}
         {listas.map((l) => (
-          <IonItem key={l.id} className="form-field">
-            <IonLabel position="stacked" className="text-gray-700 font-semibold space-y-1">
-              <span>{l.lista}</span>
+          <IonCard
+            key={l.id}
+            className="ion-margin-bottom shadow-sm border border-solid border-gray-200"
+          >
+            <IonCardHeader className="pb-0">
+              <IonCardTitle className="text-lg font-semibold text-gray-800">
+                {l.lista}
+              </IonCardTitle>
               {(l.numeroLista || l.sigla) && (
-                <IonNote color="medium" className="block text-xs tracking-wide">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <IonNote color="medium" className="mt-2 block text-sm text-gray-600">
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     {l.numeroLista && (
                       <span>
                         Nº de lista:{' '}
@@ -589,15 +598,21 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
                   </span>
                 </IonNote>
               )}
-            </IonLabel>
-            <div style={{ marginTop: 16 }} />
-            <Input
-              type="number"
-              value={valores[l.id] || ''}
-              onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
-              placeholder="Cantidad de votos"
-            />
-          </IonItem>
+            </IonCardHeader>
+            <IonCardContent className="pt-4">
+              <IonItem lines="none" className="form-field ion-no-padding">
+                <IonLabel position="stacked" className="text-base font-semibold text-gray-700">
+                  Cantidad de votos
+                </IonLabel>
+                <Input
+                  type="number"
+                  value={valores[l.id] || ''}
+                  onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
+                  placeholder="Cantidad de votos"
+                />
+              </IonItem>
+            </IonCardContent>
+          </IonCard>
         ))}
 
         {/* Inputs para campos especiales */}
