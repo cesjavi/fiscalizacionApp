@@ -22,7 +22,8 @@ import { buildUrl, postJson } from '../utils/api';
 interface Lista {
   id: string;
   lista: string;
-  nro_lista?: string;
+  sigla?: string;
+  numeroLista?: string;
 }
 // helper común arriba del componente (o en utils)
 function toErrorMessage(e: unknown): string {
@@ -234,7 +235,55 @@ const Escrutinio: React.FC = () => {
       }
     }
 
-    type ApiLista = { identificador: string; nombre: string; nomenclatura: string };
+    type ApiLista = {
+      identificador: string | number;
+      nombre?: string | null;
+      nomenclatura?: string | null;
+      [key: string]: unknown;
+    };
+
+    const normalizeText = (value: unknown): string | undefined => {
+      if (value === null || value === undefined) return undefined;
+      const text = `${value}`.trim();
+      return text || undefined;
+    };
+
+    const extractListNumber = (item: ApiLista): string | undefined => {
+      const record = item as Record<string, unknown>;
+      const candidateKeys = [
+        'numero_lista',
+        'numeroLista',
+        'numero',
+        'lista_numero',
+        'listaNumero',
+        'nro_lista',
+        'listNumber',
+        'lista',
+      ];
+
+      for (const key of candidateKeys) {
+        if (!(key in record)) continue;
+        const normalized = normalizeText(record[key]);
+        if (normalized && /\d/.test(normalized)) {
+          return normalized;
+        }
+      }
+
+      const idText = normalizeText(item.identificador);
+      if (idText && /\d/.test(idText)) {
+        return idText;
+      }
+
+      const nameText = normalizeText(item.nombre);
+      if (nameText) {
+        const match = nameText.match(/\b\d+[A-Z]?\b/);
+        if (match) {
+          return match[0];
+        }
+      }
+
+      return undefined;
+    };
 
     const fetchListas = async () => {
       setError(null);
@@ -269,11 +318,19 @@ const Escrutinio: React.FC = () => {
         }
 
         const data = (r.payload as { data?: ApiLista[] }).data ?? [];
-        const mapped: Lista[] = data.map(({ identificador, nombre, nomenclatura }) => ({
-          id: identificador,
-          lista: nombre,
-          nro_lista: nomenclatura,
-        }));
+        const mapped: Lista[] = data.map((listaItem) => {
+          const id = normalizeText(listaItem.identificador) ?? `${listaItem.identificador}`;
+          const listaNombre = normalizeText(listaItem.nombre) ?? id;
+          const sigla = normalizeText(listaItem.nomenclatura);
+          const numeroLista = extractListNumber(listaItem);
+
+          return {
+            id,
+            lista: listaNombre,
+            sigla,
+            numeroLista,
+          };
+        });
         setListas(mapped);
       } catch (e: unknown) {
         const msg = toErrorMessage(e);
@@ -303,7 +360,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
       datos[l.lista] = cantidad;
       escrutinioItems.push({
         identificador: l.id,
-        nomenclatura: l.nro_lista ?? l.id,
+        nomenclatura: l.sigla ?? l.numeroLista ?? l.id,
         nombre: l.lista,
         cantidad,
       });
@@ -514,9 +571,22 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
           <IonItem key={l.id} className="form-field">
             <IonLabel position="stacked" className="text-gray-700 font-semibold space-y-1">
               <span>{l.lista}</span>
-              {l.nro_lista && (
-                <IonNote color="medium" className="block text-xs uppercase tracking-wide">
-                  Nº de lista: {l.nro_lista}
+              {(l.numeroLista || l.sigla) && (
+                <IonNote color="medium" className="block text-xs tracking-wide">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    {l.numeroLista && (
+                      <span>
+                        Nº de lista:{' '}
+                        <span className="font-semibold">{l.numeroLista}</span>
+                      </span>
+                    )}
+                    {l.sigla && (
+                      <span>
+                        Sigla:{' '}
+                        <span className="font-semibold uppercase">{l.sigla}</span>
+                      </span>
+                    )}
+                  </span>
                 </IonNote>
               )}
             </IonLabel>
