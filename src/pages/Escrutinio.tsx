@@ -590,7 +590,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
                 </IonNote>
               )}
             </IonLabel>
-            <div style={{ height: 6 }} />
+            <div style={{ marginTop: 16 }} />
             <Input
               type="number"
               value={valores[l.id] || ''}
@@ -617,13 +617,14 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
         ))}
 
         <Button
-          expand="block"
-          className="ion-margin-top"
+          expand="block"          
+          className="ion-margin-top"  
           onClick={handleSubmit}
           disabled={!puedeEnviar}
         >
           Enviar
         </Button>
+        <Gap h={24} /> 
 
         {resultado && (
           <IonText className="ion-margin-top">
