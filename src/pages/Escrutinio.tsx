@@ -543,57 +543,49 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
 
         {/* Cards por lista */}
         {listas.map((l) => (
-          <IonCard
-            key={l.id}
-            className="ion-margin-bottom shadow-sm border border-solid border-gray-200"
-          >
-            <IonCardHeader className="pb-0">
-              {/* ↑↑ AUMENTO DE TAMAÑO */}
-              <IonCardTitle className="text-xl font-semibold text-gray-900">
-                {l.lista}
-              </IonCardTitle>
+  <IonCard
+    key={l.id}
+    className="ion-margin-bottom shadow-sm border border-solid border-gray-200"
+  >
+    <IonCardHeader className="pb-0">
+      {/* Cabecera con nombre a la izquierda y número a la derecha */}
+      <div className="flex items-start justify-between items-center">
+        <div>
+          <IonCardTitle className="text-xl font-semibold text-gray-900 leading-tight">
+            {l.lista}
+          </IonCardTitle>
+          {l.sigla && (
+            <IonNote
+              color="medium"
+              className="mt-1 block text-sm text-gray-600 uppercase tracking-wide"
+            >
+              {l.sigla}
+            </IonNote>
+          )}
+        </div>
 
-              {(l.numeroLista || l.sigla) && (
-                // ↑↑ MÁS TAMAÑO Y ESPACIO ENTRE Nº Y SIGLA
-                <IonNote color="medium" className="mt-2 block text-base text-gray-700">
-                  <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                    {l.numeroLista && (
-                      <span className="flex items-center">
-                        <span className="mr-1">Nº de lista:</span>
-                        <span className="font-semibold">{l.numeroLista}</span>
-                      </span>
-                    )}
+        {l.numeroLista && (
+          <div className="text-3xl font-bold text-gray-900 bg-gray-100 rounded-xl px-4 py-2 ml-3 shadow-sm">
+            {l.numeroLista}
+          </div>
+        )}
+      </div>
+    </IonCardHeader>
 
-                    {/* separador visual cuando hay ambos */}
-                    {l.numeroLista && l.sigla && <span className="opacity-50">·</span>}
+    <IonCardContent className="pt-4">
+      <IonItem lines="none" className="form-field ion-no-padding">
+        <Input
+          type="number"
+          value={valores[l.id] || ''}
+          onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
+          placeholder="Cantidad de votos"
+          aria-label={`Cantidad de votos para ${l.lista}`}
+        />
+      </IonItem>
+    </IonCardContent>
+  </IonCard>
+))}
 
-                    {l.sigla && (
-                      <span className="flex items-center">
-                        <span className="mr-1">Sigla:</span>
-                        <span className="font-semibold uppercase tracking-wide">
-                          {l.sigla}
-                        </span>
-                      </span>
-                    )}
-                  </span>
-                </IonNote>
-              )}
-            </IonCardHeader>
-
-            <IonCardContent className="pt-4">
-              {/* ↓↓↓ SE QUITA EL LABEL “Cantidad de votos” */}
-              <IonItem lines="none" className="form-field ion-no-padding">
-                <Input
-                  type="number"
-                  value={valores[l.id] || ''}
-                  onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
-                  placeholder="Cantidad de votos"
-                  aria-label={`Cantidad de votos para ${l.lista}`}
-                />
-              </IonItem>
-            </IonCardContent>
-          </IonCard>
-        ))}
 
         {/* Campos especiales: se dejan igual */}
         {CAMPOS_ESPECIALES.map((key) => (
