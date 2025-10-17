@@ -531,7 +531,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
   return (
     <Layout backHref="/fiscalizacion-acciones">
       <IonContent>
-        {error && <p className="text-red-600 ion-ion-margin-start">{error}</p>}
+        {error && <p className="text-4xl text-red-600 ion-ion-margin-start">{error}</p>}
 
         {/* Mesa */}
         <IonItem className="form-field">
@@ -545,11 +545,11 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
         {listas.map((l) => (
   <IonCard
     key={l.id}
-    className="ion-margin-bottom shadow-sm border border-solid border-gray-200"
+    className="text-20xl ion-margin-bottom shadow-sm border border-solid border-gray-200"
   >
     <IonCardHeader className="pb-0">
       {/* Cabecera con nombre a la izquierda y número a la derecha */}
-      <div className="flex items-start justify-between items-center">
+      <div className="text-1xl flex items-start justify-between items-center">
         <div>
           <IonCardTitle className="text-xl font-semibold text-gray-900 leading-tight">
             {l.lista}
@@ -565,10 +565,11 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
         </div>
 
         {l.numeroLista && (
-          <div className="text-3xl font-bold text-gray-900 bg-gray-100 rounded-xl px-4 py-2 ml-3 shadow-sm">
-            {l.numeroLista}
-          </div>
-        )}
+  <div className="w-14 h-14 flex items-center justify-center text-4xl font-extrabold text-gray-900 bg-gray-200 rounded-full ml-3 shadow-inner">
+    {l.numeroLista}
+  </div>
+)}
+
       </div>
     </IonCardHeader>
 
