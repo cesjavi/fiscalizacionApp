@@ -83,6 +83,627 @@ const blobToDataUrl = (blob: Blob) =>
     fr.readAsDataURL(blob);
   });
 
+type MesaFiscalCardData = {
+  id: string;
+  mesa: string;
+  nombre: string;
+  telefono?: string;
+  esMesaTestigo: boolean;
+};
+
+type EstablecimientoCardData = {
+  id: string;
+  nombre: string;
+  direccion?: string;
+  locationUrl?: string;
+  fiscalGeneral?: string;
+  fiscalGeneralTelefono?: string;
+};
+
+const MESA_NUMBER_KEYS = [
+  'mesa',
+  'mesa_nro',
+  'mesaNumero',
+  'mesa_numero',
+  'numero_mesa',
+  'mesa_id',
+  'mesaId',
+  'numero',
+  'mesaAsignada',
+  'mesa_asignada',
+] as const;
+
+const PHONE_KEYS = [
+  'telefono',
+  'tel',
+  'telefono_contacto',
+  'telefonoContacto',
+  'telefono_fiscal',
+  'telefonoFiscal',
+  'celular',
+  'cel',
+  'whatsapp',
+  'telefono_movil',
+  'movil',
+] as const;
+
+const TESTIGO_BOOLEAN_KEYS = [
+  'mesa_testigo',
+  'es_mesa_testigo',
+  'es_testigo',
+  'esTestigo',
+  'mesaTestigo',
+  'mesaEsTestigo',
+] as const;
+
+const TESTIGO_LABEL_KEYS = [
+  'tipo_mesa',
+  'tipoMesa',
+  'categoria_mesa',
+  'categoria',
+  'tipo',
+  'clasificacion',
+] as const;
+
+const ESTABLISHMENT_NAME_KEYS = [
+  'nombre_establecimiento',
+  'nombre_establecimiento_fiscalizacion',
+  'nombre_escuela',
+  'nombre',
+  'escuela',
+  'establecimiento',
+  'colegio',
+  'lugar',
+  'nombre_lugar',
+  'institucion',
+] as const;
+
+const ESTABLISHMENT_ADDRESS_KEYS = [
+  'direccion_establecimiento',
+  'direccion_establecimiento_fiscalizacion',
+  'direccion_escuela',
+  'direccion',
+  'domicilio',
+  'ubicacion',
+  'calle',
+  'direccion_lugar',
+] as const;
+
+const ESTABLISHMENT_INDICATOR_KEYS = [
+  'establecimiento',
+  'establecimientos',
+  'nombre_establecimiento',
+  'nombre_establecimiento_fiscalizacion',
+  'nombre_escuela',
+  'escuela',
+  'colegio',
+  'institucion',
+  'lugar',
+  'nombre_lugar',
+] as const;
+
+const LOCATION_LINK_KEYS = [
+  'ubicacion_link',
+  'ubicacion_url',
+  'maps_url',
+  'mapsUrl',
+  'link_ubicacion',
+  'google_maps',
+  'googleMaps',
+  'mapa',
+] as const;
+
+const LOCATION_OBJECT_KEYS = [
+  'ubicacion',
+  'coordenadas',
+  'coordenada',
+  'location',
+  'geo',
+] as const;
+
+const FISCAL_GENERAL_CONTAINER_KEYS = [
+  'fiscal_general',
+  'fiscalGeneral',
+  'fiscal-general',
+  'fg',
+  'f_g',
+  'fiscal_general_asignado',
+  'fiscal_general_datos',
+  'fiscalGeneralAsignado',
+] as const;
+
+const FISCAL_GENERAL_NAME_KEYS = [
+  'fiscal_general_nombre',
+  'nombre_fiscal_general',
+  'fg_nombre',
+  'fiscalGeneralNombre',
+  'nombre_fg',
+] as const;
+
+const FISCAL_GENERAL_PHONE_KEYS = [
+  'fiscal_general_telefono',
+  'telefono_fiscal_general',
+  'fg_telefono',
+  'telefono_fg',
+  'celular_fg',
+  'whatsapp_fg',
+  'telefono',
+  'celular',
+  'whatsapp',
+] as const;
+
+const DISPLAY_NAME_KEYS = ['displayName', 'nombre_completo', 'nombreCompleto'] as const;
+const FIRST_NAME_KEYS = ['nombres', 'nombre', 'primer_nombre', 'nombre1', 'first_name'] as const;
+const LAST_NAME_KEYS = ['apellidos', 'apellido', 'apellido1', 'segundo_apellido', 'last_name'] as const;
+
+const buildMapsUrl = (raw?: string): string | undefined => {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  if (/^https?:/i.test(trimmed)) return trimmed;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmed)}`;
+};
+
+const extractNumberValue = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const normalized = value.replace(/,/g, '.').trim();
+    if (!normalized) return undefined;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const extractStringValue = (value: unknown, depth = 0): string | undefined => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? `${value}` : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const result = extractStringValue(item, depth + 1);
+      if (result) return result;
+    }
+    return undefined;
+  }
+
+  if (value && typeof value === 'object' && depth < 3) {
+    const record = value as Record<string, unknown>;
+    for (const key of [
+      ...DISPLAY_NAME_KEYS,
+      'nombre',
+      'name',
+      'descripcion',
+      'description',
+      'value',
+      'texto',
+      'label',
+      'title',
+    ]) {
+      if (key in record) {
+        const nested = extractStringValue(record[key], depth + 1);
+        if (nested) return nested;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const extractBooleanValue = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0 ? true : value === 0 ? false : undefined;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return undefined;
+    if (['true', '1', 'si', 'sí', 's', 'y', 'yes'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  }
+  return undefined;
+};
+
+const pickFirstStringFromRecord = (
+  record: Record<string, unknown>,
+  keys: readonly string[],
+): string | undefined => {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = extractStringValue(record[key]);
+    if (value) return value;
+  }
+  return undefined;
+};
+
+const pickFirstBooleanFromRecord = (
+  record: Record<string, unknown>,
+  keys: readonly string[],
+): boolean | undefined => {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = extractBooleanValue(record[key]);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+};
+
+const extractNameFromRecord = (
+  record: Record<string, unknown>,
+  visited?: WeakSet<object>,
+): string | undefined => {
+  const tracker = visited ?? new WeakSet<object>();
+  if (tracker.has(record)) return undefined;
+  tracker.add(record);
+
+  const direct = pickFirstStringFromRecord(record, DISPLAY_NAME_KEYS);
+  if (direct) return direct;
+
+  const first = pickFirstStringFromRecord(record, FIRST_NAME_KEYS);
+  const last = pickFirstStringFromRecord(record, LAST_NAME_KEYS);
+  const combined = [first, last].filter(Boolean).join(' ').trim();
+  if (combined) return combined;
+
+  const personaValue = record['persona'];
+  if (typeof personaValue === 'string') {
+    const trimmed = personaValue.trim();
+    if (trimmed) return trimmed;
+  } else if (personaValue && typeof personaValue === 'object') {
+    const personaName = extractNameFromRecord(personaValue as Record<string, unknown>, tracker);
+    if (personaName) return personaName;
+  }
+
+  for (const key of ['fiscal', 'miembro', 'usuario']) {
+    const nested = record[key];
+    if (!nested) continue;
+    if (typeof nested === 'string') {
+      const trimmed = nested.trim();
+      if (trimmed) return trimmed;
+    } else if (typeof nested === 'object') {
+      const nestedName = extractNameFromRecord(nested as Record<string, unknown>, tracker);
+      if (nestedName) return nestedName;
+    }
+  }
+
+  return undefined;
+};
+
+const resolveMesaValue = (record: Record<string, unknown>): string | undefined => {
+  const direct = pickFirstStringFromRecord(record, MESA_NUMBER_KEYS);
+  if (direct) return direct;
+
+  const mesaField = record['mesa'];
+  if (typeof mesaField === 'string' || typeof mesaField === 'number') {
+    return extractStringValue(mesaField);
+  }
+  if (mesaField && typeof mesaField === 'object') {
+    const nested = pickFirstStringFromRecord(mesaField as Record<string, unknown>, MESA_NUMBER_KEYS);
+    if (nested) return nested;
+  }
+
+  const mesas = record['mesas'];
+  if (Array.isArray(mesas)) {
+    for (const item of mesas) {
+      if (!item) continue;
+      if (typeof item === 'string' || typeof item === 'number') {
+        const str = extractStringValue(item);
+        if (str) return str;
+      }
+      if (typeof item === 'object') {
+        const nested = resolveMesaValue(item as Record<string, unknown>);
+        if (nested) return nested;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const resolveEstablecimientoName = (
+  record: Record<string, unknown>,
+  visited?: WeakSet<object>,
+): string | undefined => {
+  const tracker = visited ?? new WeakSet<object>();
+  if (tracker.has(record)) return undefined;
+  tracker.add(record);
+
+  const direct = pickFirstStringFromRecord(record, ESTABLISHMENT_NAME_KEYS);
+  if (direct) return direct;
+
+  for (const key of ['establecimiento', 'escuela', 'colegio', 'lugar', 'institucion']) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    if (!value) continue;
+    if (typeof value === 'string' || typeof value === 'number') {
+      const str = extractStringValue(value);
+      if (str) return str;
+    }
+    if (typeof value === 'object') {
+      const nested = resolveEstablecimientoName(value as Record<string, unknown>, tracker);
+      if (nested) return nested;
+    }
+  }
+
+  return undefined;
+};
+
+const resolveDireccionValue = (
+  record: Record<string, unknown>,
+  visited?: WeakSet<object>,
+): string | undefined => {
+  const tracker = visited ?? new WeakSet<object>();
+  if (tracker.has(record)) return undefined;
+  tracker.add(record);
+
+  const direct = pickFirstStringFromRecord(record, ESTABLISHMENT_ADDRESS_KEYS);
+  if (direct) return direct;
+
+  for (const key of [
+    'direccion',
+    'domicilio',
+    'ubicacion',
+    'location',
+    'establecimiento',
+    'escuela',
+    'colegio',
+    'lugar',
+  ]) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    if (!value) continue;
+    if (typeof value === 'string' || typeof value === 'number') {
+      const str = extractStringValue(value);
+      if (str) return str;
+    }
+    if (typeof value === 'object') {
+      const nested = resolveDireccionValue(value as Record<string, unknown>, tracker);
+      if (nested) return nested;
+    }
+  }
+
+  return undefined;
+};
+
+const extractLocationUrlFromRecord = (
+  record: Record<string, unknown>,
+  visited?: WeakSet<object>,
+): string | undefined => {
+  const tracker = visited ?? new WeakSet<object>();
+  if (tracker.has(record)) return undefined;
+  tracker.add(record);
+
+  for (const key of LOCATION_LINK_KEYS) {
+    if (!(key in record)) continue;
+    const value = extractStringValue(record[key]);
+    const url = buildMapsUrl(value);
+    if (url) return url;
+  }
+
+  for (const key of LOCATION_OBJECT_KEYS) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    if (!value) continue;
+    if (typeof value === 'string') {
+      const url = buildMapsUrl(value);
+      if (url) return url;
+    } else if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string') {
+          const url = buildMapsUrl(item);
+          if (url) return url;
+        } else if (item && typeof item === 'object') {
+          const nested = extractLocationUrlFromRecord(item as Record<string, unknown>, tracker);
+          if (nested) return nested;
+        }
+      }
+    } else if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      const lat =
+        extractNumberValue(obj['lat']) ??
+        extractNumberValue(obj['latitude']) ??
+        extractNumberValue(obj['latitud']);
+      const lng =
+        extractNumberValue(obj['lng']) ??
+        extractNumberValue(obj['lon']) ??
+        extractNumberValue(obj['long']) ??
+        extractNumberValue(obj['longitude']) ??
+        extractNumberValue(obj['longitud']);
+      if (lat !== undefined && lng !== undefined) {
+        const url = buildMapsUrl(`${lat},${lng}`);
+        if (url) return url;
+      }
+      const nested = extractLocationUrlFromRecord(obj, tracker);
+      if (nested) return nested;
+    }
+  }
+
+  const direccion = resolveDireccionValue(record);
+  if (direccion) {
+    const url = buildMapsUrl(direccion);
+    if (url) return url;
+  }
+
+  return undefined;
+};
+
+const extractFiscalGeneralInfo = (
+  record: Record<string, unknown>,
+  visited?: WeakSet<object>,
+): { nombre?: string; telefono?: string } | null => {
+  const tracker = visited ?? new WeakSet<object>();
+  if (tracker.has(record)) return null;
+  tracker.add(record);
+
+  let nombre = pickFirstStringFromRecord(record, FISCAL_GENERAL_NAME_KEYS) || undefined;
+  let telefono = pickFirstStringFromRecord(record, FISCAL_GENERAL_PHONE_KEYS);
+
+  for (const key of FISCAL_GENERAL_CONTAINER_KEYS) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    if (typeof value === 'string') {
+      if (!nombre) {
+        const trimmed = value.trim();
+        if (trimmed) nombre = trimmed;
+      }
+      continue;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (!item || typeof item !== 'object') continue;
+        const nested = extractFiscalGeneralInfo(item as Record<string, unknown>, tracker);
+        if (nested?.nombre && !nombre) nombre = nested.nombre;
+        if (nested?.telefono && !telefono) telefono = nested.telefono;
+        if (nombre && telefono) break;
+      }
+    } else if (value && typeof value === 'object') {
+      const nested = extractFiscalGeneralInfo(value as Record<string, unknown>, tracker);
+      if (nested?.nombre && !nombre) nombre = nested.nombre;
+      if (nested?.telefono && !telefono) telefono = nested.telefono;
+    }
+    if (nombre && telefono) break;
+  }
+
+  if (!telefono) {
+    const personaValue = record['persona'];
+    if (personaValue && typeof personaValue === 'object') {
+      telefono = pickFirstStringFromRecord(personaValue as Record<string, unknown>, PHONE_KEYS) || telefono;
+    }
+  }
+
+  if (!nombre) {
+    const personaValue = record['persona'];
+    if (typeof personaValue === 'string') {
+      const trimmed = personaValue.trim();
+      if (trimmed) nombre = trimmed;
+    } else if (personaValue && typeof personaValue === 'object') {
+      nombre = extractNameFromRecord(personaValue as Record<string, unknown>, tracker) || nombre;
+    }
+  }
+
+  if (nombre || telefono) {
+    return { nombre: nombre ?? undefined, telefono: telefono ?? undefined };
+  }
+
+  return null;
+};
+
+const extractMesaFiscales = (data: unknown): MesaFiscalCardData[] => {
+  if (!data || typeof data !== 'object') return [];
+  const results: MesaFiscalCardData[] = [];
+  const visited = new WeakSet<object>();
+  const seen = new Set<string>();
+
+  const traverse = (value: unknown, isRoot = false) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => traverse(item, false));
+      return;
+    }
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      if (visited.has(obj)) return;
+      visited.add(obj);
+
+      if (!isRoot) {
+        const mesa = resolveMesaValue(obj);
+        const nombre = extractNameFromRecord(obj);
+        if (mesa && nombre) {
+          const telefono =
+            pickFirstStringFromRecord(obj, PHONE_KEYS) ||
+            (typeof obj['persona'] === 'object'
+              ? pickFirstStringFromRecord(obj['persona'] as Record<string, unknown>, PHONE_KEYS)
+              : undefined);
+          const isTestigo = pickFirstBooleanFromRecord(obj, TESTIGO_BOOLEAN_KEYS);
+          let esMesaTestigo = isTestigo === true;
+          if (!esMesaTestigo) {
+            const label = pickFirstStringFromRecord(obj, TESTIGO_LABEL_KEYS);
+            if (label && label.toLowerCase().includes('testigo')) {
+              esMesaTestigo = true;
+            }
+          }
+          const key = `${mesa}|${nombre}|${telefono ?? ''}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            results.push({
+              id: key || `fiscal-${results.length}`,
+              mesa,
+              nombre,
+              telefono: telefono ?? undefined,
+              esMesaTestigo,
+            });
+          }
+        }
+      }
+
+      Object.values(obj).forEach((child) => traverse(child, false));
+    }
+  };
+
+  traverse(data, true);
+  return results.sort((a, b) => a.mesa.localeCompare(b.mesa, undefined, { numeric: true }));
+};
+
+const extractEstablecimientos = (data: unknown): EstablecimientoCardData[] => {
+  if (!data || typeof data !== 'object') return [];
+  const results: EstablecimientoCardData[] = [];
+  const visited = new WeakSet<object>();
+  const seen = new Set<string>();
+
+  const traverse = (value: unknown, isRoot = false) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => traverse(item, false));
+      return;
+    }
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      if (visited.has(obj)) return;
+      visited.add(obj);
+
+      if (!isRoot) {
+        const nombre = resolveEstablecimientoName(obj);
+        const direccion = resolveDireccionValue(obj);
+        const locationUrl = extractLocationUrlFromRecord(obj);
+        const fiscalGeneralInfo = extractFiscalGeneralInfo(obj);
+        const hasIndicator = ESTABLISHMENT_INDICATOR_KEYS.some((key) => key in obj);
+
+        if (
+          nombre &&
+          (direccion || locationUrl || hasIndicator || fiscalGeneralInfo?.nombre)
+        ) {
+          const key = `${nombre}|${direccion ?? ''}|${locationUrl ?? ''}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            results.push({
+              id: key || `establecimiento-${results.length}`,
+              nombre,
+              direccion: direccion ?? undefined,
+              locationUrl: locationUrl ?? undefined,
+              fiscalGeneral: fiscalGeneralInfo?.nombre,
+              fiscalGeneralTelefono: fiscalGeneralInfo?.telefono,
+            });
+          }
+        }
+      }
+
+      Object.values(obj).forEach((child) => traverse(child, false));
+    }
+  };
+
+  traverse(data, true);
+  return results.sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true }));
+};
+
+const buildTelHref = (value: string): string | undefined => {
+  const digits = value.replace(/[^0-9+]/g, '');
+  if (!digits) return undefined;
+  return `tel:${digits}`;
+};
+
 const FiscalizacionActions: React.FC = () => {
   const history = useHistory();
   const { fiscalData, hasFiscalData, setFiscalData } = useFiscalData();
@@ -117,9 +738,22 @@ const FiscalizacionActions: React.FC = () => {
     return '';
   }, [fiscalData]);
 
-  const isFiscalZonal = useMemo(
-    () => !!memberType && memberType.trim().toUpperCase() === 'FISCAL ZONAL',
+  const memberTypeNormalized = useMemo(
+    () => (memberType ? memberType.trim().toUpperCase() : ''),
     [memberType],
+  );
+
+  const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
+  const isFiscalGeneral = memberTypeNormalized === 'FISCAL GENERAL';
+
+  const mesaFiscales = useMemo(
+    () => extractMesaFiscales(fiscalData ?? undefined),
+    [fiscalData],
+  );
+
+  const establecimientosZonales = useMemo(
+    () => extractEstablecimientos(fiscalData ?? undefined),
+    [fiscalData],
   );
 
   const zonaEleccionNombre = useMemo(() => {
@@ -159,6 +793,8 @@ const FiscalizacionActions: React.FC = () => {
   const [isSendingPhoto, setIsSendingPhoto] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [useCustomMesa, setUseCustomMesa] = useState(false);
+  const [showMesaFiscales, setShowMesaFiscales] = useState(false);
+  const [showEstablecimientos, setShowEstablecimientos] = useState(false);
 
   const fechaEnvio = new Date().toISOString();
   const fileDescriptor = 'archivo subido (acta.jpg)';
@@ -584,6 +1220,18 @@ const FiscalizacionActions: React.FC = () => {
   const mesaSelectValue = useCustomMesa ? '__custom__' : establecimientoForm.mesa;
 
   useEffect(() => {
+    if (!isFiscalGeneral) {
+      setShowMesaFiscales(false);
+    }
+  }, [isFiscalGeneral]);
+
+  useEffect(() => {
+    if (!isFiscalZonal) {
+      setShowEstablecimientos(false);
+    }
+  }, [isFiscalZonal]);
+
+  useEffect(() => {
     if (!hasFiscalData) {
       const stored = localStorage.getItem('fiscalData');
       if (stored) {
@@ -644,6 +1292,143 @@ const FiscalizacionActions: React.FC = () => {
               )}
             </IonLabel>
           </IonItem>
+        )}
+
+        {isFiscalGeneral && (
+          <div className="w-full max-w-3xl mx-auto mb-6">
+            <Button
+              expand="block"
+              onClick={() => setShowMesaFiscales((prev) => !prev)}
+            >
+              {showMesaFiscales ? 'Ocultar fiscales de mesa' : 'Fiscales de mesa'}
+            </Button>
+            {showMesaFiscales && (
+              <div className="mt-3 space-y-3">
+                {mesaFiscales.length > 0 ? (
+                  mesaFiscales.map((fiscal) => {
+                    const telHref = fiscal.telefono ? buildTelHref(fiscal.telefono) : undefined;
+                    return (
+                      <div
+                        key={fiscal.id}
+                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h3 className="text-base font-semibold text-gray-900">{fiscal.nombre}</h3>
+                          <span className="text-sm font-semibold text-indigo-600">
+                            Mesa {fiscal.mesa}
+                          </span>
+                        </div>
+                        {fiscal.esMesaTestigo && (
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-red-600">
+                            MESA TESTIGO
+                          </p>
+                        )}
+                        {fiscal.telefono && (
+                          <p className="mt-2 text-sm text-gray-700">
+                            Teléfono:{' '}
+                            {telHref ? (
+                              <a className="text-blue-600 underline" href={telHref}>
+                                {fiscal.telefono}
+                              </a>
+                            ) : (
+                              <span className="font-medium text-gray-900">{fiscal.telefono}</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="mt-3 text-sm text-center text-gray-600">
+                    No se encontraron fiscales de mesa asignados.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isFiscalZonal && (
+          <div className="w-full max-w-3xl mx-auto mb-6">
+            <Button
+              expand="block"
+              onClick={() => setShowEstablecimientos((prev) => !prev)}
+            >
+              {showEstablecimientos ? 'Ocultar establecimientos' : 'Establecimientos'}
+            </Button>
+            {showEstablecimientos && (
+              <div className="mt-3 space-y-4">
+                {establecimientosZonales.length > 0 ? (
+                  establecimientosZonales.map((establecimiento) => {
+                    const telHref = establecimiento.fiscalGeneralTelefono
+                      ? buildTelHref(establecimiento.fiscalGeneralTelefono)
+                      : undefined;
+                    return (
+                      <div
+                        key={establecimiento.id}
+                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h3 className="text-base font-semibold text-gray-900">
+                            {establecimiento.nombre}
+                          </h3>
+                          {establecimiento.locationUrl && (
+                            <a
+                              className="text-sm text-blue-600 underline"
+                              href={establecimiento.locationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Ver ubicación
+                            </a>
+                          )}
+                        </div>
+                        {establecimiento.direccion && (
+                          <p className="mt-2 text-sm text-gray-700">
+                            Dirección:{' '}
+                            <span className="font-medium text-gray-900">
+                              {establecimiento.direccion}
+                            </span>
+                          </p>
+                        )}
+                        {(establecimiento.fiscalGeneral ||
+                          establecimiento.fiscalGeneralTelefono) && (
+                          <div className="mt-3 rounded-md bg-gray-50 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Fiscal General
+                            </p>
+                            {establecimiento.fiscalGeneral && (
+                              <p className="mt-1 text-sm text-gray-900">
+                                {establecimiento.fiscalGeneral}
+                              </p>
+                            )}
+                            {establecimiento.fiscalGeneralTelefono && (
+                              <p className="mt-1 text-sm text-gray-700">
+                                Teléfono:{' '}
+                                {telHref ? (
+                                  <a className="text-blue-600 underline" href={telHref}>
+                                    {establecimiento.fiscalGeneralTelefono}
+                                  </a>
+                                ) : (
+                                  <span className="font-medium text-gray-900">
+                                    {establecimiento.fiscalGeneralTelefono}
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="mt-3 text-sm text-center text-gray-600">
+                    No se encontraron establecimientos asignados.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {coords && (
