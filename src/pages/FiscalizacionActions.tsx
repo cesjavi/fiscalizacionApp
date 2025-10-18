@@ -1334,57 +1334,6 @@ const extractMesaFiscales = (data: unknown): MesaFiscalCardData[] => {
   return results.sort((a, b) => a.mesa.localeCompare(b.mesa, undefined, { numeric: true }));
 };
 
-/*const extractEstablecimientos = (data: unknown): EstablecimientoCardData[] => {
-  if (!data || typeof data !== 'object') return [];
-  const results: EstablecimientoCardData[] = [];
-  const visited = new WeakSet<object>();
-  const seen = new Set<string>();
-*/
-  const traverse = (value: unknown, isRoot = false) => {
-    if (!value) return;
-    if (Array.isArray(value)) {
-      value.forEach((item) => traverse(item, false));
-      return;
-    }
-    if (typeof value === 'object') {
-      const obj = value as Record<string, unknown>;
-      if (visited.has(obj)) return;
-      visited.add(obj);
-
-      if (!isRoot) {
-        const nombre = resolveEstablecimientoName(obj);
-        const direccion = resolveDireccionValue(obj);
-        const locationUrl = extractLocationUrlFromRecord(obj);
-        const fiscalGeneralInfo = extractFiscalGeneralInfo(obj);
-        const hasIndicator = ESTABLISHMENT_INDICATOR_KEYS.some((key) => key in obj);
-
-        if (
-          nombre &&
-          (direccion || locationUrl || hasIndicator || fiscalGeneralInfo?.nombre)
-        ) {
-          const key = `${nombre}|${direccion ?? ''}|${locationUrl ?? ''}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            results.push({
-              id: key || `establecimiento-${results.length}`,
-              nombre,
-              direccion: direccion ?? undefined,
-              locationUrl: locationUrl ?? undefined,
-              fiscalGeneral: fiscalGeneralInfo?.nombre,
-              fiscalGeneralTelefono: fiscalGeneralInfo?.telefono,
-            });
-          }
-        }
-      }
-
-      Object.values(obj).forEach((child) => traverse(child, false));
-    }
-  };
-
-  traverse(data, true);
-  return results.sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true }));
-};
-
 const buildTelHref = (value: string): string | undefined => {
   const digits = value.replace(/[^0-9+]/g, '');
   if (!digits) return undefined;
