@@ -74,6 +74,693 @@ type EstablecimientoFormState = {
   nombre: string;
 };
 
+type FiscalMesaCard = {
+  id: string;
+  nombre?: string;
+  telefono?: string;
+  mesa?: string;
+  isMesaTestigo?: boolean;
+};
+
+type EstablecimientoCard = {
+  id: string;
+  nombre?: string;
+  direccion?: string;
+  mapsQuery?: string;
+  fiscalGeneral?: string;
+  telefono?: string;
+};
+
+type RoleContact = {
+  nombre?: string;
+  telefono?: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const asString = (value: unknown): string | undefined => {
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = `${value}`.trim();
+    return text || undefined;
+  }
+  return undefined;
+};
+
+const formatMemberNameFromParts = (parts: MemberNameParts): string | undefined => {
+  const { displayName, apellidos, nombres } = parts;
+  if (displayName && displayName.trim().length > 0) return displayName.trim();
+  const trimmedApellidos = apellidos?.trim();
+  const trimmedNombres = nombres?.trim();
+  if (trimmedApellidos && trimmedNombres) {
+    return `${trimmedApellidos}, ${trimmedNombres}`;
+  }
+  return trimmedApellidos || trimmedNombres || undefined;
+};
+
+const PHONE_KEYS = [
+  'telefono',
+  'telefono_contacto',
+  'telefonoContacto',
+  'telefono_fg',
+  'telefonoFG',
+  'telefono_fiscal_general',
+  'tel',
+  'telefono1',
+  'telefono_1',
+  'telefono2',
+  'telefono_2',
+  'celular',
+  'cel',
+  'movil',
+  'whatsapp',
+  'phone',
+] as const;
+
+const stringFromKeys = (
+  record: Record<string, unknown>,
+  keys: readonly string[],
+  visited: Set<unknown> = new Set(),
+): string | undefined => {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    const direct = asString(value);
+    if (direct) return direct;
+    if (value && typeof value === 'object' && !visited.has(value)) {
+      visited.add(value);
+      if (isRecord(value)) {
+        const nested = stringFromKeys(value, keys, visited);
+        if (nested) return nested;
+      }
+    }
+  }
+  return undefined;
+};
+
+const extractPersonName = (record: Record<string, unknown>): string | undefined => {
+  const fromParts = formatMemberNameFromParts(
+    getMemberNameParts(record as Record<string, unknown> & { persona?: unknown }),
+  );
+  if (fromParts) return fromParts;
+
+  const direct = stringFromKeys(
+    record,
+    ['nombre_completo', 'nombreCompleto', 'nombre_y_apellido', 'nombreApellido', 'displayName'],
+  );
+  if (direct) return direct;
+
+  const apellido = stringFromKeys(record, ['apellidos', 'apellido']);
+  const nombres = stringFromKeys(record, ['nombres', 'nombre']);
+  if (apellido || nombres) {
+    return [apellido, nombres].filter(Boolean).join(apellido && nombres ? ', ' : '');
+  }
+
+  const personaValue = record['persona'];
+  if (isRecord(personaValue)) {
+    return extractPersonName(personaValue);
+  }
+
+  return undefined;
+};
+
+const extractPhone = (record: Record<string, unknown>): string | undefined => {
+  for (const key of PHONE_KEYS) {
+    if (key in record) {
+      const value = asString(record[key]);
+      if (value) return value;
+    }
+  }
+
+  const personaValue = record['persona'];
+  if (isRecord(personaValue)) {
+    const nested = extractPhone(personaValue);
+    if (nested) return nested;
+  }
+
+  return undefined;
+};
+
+type RoleContactConfig = {
+  primaryKeys: readonly string[];
+  keySubstrings: readonly string[];
+  phoneKeys: readonly string[];
+  additionalNameKeys?: readonly string[];
+};
+
+const DEFAULT_ROLE_NAME_KEYS = [
+  'nombre',
+  'name',
+  'descripcion',
+  'description',
+  'displayName',
+  'nombreCompleto',
+  'nombre_completo',
+] as const;
+
+const FISCAL_GENERAL_CONTACT_CONFIG: RoleContactConfig = {
+  primaryKeys: [
+    'fiscal_general',
+    'fiscalGeneral',
+    'fiscal_general_asignado',
+    'fg_asignado',
+    'f_g_asignado',
+    'fiscal_general_contacto',
+  ],
+  keySubstrings: ['fiscal_general', 'fiscalgeneral', 'fg_asignado', 'fg'],
+  phoneKeys: [
+    'telefono_fg',
+    'telefonoFG',
+    'telefono_fiscal_general',
+    'telefono_fiscalgeneral',
+    'telefono_fg_asignado',
+    'whatsapp_fg',
+    'cel_fg',
+  ],
+  additionalNameKeys: ['nombre_fiscal_general', 'fiscal_general_nombre'],
+};
+
+const FISCAL_ZONAL_CONTACT_CONFIG: RoleContactConfig = {
+  primaryKeys: [
+    'fiscal_zonal',
+    'fiscalZonal',
+    'f_z_asignado',
+    'fz_asignado',
+    'coordinador_zonal',
+    'coordinadorZona',
+    'zonaEleccion',
+  ],
+  keySubstrings: [
+    'fiscal_zonal',
+    'fiscalzonal',
+    'coordinador_zona',
+    'coordinadorzona',
+    'coordinador_zonal',
+    'fz_asignado',
+    'f_z',
+  ],
+  phoneKeys: [
+    'telefono_fiscal_zonal',
+    'telefono_zonal',
+    'telefono_fz',
+    'telefono_coordinador_zona',
+    'telefono_coordinadorZona',
+    'whatsapp_zona',
+    'cel_zona',
+  ],
+  additionalNameKeys: ['nombre_fiscal_zonal', 'fiscal_zonal_nombre', 'coordinador_nombre'],
+};
+
+const isLikelyPhone = (value: string): boolean => {
+  const digits = value.replace(/[^+\d]/g, '');
+  return digits.length >= 6 && /\d/.test(digits);
+};
+
+const collectRoleContact = (
+  value: unknown,
+  config: RoleContactConfig,
+  result: RoleContact,
+  visited: Set<unknown>,
+  isTarget = false,
+) => {
+  if (value === null || value === undefined) return;
+  if (typeof value === 'string' || typeof value === 'number') {
+    if (!isTarget) return;
+    const text = `${value}`.trim();
+    if (!text) return;
+    if (!result.nombre) {
+      result.nombre = text;
+      return;
+    }
+    if (!result.telefono && isLikelyPhone(text)) {
+      result.telefono = text;
+    }
+    return;
+  }
+
+  if (typeof value !== 'object') return;
+  if (visited.has(value)) return;
+  visited.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (result.nombre && result.telefono) break;
+      collectRoleContact(item, config, result, visited, isTarget);
+    }
+    return;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (isTarget) {
+    if (!result.nombre) {
+      const fromNameKeys = config.additionalNameKeys
+        ? stringFromKeys(record, config.additionalNameKeys)
+        : undefined;
+      const extracted = extractPersonName(record);
+      const fallback =
+        fromNameKeys || extracted || stringFromKeys(record, DEFAULT_ROLE_NAME_KEYS);
+      if (fallback) {
+        result.nombre = fallback;
+      }
+    }
+
+    if (!result.telefono) {
+      const phone = stringFromKeys(record, [...config.phoneKeys, ...PHONE_KEYS]);
+      if (phone) {
+        result.telefono = phone;
+      } else {
+        const nestedPhone = extractPhone(record);
+        if (nestedPhone) {
+          result.telefono = nestedPhone;
+        }
+      }
+    }
+  }
+
+  for (const [key, nested] of Object.entries(record)) {
+    if (result.nombre && result.telefono) break;
+    const lowerKey = key.toLowerCase();
+
+    const matchesPrimary = config.primaryKeys.some(
+      (candidate) => candidate.toLowerCase() === lowerKey,
+    );
+    if (matchesPrimary) {
+      collectRoleContact(nested, config, result, visited, true);
+      continue;
+    }
+
+    const matchesSubstring = config.keySubstrings.some((substring) =>
+      lowerKey.includes(substring.toLowerCase()),
+    );
+
+    if (matchesSubstring) {
+      const isPhoneKey =
+        lowerKey.includes('tel') ||
+        lowerKey.includes('whats') ||
+        config.phoneKeys.some((phoneKey) => lowerKey.includes(phoneKey.toLowerCase()));
+
+      if (isPhoneKey) {
+        if (!result.telefono) {
+          const phoneValue = asString(nested);
+          if (phoneValue) {
+            result.telefono = phoneValue;
+            continue;
+          }
+        }
+        collectRoleContact(nested, config, result, visited, true);
+        continue;
+      }
+
+      collectRoleContact(nested, config, result, visited, true);
+      continue;
+    }
+
+    collectRoleContact(nested, config, result, visited, isTarget);
+  }
+};
+
+const extractRoleContact = (
+  data: FiscalData | null | undefined,
+  config: RoleContactConfig,
+): RoleContact | undefined => {
+  if (!data) return undefined;
+  const result: RoleContact = {};
+  collectRoleContact(data, config, result, new Set());
+  return result.nombre || result.telefono ? result : undefined;
+};
+
+const MESA_KEYS = [
+  'mesa',
+  'mesa_nro',
+  'mesaNumero',
+  'mesa_numero',
+  'numero_mesa',
+  'numeroMesa',
+  'numero',
+  'mesaId',
+  'mesa_id',
+] as const;
+
+const extractMesaNumero = (
+  record: Record<string, unknown>,
+  visited: Set<unknown> = new Set(),
+): string | undefined => {
+  for (const key of MESA_KEYS) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    if (value === null || value === undefined) continue;
+    if (typeof value === 'string' || typeof value === 'number') {
+      const formatted = `${value}`.trim();
+      if (formatted) return formatted;
+    }
+    if (value && typeof value === 'object' && !visited.has(value)) {
+      visited.add(value);
+      if (isRecord(value)) {
+        const nested = extractMesaNumero(value, visited);
+        if (nested) return nested;
+      }
+    }
+  }
+
+  if ('mesa_asignada' in record && isRecord(record['mesa_asignada'])) {
+    const nested = extractMesaNumero(record['mesa_asignada'], visited);
+    if (nested) return nested;
+  }
+
+  return undefined;
+};
+
+const TESTIGO_KEYS = ['mesa_testigo', 'es_mesa_testigo', 'mesaTestigo', 'testigo', 'esTestigo'] as const;
+
+const parseBooleanValue = (value: unknown): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) && value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    if (normalized === '1' || normalized === 'true' || normalized === 't') return true;
+    if (normalized === 'si' || normalized === 'sí' || normalized === 'yes') return true;
+    if (normalized === '0' || normalized === 'false' || normalized === 'f' || normalized === 'no') return false;
+    if (normalized.includes('testigo')) return true;
+  }
+  return false;
+};
+
+const extractIsMesaTestigo = (record: Record<string, unknown>): boolean => {
+  for (const key of TESTIGO_KEYS) {
+    if (key in record && parseBooleanValue(record[key])) {
+      return true;
+    }
+  }
+
+  const mesaValue = record['mesa'];
+  if (isRecord(mesaValue)) {
+    return extractIsMesaTestigo(mesaValue);
+  }
+
+  return false;
+};
+
+const collectFiscalesDeMesa = (
+  value: unknown,
+  results: Map<string, FiscalMesaCard>,
+  visited: Set<unknown>,
+) => {
+  if (value === null || value === undefined) return;
+  if (typeof value !== 'object') return;
+  if (visited.has(value)) return;
+  visited.add(value);
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectFiscalesDeMesa(item, results, visited));
+    return;
+  }
+
+  if (!isRecord(value)) return;
+
+  const mesa = extractMesaNumero(value);
+  const telefono = extractPhone(value);
+  const nombre = extractPersonName(value);
+  const isMesaTestigo = extractIsMesaTestigo(value);
+
+  if (mesa || telefono || nombre) {
+    const key = `${(nombre ?? '').toLowerCase()}|${telefono ?? ''}|${mesa ?? ''}`;
+    if (!results.has(key)) {
+      results.set(key, {
+        id: key || `fiscal-${results.size}`,
+        mesa,
+        telefono,
+        nombre,
+        isMesaTestigo,
+      });
+    }
+  }
+
+  Object.values(value).forEach((nested) => {
+    if (nested && typeof nested === 'object') {
+      collectFiscalesDeMesa(nested, results, visited);
+    }
+  });
+};
+
+const FISCALES_KEYS = [
+  'fiscales_de_mesa',
+  'fiscalesMesa',
+  'fiscales_mesa',
+  'fiscales',
+  'fiscalesAsignados',
+  'fiscales_asignados',
+  'mesasAsignadas',
+  'mesas_asignadas',
+  'mesas',
+  'lista_fiscales',
+  'listado_fiscales',
+] as const;
+
+const extractFiscalesDeMesa = (data?: FiscalData | null): FiscalMesaCard[] => {
+  if (!data) return [];
+  const record = data as Record<string, unknown>;
+  const visited = new Set<unknown>();
+  const results = new Map<string, FiscalMesaCard>();
+
+  FISCALES_KEYS.forEach((key) => {
+    if (key in record) {
+      collectFiscalesDeMesa(record[key], results, visited);
+    }
+  });
+
+  return Array.from(results.values());
+};
+
+const extractCoords = (
+  value: unknown,
+  visited: Set<unknown> = new Set(),
+): { lat: number; lng: number } | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value !== 'object') {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const nested = extractCoords(item, visited);
+        if (nested) return nested;
+      }
+    }
+    return undefined;
+  }
+
+  if (visited.has(value)) return undefined;
+  visited.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nested = extractCoords(item, visited);
+      if (nested) return nested;
+    }
+    return undefined;
+  }
+
+  if (!isRecord(value)) return undefined;
+
+  const lat = toNumber(
+    value['lat'] ?? value['latitude'] ?? value['latitud'] ?? value['Lat'] ?? value['LAT'],
+  );
+  const lng = toNumber(
+    value['lng'] ??
+      value['long'] ??
+      value['lon'] ??
+      value['longitude'] ??
+      value['longitud'] ??
+      value['Lng'] ??
+      value['LNG'],
+  );
+  if (lat !== undefined && lng !== undefined) {
+    return { lat, lng };
+  }
+
+  const coordinates = value['coordinates'];
+  if (Array.isArray(coordinates) && coordinates.length >= 2) {
+    const maybeLng = toNumber(coordinates[0]);
+    const maybeLat = toNumber(coordinates[1]);
+    if (maybeLat !== undefined && maybeLng !== undefined) {
+      return { lat: maybeLat, lng: maybeLng };
+    }
+  }
+
+  const nestedCandidates = [
+    value['ubicacion'],
+    value['location'],
+    value['ubicacion_geo'],
+    value['geo'],
+  ];
+
+  for (const candidate of nestedCandidates) {
+    if (candidate && typeof candidate === 'object') {
+      const nested = extractCoords(candidate, visited);
+      if (nested) return nested;
+    }
+  }
+
+  for (const nested of Object.values(value)) {
+    if (nested && typeof nested === 'object') {
+      const result = extractCoords(nested, visited);
+      if (result) return result;
+    }
+  }
+
+  return undefined;
+};
+
+const ESTABLECIMIENTO_NAME_KEYS = [
+  'nombre_establecimiento',
+  'nombre_establecimiento_fiscalizacion',
+  'nombre_establecimiento_educativo',
+  'nombre_escuela',
+  'nombre_lugar',
+  'nombre',
+  'descripcion',
+  'description',
+  'colegio',
+  'escuela',
+  'establecimiento',
+  'lugar',
+] as const;
+
+const DIRECCION_KEYS = [
+  'direccion_establecimiento',
+  'direccion_establecimiento_fiscalizacion',
+  'direccion_escuela',
+  'direccion_lugar',
+  'direccion',
+  'domicilio',
+  'ubicacion',
+  'address',
+  'calle',
+] as const;
+
+const buildEstablecimientoCard = (
+  record: Record<string, unknown>,
+): Omit<EstablecimientoCard, 'id'> | undefined => {
+  const nombre = stringFromKeys(record, ESTABLECIMIENTO_NAME_KEYS);
+  const direccion = stringFromKeys(record, DIRECCION_KEYS);
+  const coords = extractCoords(record);
+  const mapsQuery = coords
+    ? `${coords.lat},${coords.lng}`
+    : [nombre, direccion].filter(Boolean).join(' ');
+
+  let fiscalGeneral = stringFromKeys(record, ['nombre_fiscal_general', 'fiscal_general_nombre']);
+  let telefono = stringFromKeys(record, ['telefono_fg', 'telefonoFG', 'telefono_fiscal_general']);
+
+  const rawFG = record['fiscal_general'] ?? record['fiscalGeneral'] ?? record['fg'];
+  if (isRecord(rawFG)) {
+    fiscalGeneral = fiscalGeneral ?? extractPersonName(rawFG);
+    telefono = telefono ?? extractPhone(rawFG);
+  } else if (Array.isArray(rawFG)) {
+    for (const item of rawFG) {
+      if (isRecord(item)) {
+        fiscalGeneral = fiscalGeneral ?? extractPersonName(item);
+        telefono = telefono ?? extractPhone(item);
+      } else if (typeof item === 'string' && !fiscalGeneral) {
+        const trimmed = item.trim();
+        if (trimmed) fiscalGeneral = trimmed;
+      }
+      if (fiscalGeneral && telefono) break;
+    }
+  } else if (typeof rawFG === 'string') {
+    const trimmed = rawFG.trim();
+    if (trimmed) {
+      fiscalGeneral = fiscalGeneral ?? trimmed;
+    }
+  }
+
+  telefono = telefono ?? extractPhone(record);
+
+  if (!nombre && !direccion) {
+    return undefined;
+  }
+
+  return {
+    nombre,
+    direccion,
+    mapsQuery: mapsQuery || undefined,
+    fiscalGeneral,
+    telefono,
+  };
+};
+
+const ESTABLECIMIENTOS_KEYS = [
+  'establecimientos',
+  'establecimientos_asignados',
+  'establecimientosAsignados',
+  'establecimientos_fiscalizacion',
+  'escuelas',
+  'escuelas_asignadas',
+  'escuelasAsignadas',
+  'colegios',
+  'lugares',
+  'lugaresFiscalizacion',
+] as const;
+
+const collectEstablecimientos = (
+  value: unknown,
+  results: Map<string, EstablecimientoCard>,
+  visited: Set<unknown>,
+) => {
+  if (value === null || value === undefined) return;
+  if (typeof value !== 'object') return;
+  if (visited.has(value)) return;
+  visited.add(value);
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectEstablecimientos(item, results, visited));
+    return;
+  }
+
+  if (!isRecord(value)) return;
+
+  const card = buildEstablecimientoCard(value);
+  if (card) {
+    const key = `${(card.nombre ?? '').toLowerCase()}|${(card.direccion ?? '').toLowerCase()}`;
+    if (!results.has(key)) {
+      results.set(key, {
+        id: key || `est-${results.size}`,
+        ...card,
+      });
+    } else {
+      const existing = results.get(key)!;
+      if (!existing.fiscalGeneral && card.fiscalGeneral) {
+        existing.fiscalGeneral = card.fiscalGeneral;
+      }
+      if (!existing.telefono && card.telefono) {
+        existing.telefono = card.telefono;
+      }
+      if (!existing.mapsQuery && card.mapsQuery) {
+        existing.mapsQuery = card.mapsQuery;
+      }
+    }
+  }
+
+  Object.values(value).forEach((nested) => {
+    if (nested && typeof nested === 'object') {
+      collectEstablecimientos(nested, results, visited);
+    }
+  });
+};
+
+const extractEstablecimientos = (data?: FiscalData | null): EstablecimientoCard[] => {
+  if (!data) return [];
+  const record = data as Record<string, unknown>;
+  const visited = new Set<unknown>();
+  const results = new Map<string, EstablecimientoCard>();
+
+  ESTABLECIMIENTOS_KEYS.forEach((key) => {
+    if (key in record) {
+      collectEstablecimientos(record[key], results, visited);
+    }
+  });
+
+  return Array.from(results.values());
+};
+
 // helper: Blob -> dataURL para preview
 const blobToDataUrl = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
@@ -738,9 +1425,30 @@ const FiscalizacionActions: React.FC = () => {
     return '';
   }, [fiscalData]);
 
-  const memberTypeNormalized = useMemo(
-    () => (memberType ? memberType.trim().toUpperCase() : ''),
-    [memberType],
+  const normalizedMemberType = useMemo(() => memberType.trim().toUpperCase(), [memberType]);
+
+  const isFiscalGeneral = useMemo(
+    () => normalizedMemberType.includes('FISCAL GENERAL'),
+    [normalizedMemberType],
+  );
+
+  const isFiscalZonal = useMemo(
+    () => normalizedMemberType.includes('FISCAL ZONAL'),
+    [normalizedMemberType],
+  );
+
+  const fiscalesMesa = useMemo(() => extractFiscalesDeMesa(fiscalData ?? undefined), [fiscalData]);
+  const establecimientosAsignados = useMemo(
+    () => extractEstablecimientos(fiscalData ?? undefined),
+    [fiscalData],
+  );
+  const fiscalGeneralContact = useMemo(
+    () => extractRoleContact(fiscalData ?? undefined, FISCAL_GENERAL_CONTACT_CONFIG),
+    [fiscalData],
+  );
+  const fiscalZonalContact = useMemo(
+    () => extractRoleContact(fiscalData ?? undefined, FISCAL_ZONAL_CONTACT_CONFIG),
+    [fiscalData],
   );
 
   const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
@@ -793,7 +1501,7 @@ const FiscalizacionActions: React.FC = () => {
   const [isSendingPhoto, setIsSendingPhoto] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [useCustomMesa, setUseCustomMesa] = useState(false);
-  const [showMesaFiscales, setShowMesaFiscales] = useState(false);
+  const [showFiscalesMesa, setShowFiscalesMesa] = useState(false);
   const [showEstablecimientos, setShowEstablecimientos] = useState(false);
 
   const fechaEnvio = new Date().toISOString();
@@ -860,14 +1568,7 @@ const FiscalizacionActions: React.FC = () => {
     lugar: lugarAsignadoDesdeData,
     establecimiento: establecimientoDesdeData,
     direccion: direccionDesdeData,
-    fiscalGeneral,
   } = useMemo(() => getFiscalAssignmentDetails(fiscalData ?? undefined), [fiscalData]);
-  console.log('Detalles de asignación fiscal:', {
-    mesa: mesaAsignadaDesdeData,
-    lugar: lugarAsignadoDesdeData,
-    establecimiento: establecimientoDesdeData,
-    direccion: direccionDesdeData,    
-  }); 
   const readStoredAssignmentValue = useCallback(
     (keys: string[], preferredNestedKeys: readonly string[]): string | undefined => {
       for (const key of keys) {
@@ -1093,15 +1794,12 @@ const FiscalizacionActions: React.FC = () => {
     fd.append('fecha', fechaEnvio);
     fd.append('establecimiento', JSON.stringify(establecimientoPayload));
     fd.append('persona', JSON.stringify(personaPayload));
-    console.log('Payload para envío de foto:', fd);
     try {
       setIsSendingPhoto(true);
       setSendError(null);
 
       const raw = localStorage.getItem('token') || '';
-      console.log('Token para auth:', raw);
-   
-      
+
       const response = await fetch(
         'https://api.lalibertadavanzacomuna7.com/api/actasFoto/enviar-foto',
         {
@@ -1154,6 +1852,12 @@ const FiscalizacionActions: React.FC = () => {
 
   const metadataLabelClass = 'text-sm text-gray-600';
   const metadataValueClass = 'font-medium text-gray-700';
+
+  const getTelHref = useCallback((value?: string) => {
+    if (!value) return undefined;
+    const normalized = value.replace(/[^+\d]/g, '').trim();
+    return normalized ? `tel:${normalized}` : undefined;
+  }, []);
 
   // Tomar foto con Camera -> Blob real + preview
   const handleFoto = async () => {
@@ -1220,16 +1924,16 @@ const FiscalizacionActions: React.FC = () => {
   const mesaSelectValue = useCustomMesa ? '__custom__' : establecimientoForm.mesa;
 
   useEffect(() => {
-    if (!isFiscalGeneral) {
-      setShowMesaFiscales(false);
+    if (fiscalesMesa.length === 0 && showFiscalesMesa) {
+      setShowFiscalesMesa(false);
     }
-  }, [isFiscalGeneral]);
+  }, [fiscalesMesa.length, showFiscalesMesa]);
 
   useEffect(() => {
-    if (!isFiscalZonal) {
+    if (establecimientosAsignados.length === 0 && showEstablecimientos) {
       setShowEstablecimientos(false);
     }
-  }, [isFiscalZonal]);
+  }, [establecimientosAsignados.length, showEstablecimientos]);
 
   useEffect(() => {
     if (!hasFiscalData) {
@@ -1294,136 +1998,63 @@ const FiscalizacionActions: React.FC = () => {
           </IonItem>
         )}
 
-        {isFiscalGeneral && (
-          <div className="w-full max-w-3xl mx-auto mb-6">
-            <Button
-              expand="block"
-              onClick={() => setShowMesaFiscales((prev) => !prev)}
-            >
-              {showMesaFiscales ? 'Ocultar fiscales de mesa' : 'Fiscales de mesa'}
-            </Button>
-            {showMesaFiscales && (
-              <div className="mt-3 space-y-3">
-                {mesaFiscales.length > 0 ? (
-                  mesaFiscales.map((fiscal) => {
-                    const telHref = fiscal.telefono ? buildTelHref(fiscal.telefono) : undefined;
-                    return (
-                      <div
-                        key={fiscal.id}
-                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+        {(fiscalGeneralContact || fiscalZonalContact) && (
+          <div className="ion-margin-bottom flex flex-col gap-3">
+            {fiscalGeneralContact && (
+              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Fiscal general de referencia
+                </p>
+                {fiscalGeneralContact.nombre && (
+                  <p className="mt-1 text-base font-semibold text-gray-800">
+                    {fiscalGeneralContact.nombre}
+                  </p>
+                )}
+                {fiscalGeneralContact.telefono && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    Teléfono:{' '}
+                    {getTelHref(fiscalGeneralContact.telefono) ? (
+                      <a
+                        href={getTelHref(fiscalGeneralContact.telefono)}
+                        className="font-medium text-blue-600 underline"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h3 className="text-base font-semibold text-gray-900">{fiscal.nombre}</h3>
-                          <span className="text-sm font-semibold text-indigo-600">
-                            Mesa {fiscal.mesa}
-                          </span>
-                        </div>
-                        {fiscal.esMesaTestigo && (
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-red-600">
-                            MESA TESTIGO
-                          </p>
-                        )}
-                        {fiscal.telefono && (
-                          <p className="mt-2 text-sm text-gray-700">
-                            Teléfono:{' '}
-                            {telHref ? (
-                              <a className="text-blue-600 underline" href={telHref}>
-                                {fiscal.telefono}
-                              </a>
-                            ) : (
-                              <span className="font-medium text-gray-900">{fiscal.telefono}</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="mt-3 text-sm text-center text-gray-600">
-                    No se encontraron fiscales de mesa asignados.
+                        {fiscalGeneralContact.telefono}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-gray-800">
+                        {fiscalGeneralContact.telefono}
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
             )}
-          </div>
-        )}
 
-        {isFiscalZonal && (
-          <div className="w-full max-w-3xl mx-auto mb-6">
-            <Button
-              expand="block"
-              onClick={() => setShowEstablecimientos((prev) => !prev)}
-            >
-              {showEstablecimientos ? 'Ocultar establecimientos' : 'Establecimientos'}
-            </Button>
-            {showEstablecimientos && (
-              <div className="mt-3 space-y-4">
-                {establecimientosZonales.length > 0 ? (
-                  establecimientosZonales.map((establecimiento) => {
-                    const telHref = establecimiento.fiscalGeneralTelefono
-                      ? buildTelHref(establecimiento.fiscalGeneralTelefono)
-                      : undefined;
-                    return (
-                      <div
-                        key={establecimiento.id}
-                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            {fiscalZonalContact && (
+              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Fiscal zonal de referencia
+                </p>
+                {fiscalZonalContact.nombre && (
+                  <p className="mt-1 text-base font-semibold text-gray-800">
+                    {fiscalZonalContact.nombre}
+                  </p>
+                )}
+                {fiscalZonalContact.telefono && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    Teléfono:{' '}
+                    {getTelHref(fiscalZonalContact.telefono) ? (
+                      <a
+                        href={getTelHref(fiscalZonalContact.telefono)}
+                        className="font-medium text-blue-600 underline"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h3 className="text-base font-semibold text-gray-900">
-                            {establecimiento.nombre}
-                          </h3>
-                          {establecimiento.locationUrl && (
-                            <a
-                              className="text-sm text-blue-600 underline"
-                              href={establecimiento.locationUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Ver ubicación
-                            </a>
-                          )}
-                        </div>
-                        {establecimiento.direccion && (
-                          <p className="mt-2 text-sm text-gray-700">
-                            Dirección:{' '}
-                            <span className="font-medium text-gray-900">
-                              {establecimiento.direccion}
-                            </span>
-                          </p>
-                        )}
-                        {(establecimiento.fiscalGeneral ||
-                          establecimiento.fiscalGeneralTelefono) && (
-                          <div className="mt-3 rounded-md bg-gray-50 p-3">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Fiscal General
-                            </p>
-                            {establecimiento.fiscalGeneral && (
-                              <p className="mt-1 text-sm text-gray-900">
-                                {establecimiento.fiscalGeneral}
-                              </p>
-                            )}
-                            {establecimiento.fiscalGeneralTelefono && (
-                              <p className="mt-1 text-sm text-gray-700">
-                                Teléfono:{' '}
-                                {telHref ? (
-                                  <a className="text-blue-600 underline" href={telHref}>
-                                    {establecimiento.fiscalGeneralTelefono}
-                                  </a>
-                                ) : (
-                                  <span className="font-medium text-gray-900">
-                                    {establecimiento.fiscalGeneralTelefono}
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="mt-3 text-sm text-center text-gray-600">
-                    No se encontraron establecimientos asignados.
+                        {fiscalZonalContact.telefono}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-gray-800">
+                        {fiscalZonalContact.telefono}
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -1464,7 +2095,7 @@ const FiscalizacionActions: React.FC = () => {
           </IonItem>
         )}
 
-        <div className="flex flex-col items-center gap-4  w-4/5 mx-auto mt-4">
+        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
           </Button>
@@ -1495,9 +2126,146 @@ const FiscalizacionActions: React.FC = () => {
             </div>
           )}
 
-<Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">
-  Escrutinio
-</Button>
+          <Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">
+            Escrutinio
+          </Button>
+
+          {isFiscalGeneral && fiscalesMesa.length > 0 && (
+            <div className="flex w-full flex-col items-center gap-3">
+              <Button
+                className="flex flex-col items-center w-4/5"
+                onClick={() => setShowFiscalesMesa((prev) => !prev)}
+              >
+                {showFiscalesMesa ? 'Ocultar fiscales de mesa' : 'Fiscales de mesa'}
+              </Button>
+              {showFiscalesMesa && (
+                <div className="flex w-full flex-col gap-3">
+                  {fiscalesMesa.map((fiscal) => {
+                    const telHref = getTelHref(fiscal.telefono);
+                    return (
+                      <div
+                        key={fiscal.id}
+                        className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-base font-semibold text-gray-800">
+                              {fiscal.nombre || 'Sin nombre'}
+                            </p>
+                            {fiscal.mesa && (
+                              <p className="text-sm text-gray-600">
+                                Mesa:{' '}
+                                <span className="font-medium text-gray-800">{fiscal.mesa}</span>
+                              </p>
+                            )}
+                          </div>
+                          {fiscal.isMesaTestigo && (
+                            <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                              Mesa Testigo
+                            </span>
+                          )}
+                        </div>
+                        {fiscal.telefono && (
+                          <p className="mt-2 text-sm text-gray-600">
+                            Teléfono:{' '}
+                            {telHref ? (
+                              <a href={telHref} className="font-medium text-blue-600 underline">
+                                {fiscal.telefono}
+                              </a>
+                            ) : (
+                              <span className="font-medium text-gray-800">{fiscal.telefono}</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {isFiscalZonal && establecimientosAsignados.length > 0 && (
+            <div className="flex w-full flex-col items-center gap-3">
+              <Button
+                className="flex flex-col items-center w-4/5"
+                onClick={() => setShowEstablecimientos((prev) => !prev)}
+              >
+                {showEstablecimientos ? 'Ocultar establecimientos' : 'Establecimientos'}
+              </Button>
+              {showEstablecimientos && (
+                <div className="flex w-full flex-col gap-3">
+                  {establecimientosAsignados.map((establecimiento) => {
+                    const telHref = getTelHref(establecimiento.telefono);
+                    const mapsHref = establecimiento.mapsQuery
+                      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          establecimiento.mapsQuery,
+                        )}`
+                      : undefined;
+                    return (
+                      <div
+                        key={establecimiento.id}
+                        className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
+                      >
+                        {establecimiento.nombre && (
+                          <p className="text-base font-semibold text-gray-800">
+                            {establecimiento.nombre}
+                          </p>
+                        )}
+                        {establecimiento.direccion && (
+                          <p className="mt-1 text-sm text-gray-600">
+                            Dirección:{' '}
+                            <span className="font-medium text-gray-800">
+                              {establecimiento.direccion}
+                            </span>
+                          </p>
+                        )}
+                        {mapsHref && (
+                          <a
+                            href={mapsHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-block text-sm font-medium text-blue-600 underline"
+                          >
+                            Ver en Google Maps
+                          </a>
+                        )}
+                        {(establecimiento.fiscalGeneral || establecimiento.telefono) && (
+                          <div className="mt-2 space-y-1 text-sm text-gray-600">
+                            {establecimiento.fiscalGeneral && (
+                              <p>
+                                FG:{' '}
+                                <span className="font-medium text-gray-800">
+                                  {establecimiento.fiscalGeneral}
+                                </span>
+                              </p>
+                            )}
+                            {establecimiento.telefono && (
+                              <p>
+                                Teléfono:{' '}
+                                {telHref ? (
+                                  <a
+                                    href={telHref}
+                                    className="font-medium text-blue-600 underline"
+                                  >
+                                    {establecimiento.telefono}
+                                  </a>
+                                ) : (
+                                  <span className="font-medium text-gray-800">
+                                    {establecimiento.telefono}
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </IonContent>
 
