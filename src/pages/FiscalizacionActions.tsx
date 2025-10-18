@@ -800,7 +800,7 @@ const MESA_NUMBER_KEYS = [
   'mesa_asignada',
 ] as const;
 
-const PHONE_KEYS = [
+/*const PHONE_KEYS = [
   'telefono',
   'tel',
   'telefono_contacto',
@@ -813,7 +813,7 @@ const PHONE_KEYS = [
   'telefono_movil',
   'movil',
 ] as const;
-
+*/
 const TESTIGO_BOOLEAN_KEYS = [
   'mesa_testigo',
   'es_mesa_testigo',
@@ -1334,12 +1334,12 @@ const extractMesaFiscales = (data: unknown): MesaFiscalCardData[] => {
   return results.sort((a, b) => a.mesa.localeCompare(b.mesa, undefined, { numeric: true }));
 };
 
-const extractEstablecimientos = (data: unknown): EstablecimientoCardData[] => {
+/*const extractEstablecimientos = (data: unknown): EstablecimientoCardData[] => {
   if (!data || typeof data !== 'object') return [];
   const results: EstablecimientoCardData[] = [];
   const visited = new WeakSet<object>();
   const seen = new Set<string>();
-
+*/
   const traverse = (value: unknown, isRoot = false) => {
     if (!value) return;
     if (Array.isArray(value)) {
@@ -1451,18 +1451,18 @@ const FiscalizacionActions: React.FC = () => {
     [fiscalData],
   );
 
-  const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
+  /*const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
   const isFiscalGeneral = memberTypeNormalized === 'FISCAL GENERAL';
 
   const mesaFiscales = useMemo(
     () => extractMesaFiscales(fiscalData ?? undefined),
     [fiscalData],
-  );
+  );*/
 
-  const establecimientosZonales = useMemo(
+  /*const establecimientosZonales = useMemo(
     () => extractEstablecimientos(fiscalData ?? undefined),
     [fiscalData],
-  );
+  );*/
 
   const zonaEleccionNombre = useMemo(() => {
     if (!fiscalData) return undefined;
