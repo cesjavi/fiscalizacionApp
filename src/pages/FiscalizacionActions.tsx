@@ -184,18 +184,50 @@ const extractPersonName = (record: Record<string, unknown>): string | undefined 
   return undefined;
 };
 
-const extractPhone = (record: Record<string, unknown>): string | undefined => {
+const isLikelyPhone = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (!/^[\d+\s().-]+$/.test(trimmed)) return false;
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  return digitsOnly.length >= 6;
+};
+
+const extractPhone = (
+  record: Record<string, unknown>,
+  visited: Set<unknown> = new Set(),
+): string | undefined => {
+  if (visited.has(record)) return undefined;
+  visited.add(record);
+
   for (const key of PHONE_KEYS) {
     if (key in record) {
       const value = asString(record[key]);
-      if (value) return value;
+      if (value && isLikelyPhone(value)) return value;
     }
   }
 
   const personaValue = record['persona'];
   if (isRecord(personaValue)) {
-    const nested = extractPhone(personaValue);
+    const nested = extractPhone(personaValue, visited);
     if (nested) return nested;
+  }
+
+  for (const value of Object.values(record)) {
+    if (!value || typeof value !== 'object') continue;
+    if (visited.has(value)) continue;
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item && typeof item === 'object' && !visited.has(item)) {
+          const nested = extractPhone(item as Record<string, unknown>, visited);
+          if (nested) return nested;
+        }
+      }
+      continue;
+    }
+    if (isRecord(value)) {
+      const nested = extractPhone(value, visited);
+      if (nested) return nested;
+    }
   }
 
   return undefined;
@@ -271,11 +303,6 @@ const FISCAL_ZONAL_CONTACT_CONFIG: RoleContactConfig = {
   additionalNameKeys: ['nombre_fiscal_zonal', 'fiscal_zonal_nombre', 'coordinador_nombre'],
 };
 
-const isLikelyPhone = (value: string): boolean => {
-  const digits = value.replace(/[^+\d]/g, '');
-  return digits.length >= 6 && /\d/.test(digits);
-};
-
 const collectRoleContact = (
   value: unknown,
   config: RoleContactConfig,
@@ -327,7 +354,7 @@ const collectRoleContact = (
 
     if (!result.telefono) {
       const phone = stringFromKeys(record, [...config.phoneKeys, ...PHONE_KEYS]);
-      if (phone) {
+      if (phone && isLikelyPhone(phone)) {
         result.telefono = phone;
       } else {
         const nestedPhone = extractPhone(record);
@@ -1400,6 +1427,16 @@ const FiscalizacionActions: React.FC = () => {
     [fiscalData],
   );
 
+  const shouldShowFiscalGeneralContact = useMemo(
+    () => Boolean(fiscalGeneralContact) && !isFiscalGeneral && !isFiscalZonal,
+    [fiscalGeneralContact, isFiscalGeneral, isFiscalZonal],
+  );
+
+  const shouldShowFiscalZonalContact = useMemo(
+    () => Boolean(fiscalZonalContact) && !isFiscalZonal,
+    [fiscalZonalContact, isFiscalZonal],
+  );
+
   /*const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
   const isFiscalGeneral = memberTypeNormalized === 'FISCAL GENERAL';
 
@@ -1803,7 +1840,7 @@ const FiscalizacionActions: React.FC = () => {
   const metadataValueClass = 'font-medium text-gray-700';
 
   const getTelHref = useCallback((value?: string) => {
-    if (!value) return undefined;
+    if (!value || !isLikelyPhone(value)) return undefined;
     const normalized = value.replace(/[^+\d]/g, '').trim();
     return normalized ? `tel:${normalized}` : undefined;
   }, []);
@@ -1947,9 +1984,9 @@ const FiscalizacionActions: React.FC = () => {
           </IonItem>
         )}
 
-        {(fiscalGeneralContact || fiscalZonalContact) && (
+        {(shouldShowFiscalGeneralContact || shouldShowFiscalZonalContact) && (
           <div className="ion-margin-bottom flex flex-col gap-3">
-            {fiscalGeneralContact && (
+            {shouldShowFiscalGeneralContact && fiscalGeneralContact && (
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Fiscal general de referencia
@@ -1979,7 +2016,7 @@ const FiscalizacionActions: React.FC = () => {
               </div>
             )}
 
-            {fiscalZonalContact && (
+            {shouldShowFiscalZonalContact && fiscalZonalContact && (
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Fiscal zonal de referencia
