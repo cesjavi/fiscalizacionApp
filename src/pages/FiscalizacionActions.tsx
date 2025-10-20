@@ -967,6 +967,7 @@ const ESTABLECIMIENTOS_KEYS = [
   'establecimientos',
   'establecimientos_asignados',
   'establecimientosAsignados',
+  'establecimiento_fiscalizacion',
   'establecimientos_fiscalizacion',
   'escuelas',
   'escuelas_asignadas',
