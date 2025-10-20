@@ -552,7 +552,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
       <div className="text-1xl flex items-start justify-between items-center">
         <div>
           <IonCardTitle className="text-xl font-semibold text-gray-900 leading-tight">
-            {l.lista}
+            {l.numeroLista} - {l.lista}
           </IonCardTitle>
           {l.sigla && (
             <IonNote
@@ -563,12 +563,6 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
             </IonNote>
           )}
         </div>
-
-        {l.numeroLista && (
-  <div className="w-14 h-14 flex items-center justify-center text-4xl font-extrabold text-gray-900 bg-gray-200 rounded-full ml-3 shadow-inner">
-    {l.numeroLista}
-  </div>
-)}
 
       </div>
     </IonCardHeader>

@@ -15,6 +15,7 @@ export interface FiscalData {
   nombre_zona?: string | null;
   zonaEleccion?: unknown;
   persona?: unknown;
+  mesa_nro?: string | null;
   [key: string]: unknown;
 }
 
@@ -519,9 +520,16 @@ export const getFiscalAssignmentDetails = (
   if (!data) {
     return {};
   }
-  console.log('Datos fiscales recibidos para detalles:', data);
+  
   const record = data as Record<string, unknown>;
-
+  /*const mesa = getFirstMatchingField(
+    record,
+    MESA_FIELD_KEYS ,
+    ['mesa_nro'],
+  );
+  */
+ const mesa = data.mesa_nro ?? '';
+  console.log('mesa ' + data.mesa_nro);
   const establecimiento = getFirstMatchingField(
     record,
     ESTABLECIMIENTO_FIELD_KEYS,
@@ -549,7 +557,7 @@ export const getFiscalAssignmentDetails = (
       : undefined);
 
   return {
-    mesa: getFirstMatchingField(record, 'mesa_nro' in record ? ['mesa_nro'] : MESA_FIELD_KEYS),
+    mesa ,//getFirstMatchingField(record, 'mesa_nro' in record ? ['mesa_nro'] : MESA_FIELD_KEYS),
     lugar: getFirstMatchingField(record, LUGAR_FIELD_KEYS),
     establecimiento,
     direccion,

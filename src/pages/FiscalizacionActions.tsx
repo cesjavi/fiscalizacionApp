@@ -449,7 +449,7 @@ const extractMesaNumero = (
       }
     }
   }
-
+  console.log(extractMesaNumero(record))
   if ('mesa_asignada' in record && isRecord(record['mesa_asignada'])) {
     const nested = extractMesaNumero(record['mesa_asignada'], visited);
     if (nested) return nested;
@@ -1381,7 +1381,7 @@ const FiscalizacionActions: React.FC = () => {
     () => getMemberNameParts(fiscalData ?? undefined),
     [fiscalData],
   );
-
+  
   const memberName = useMemo(() => {
     const { apellidos, nombres, displayName } = memberNameParts;
     if (displayName) return displayName;
@@ -1598,6 +1598,7 @@ const FiscalizacionActions: React.FC = () => {
     if (mesaAsignadaDesdeData) return mesaAsignadaDesdeData;
     if (typeof window === 'undefined') return undefined;
     const storedMesa = localStorage.getItem('mesa_nro');
+    console.log('stored mesa nro ' + storedMesa)
     return storedMesa?.trim() ? storedMesa.trim() : undefined;
   }, [mesaAsignadaDesdeData]);
 
@@ -1660,7 +1661,7 @@ const FiscalizacionActions: React.FC = () => {
     const values = new Set<string>();
     const addValue = (value: unknown) => {
       if (value === null || value === undefined) return;
-      const trimmed = `${value}`.trim();
+      const trimmed = `${value}`.trim();      
       if (trimmed) values.add(trimmed);
     };
 
@@ -1942,7 +1943,7 @@ const FiscalizacionActions: React.FC = () => {
         {fiscalData && (
           <IonItem lines="none" className="ion-margin-bottom rounded-lg bg-gray-100">
             <IonLabel>
-              <h2 className="font-semibold text-base">Fiscal asignado</h2>
+              <h2 className="font-semibold text-base">Fiscal</h2>
               {memberName && <p className="text-sm">{memberName}</p>}
               {memberType && (
                 <p className={metadataLabelClass}>
@@ -2080,7 +2081,13 @@ const FiscalizacionActions: React.FC = () => {
             </IonLabel>
           </IonItem>
         )}
-
+        {memberType === 'FISCAL GENERAL' && (
+        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4">
+        <Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">
+            Establecimiento
+          </Button>
+          </div>
+          )}
         <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
@@ -2093,7 +2100,6 @@ const FiscalizacionActions: React.FC = () => {
             onChange={handleFileChange}
             title="Subir foto del acta"
           />
-
           {fotoPreview && (
             <div className="flex flex-col items-center w-4/5">
               <img src={fotoPreview} alt="Foto del acta" className="max-w-xs mt-2 rounded shadow " />

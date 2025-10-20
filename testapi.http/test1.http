@@ -32,7 +32,7 @@ Authorization: {{token}}
 
 {
 }
-### Listar fiscalizaciones #nombre apellido y zona 36293331 11386991  95378025 25360613
+### Listar fiscalizaciones #nombre apellido y zona 36293331 11386991  95378025 25360613 17652670
 POST http://api.lalibertadavanzacomuna7.com/api/fiscalizacion/listar
 Authorization: {{token}}
 Content-Type: application/json
