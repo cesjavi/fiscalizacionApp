@@ -453,9 +453,18 @@ const extractMesaNumero = (
       }
     }
   }
-  console.log(extractMesaNumero(record))
-  if ('mesa_asignada' in record && isRecord(record['mesa_asignada'])) {
-    const nested = extractMesaNumero(record['mesa_asignada'], visited);
+  const extraMesaSources = [
+    record['mesa_asignada'],
+    record['mesaAsignada'],
+    record['mesa_asignado'],
+    record['mesaAsignado'],
+  ];
+
+  for (const source of extraMesaSources) {
+    if (!source || typeof source !== 'object' || visited.has(source)) continue;
+    visited.add(source);
+    if (!isRecord(source)) continue;
+    const nested = extractMesaNumero(source, visited);
     if (nested) return nested;
   }
 
