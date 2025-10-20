@@ -427,6 +427,10 @@ const MESA_KEYS = [
   'numero',
   'mesaId',
   'mesa_id',
+  'mesaAsignada',
+  'mesa_asignada',
+  'mesaAsignado',
+  'mesa_asignado',
 ] as const;
 
 const extractMesaNumero = (
@@ -484,6 +488,12 @@ const extractIsMesaTestigo = (record: Record<string, unknown>): boolean => {
   const mesaValue = record['mesa'];
   if (isRecord(mesaValue)) {
     return extractIsMesaTestigo(mesaValue);
+  }
+
+  const mesaAsignadaValue =
+    record['mesa_asignada'] ?? record['mesaAsignada'] ?? record['mesa_asignado'] ?? record['mesaAsignado'];
+  if (isRecord(mesaAsignadaValue)) {
+    return extractIsMesaTestigo(mesaAsignadaValue);
   }
 
   return false;
@@ -1413,10 +1423,33 @@ const FiscalizacionActions: React.FC = () => {
     [normalizedMemberType],
   );
 
+  const isFiscalMesa = useMemo(
+    () => normalizedMemberType.includes('FISCAL DE MESA') || normalizedMemberType.includes('FISCAL MESA'),
+    [normalizedMemberType],
+  );
+
   const fiscalesMesa = useMemo(() => extractFiscalesDeMesa(fiscalData ?? undefined), [fiscalData]);
   const establecimientosAsignados = useMemo(
     () => extractEstablecimientos(fiscalData ?? undefined),
     [fiscalData],
+  );
+  const fiscalGeneralContact = useMemo(
+    () => extractRoleContact(fiscalData ?? undefined, FISCAL_GENERAL_CONTACT_CONFIG),
+    [fiscalData],
+  );
+  const fiscalZonalContact = useMemo(
+    () => extractRoleContact(fiscalData ?? undefined, FISCAL_ZONAL_CONTACT_CONFIG),
+    [fiscalData],
+  );
+
+  const shouldShowFiscalGeneralContact = useMemo(
+    () => Boolean(fiscalGeneralContact) && !isFiscalGeneral && !isFiscalZonal,
+    [fiscalGeneralContact, isFiscalGeneral, isFiscalZonal],
+  );
+
+  const shouldShowFiscalZonalContact = useMemo(
+    () => Boolean(fiscalZonalContact) && !isFiscalZonal,
+    [fiscalZonalContact, isFiscalZonal],
   );
   const fiscalGeneralContact = useMemo(
     () => extractRoleContact(fiscalData ?? undefined, FISCAL_GENERAL_CONTACT_CONFIG),
@@ -1596,11 +1629,25 @@ const FiscalizacionActions: React.FC = () => {
 
   const mesaAsignada = useMemo(() => {
     if (mesaAsignadaDesdeData) return mesaAsignadaDesdeData;
+    if (isRecord(fiscalData)) {
+      const extracted = extractMesaNumero(fiscalData);
+      if (extracted) return extracted;
+      const nestedMesa = fiscalData['mesa_asignada'] ?? fiscalData['mesaAsignada'];
+      if (isRecord(nestedMesa)) {
+        const nestedExtracted = extractMesaNumero(nestedMesa as Record<string, unknown>);
+        if (nestedExtracted) return nestedExtracted;
+      }
+    }
     if (typeof window === 'undefined') return undefined;
     const storedMesa = localStorage.getItem('mesa_nro');
     console.log('stored mesa nro ' + storedMesa)
     return storedMesa?.trim() ? storedMesa.trim() : undefined;
-  }, [mesaAsignadaDesdeData]);
+  }, [fiscalData, mesaAsignadaDesdeData]);
+
+  const isMesaTestigoAsignada = useMemo(() => {
+    if (!isRecord(fiscalData)) return false;
+    return extractIsMesaTestigo(fiscalData);
+  }, [fiscalData]);
 
   const establecimientoAsignado = useMemo(() => {
     if (establecimientoDesdeData) return establecimientoDesdeData;
@@ -1952,7 +1999,23 @@ const FiscalizacionActions: React.FC = () => {
               )}
               {mesaAsignada && (
                 <p className={metadataLabelClass}>
-                  Mesa: <span className={metadataValueClass}>{mesaAsignada}</span>
+                  Mesa:{' '}
+                  <span
+                    className={
+                      isFiscalMesa
+                        ? isMesaTestigoAsignada
+                          ? 'font-semibold uppercase tracking-wide text-red-600'
+                          : 'font-semibold text-gray-800'
+                        : metadataValueClass
+                    }
+                  >
+                    {mesaAsignada}
+                  </span>
+                  {isFiscalMesa && isMesaTestigoAsignada && (
+                    <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                      Mesa Testigo
+                    </span>
+                  )}
                 </p>
               )}
               {establecimientoAsignado && (
@@ -2147,7 +2210,15 @@ const FiscalizacionActions: React.FC = () => {
                             {fiscal.mesa && (
                               <p className="text-sm text-gray-600">
                                 Mesa:{' '}
-                                <span className="font-medium text-gray-800">{fiscal.mesa}</span>
+                                <span
+                                  className={
+                                    fiscal.isMesaTestigo
+                                      ? 'font-semibold uppercase tracking-wide text-red-600'
+                                      : 'font-medium text-gray-800'
+                                  }
+                                >
+                                  {fiscal.mesa}
+                                </span>
                               </p>
                             )}
                           </div>
