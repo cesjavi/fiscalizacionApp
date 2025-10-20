@@ -1451,24 +1451,6 @@ const FiscalizacionActions: React.FC = () => {
     () => Boolean(fiscalZonalContact) && !isFiscalZonal,
     [fiscalZonalContact, isFiscalZonal],
   );
-  const fiscalGeneralContact = useMemo(
-    () => extractRoleContact(fiscalData ?? undefined, FISCAL_GENERAL_CONTACT_CONFIG),
-    [fiscalData],
-  );
-  const fiscalZonalContact = useMemo(
-    () => extractRoleContact(fiscalData ?? undefined, FISCAL_ZONAL_CONTACT_CONFIG),
-    [fiscalData],
-  );
-
-  const shouldShowFiscalGeneralContact = useMemo(
-    () => Boolean(fiscalGeneralContact) && !isFiscalGeneral && !isFiscalZonal,
-    [fiscalGeneralContact, isFiscalGeneral, isFiscalZonal],
-  );
-
-  const shouldShowFiscalZonalContact = useMemo(
-    () => Boolean(fiscalZonalContact) && !isFiscalZonal,
-    [fiscalZonalContact, isFiscalZonal],
-  );
 
   /*const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
   const isFiscalGeneral = memberTypeNormalized === 'FISCAL GENERAL';
