@@ -453,9 +453,18 @@ const extractMesaNumero = (
       }
     }
   }
-  console.log(extractMesaNumero(record))
-  if ('mesa_asignada' in record && isRecord(record['mesa_asignada'])) {
-    const nested = extractMesaNumero(record['mesa_asignada'], visited);
+  const extraMesaSources = [
+    record['mesa_asignada'],
+    record['mesaAsignada'],
+    record['mesa_asignado'],
+    record['mesaAsignado'],
+  ];
+
+  for (const source of extraMesaSources) {
+    if (!source || typeof source !== 'object' || visited.has(source)) continue;
+    visited.add(source);
+    if (!isRecord(source)) continue;
+    const nested = extractMesaNumero(source, visited);
     if (nested) return nested;
   }
 
@@ -1451,24 +1460,6 @@ const FiscalizacionActions: React.FC = () => {
     () => Boolean(fiscalZonalContact) && !isFiscalZonal,
     [fiscalZonalContact, isFiscalZonal],
   );
-  const fiscalGeneralContact = useMemo(
-    () => extractRoleContact(fiscalData ?? undefined, FISCAL_GENERAL_CONTACT_CONFIG),
-    [fiscalData],
-  );
-  const fiscalZonalContact = useMemo(
-    () => extractRoleContact(fiscalData ?? undefined, FISCAL_ZONAL_CONTACT_CONFIG),
-    [fiscalData],
-  );
-
-  const shouldShowFiscalGeneralContact = useMemo(
-    () => Boolean(fiscalGeneralContact) && !isFiscalGeneral && !isFiscalZonal,
-    [fiscalGeneralContact, isFiscalGeneral, isFiscalZonal],
-  );
-
-  const shouldShowFiscalZonalContact = useMemo(
-    () => Boolean(fiscalZonalContact) && !isFiscalZonal,
-    [fiscalZonalContact, isFiscalZonal],
-  );
 
   /*const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
   const isFiscalGeneral = memberTypeNormalized === 'FISCAL GENERAL';
@@ -2185,7 +2176,7 @@ const FiscalizacionActions: React.FC = () => {
             Escrutinio
           </Button>
 
-          {isFiscalGeneral && fiscalesMesa.length > 0 && (
+          {isFiscalGeneral && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button
                 className="flex flex-col items-center w-4/5"
@@ -2195,60 +2186,66 @@ const FiscalizacionActions: React.FC = () => {
               </Button>
               {showFiscalesMesa && (
                 <div className="flex w-full flex-col gap-3">
-                  {fiscalesMesa.map((fiscal) => {
-                    const telHref = getTelHref(fiscal.telefono);
-                    return (
-                      <div
-                        key={fiscal.id}
-                        className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-base font-semibold text-gray-800">
-                              {fiscal.nombre || 'Sin nombre'}
-                            </p>
-                            {fiscal.mesa && (
-                              <p className="text-sm text-gray-600">
-                                Mesa:{' '}
-                                <span
-                                  className={
-                                    fiscal.isMesaTestigo
-                                      ? 'font-semibold uppercase tracking-wide text-red-600'
-                                      : 'font-medium text-gray-800'
-                                  }
-                                >
-                                  {fiscal.mesa}
-                                </span>
+                  {fiscalesMesa.length === 0 ? (
+                    <p className="text-center text-sm text-gray-600">
+                      No hay fiscales de mesa asignados.
+                    </p>
+                  ) : (
+                    fiscalesMesa.map((fiscal) => {
+                      const telHref = getTelHref(fiscal.telefono);
+                      return (
+                        <div
+                          key={fiscal.id}
+                          className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-base font-semibold text-gray-800">
+                                {fiscal.nombre || 'Sin nombre'}
                               </p>
+                              {fiscal.mesa && (
+                                <p className="text-sm text-gray-600">
+                                  Mesa:{' '}
+                                  <span
+                                    className={
+                                      fiscal.isMesaTestigo
+                                        ? 'font-semibold uppercase tracking-wide text-red-600'
+                                        : 'font-medium text-gray-800'
+                                    }
+                                  >
+                                    {fiscal.mesa}
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+                            {fiscal.isMesaTestigo && (
+                              <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                                Mesa Testigo
+                              </span>
                             )}
                           </div>
-                          {fiscal.isMesaTestigo && (
-                            <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
-                              Mesa Testigo
-                            </span>
+                          {fiscal.telefono && (
+                            <p className="mt-2 text-sm text-gray-600">
+                              Teléfono:{' '}
+                              {telHref ? (
+                                <a href={telHref} className="font-medium text-blue-600 underline">
+                                  {fiscal.telefono}
+                                </a>
+                              ) : (
+                                <span className="font-medium text-gray-800">{fiscal.telefono}</span>
+                              )}
+                            </p>
                           )}
                         </div>
-                        {fiscal.telefono && (
-                          <p className="mt-2 text-sm text-gray-600">
-                            Teléfono:{' '}
-                            {telHref ? (
-                              <a href={telHref} className="font-medium text-blue-600 underline">
-                                {fiscal.telefono}
-                              </a>
-                            ) : (
-                              <span className="font-medium text-gray-800">{fiscal.telefono}</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {isFiscalZonal && establecimientosAsignados.length > 0 && (
+          {isFiscalZonal && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button
                 className="flex flex-col items-center w-4/5"
@@ -2258,73 +2255,79 @@ const FiscalizacionActions: React.FC = () => {
               </Button>
               {showEstablecimientos && (
                 <div className="flex w-full flex-col gap-3">
-                  {establecimientosAsignados.map((establecimiento) => {
-                    const telHref = getTelHref(establecimiento.telefono);
-                    const mapsHref = establecimiento.mapsQuery
-                      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          establecimiento.mapsQuery,
-                        )}`
-                      : undefined;
-                    return (
-                      <div
-                        key={establecimiento.id}
-                        className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
-                      >
-                        {establecimiento.nombre && (
-                          <p className="text-base font-semibold text-gray-800">
-                            {establecimiento.nombre}
-                          </p>
-                        )}
-                        {establecimiento.direccion && (
-                          <p className="mt-1 text-sm text-gray-600">
-                            Dirección:{' '}
-                            <span className="font-medium text-gray-800">
-                              {establecimiento.direccion}
-                            </span>
-                          </p>
-                        )}
-                        {mapsHref && (
-                          <a
-                            href={mapsHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-block text-sm font-medium text-blue-600 underline"
-                          >
-                            Ver en Google Maps
-                          </a>
-                        )}
-                        {(establecimiento.fiscalGeneral || establecimiento.telefono) && (
-                          <div className="mt-2 space-y-1 text-sm text-gray-600">
-                            {establecimiento.fiscalGeneral && (
-                              <p>
-                                FG:{' '}
-                                <span className="font-medium text-gray-800">
-                                  {establecimiento.fiscalGeneral}
-                                </span>
-                              </p>
-                            )}
-                            {establecimiento.telefono && (
-                              <p>
-                                Teléfono:{' '}
-                                {telHref ? (
-                                  <a
-                                    href={telHref}
-                                    className="font-medium text-blue-600 underline"
-                                  >
-                                    {establecimiento.telefono}
-                                  </a>
-                                ) : (
+                  {establecimientosAsignados.length === 0 ? (
+                    <p className="text-center text-sm text-gray-600">
+                      No hay establecimientos asignados.
+                    </p>
+                  ) : (
+                    establecimientosAsignados.map((establecimiento) => {
+                      const telHref = getTelHref(establecimiento.telefono);
+                      const mapsHref = establecimiento.mapsQuery
+                        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            establecimiento.mapsQuery,
+                          )}`
+                        : undefined;
+                      return (
+                        <div
+                          key={establecimiento.id}
+                          className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
+                        >
+                          {establecimiento.nombre && (
+                            <p className="text-base font-semibold text-gray-800">
+                              {establecimiento.nombre}
+                            </p>
+                          )}
+                          {establecimiento.direccion && (
+                            <p className="mt-1 text-sm text-gray-600">
+                              Dirección:{' '}
+                              <span className="font-medium text-gray-800">
+                                {establecimiento.direccion}
+                              </span>
+                            </p>
+                          )}
+                          {mapsHref && (
+                            <a
+                              href={mapsHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-block text-sm font-medium text-blue-600 underline"
+                            >
+                              Ver en Google Maps
+                            </a>
+                          )}
+                          {(establecimiento.fiscalGeneral || establecimiento.telefono) && (
+                            <div className="mt-2 space-y-1 text-sm text-gray-600">
+                              {establecimiento.fiscalGeneral && (
+                                <p>
+                                  FG:{' '}
                                   <span className="font-medium text-gray-800">
-                                    {establecimiento.telefono}
+                                    {establecimiento.fiscalGeneral}
                                   </span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                                </p>
+                              )}
+                              {establecimiento.telefono && (
+                                <p>
+                                  Teléfono:{' '}
+                                  {telHref ? (
+                                    <a
+                                      href={telHref}
+                                      className="font-medium text-blue-600 underline"
+                                    >
+                                      {establecimiento.telefono}
+                                    </a>
+                                  ) : (
+                                    <span className="font-medium text-gray-800">
+                                      {establecimiento.telefono}
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
