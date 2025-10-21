@@ -111,6 +111,45 @@ const getFirstString = (
   return undefined;
 };
 
+const findFirstStringDeep = (
+  value: unknown,
+  keys: readonly string[],
+  visited: Set<unknown> = new Set(),
+): string | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  if (visited.has(value)) {
+    return undefined;
+  }
+
+  visited.add(value);
+
+  if (isRecord(value)) {
+    const direct = getFirstString(value, keys, visited);
+    if (direct) {
+      return direct;
+    }
+
+    for (const child of Object.values(value)) {
+      const found = findFirstStringDeep(child, keys, visited);
+      if (found) {
+        return found;
+      }
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findFirstStringDeep(item, keys, visited);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return undefined;
+};
+
 const MESA_KEYS = [
   'mesa',
   'mesa_nro',
@@ -206,6 +245,16 @@ const Escrutinio: React.FC = () => {
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const fallbackSeccion = useMemo(
+    () => findFirstStringDeep(fiscalData, SECCION_KEYS),
+    [fiscalData],
+  );
+
+  const fallbackCircuito = useMemo(
+    () => findFirstStringDeep(fiscalData, CIRCUITO_KEYS),
+    [fiscalData],
+  );
+
   const mesaDetailsList = useMemo(() => {
     type PartialMesaOption = Partial<Omit<MesaOption, 'value' | 'label'>>;
 
@@ -286,6 +335,8 @@ const Escrutinio: React.FC = () => {
     const establecimientoMeta: PartialMesaOption = {
       establecimientoNombre: assignmentDetails.establecimiento || undefined,
       establecimientoDireccion: assignmentDetails.direccion || undefined,
+      seccion: fallbackSeccion,
+      circuito: fallbackCircuito,
     };
 
     addMesaValue(assignmentDetails.mesa, establecimientoMeta);
@@ -347,7 +398,14 @@ const Escrutinio: React.FC = () => {
     return Array.from(map.values()).sort((a, b) =>
       a.value.localeCompare(b.value, undefined, { numeric: true }),
     );
-  }, [assignmentDetails.direccion, assignmentDetails.establecimiento, assignmentDetails.mesa, fiscalData]);
+  }, [
+    assignmentDetails.direccion,
+    assignmentDetails.establecimiento,
+    assignmentDetails.mesa,
+    fallbackCircuito,
+    fallbackSeccion,
+    fiscalData,
+  ]);
 
   const mesaOptions = useMemo(
     () => mesaDetailsList.map((detail) => detail.value),
@@ -441,6 +499,16 @@ const Escrutinio: React.FC = () => {
       );
     }
   }, [selectedMesaDetail]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (fallbackSeccion && !localStorage.getItem('seccion')) {
+      localStorage.setItem('seccion', fallbackSeccion);
+    }
+    if (fallbackCircuito && !localStorage.getItem('circuito')) {
+      localStorage.setItem('circuito', fallbackCircuito);
+    }
+  }, [fallbackCircuito, fallbackSeccion]);
 
   const puedeEnviar = mesaSeleccionada.trim().length > 0;
 
@@ -628,10 +696,21 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
 
     //const foto = localStorage.getItem('fotoActa');
     const seccion =
-      selectedMesaDetail?.seccion || localStorage.getItem('seccion')?.trim() || '';
+      selectedMesaDetail?.seccion ||
+      readStoredString(['seccion', 'numero_seccion', 'seccionNumero', 'seccion_nro']) ||
+      fallbackSeccion ||
+      '';
     console.log('seccion', seccion);
     const circuito =
-      selectedMesaDetail?.circuito || localStorage.getItem('circuito')?.trim() || '';
+      selectedMesaDetail?.circuito ||
+      readStoredString([
+        'circuito',
+        'numero_circuito',
+        'circuitoNumero',
+        'circuito_nro',
+      ]) ||
+      fallbackCircuito ||
+      '';
 
     const { establecimiento: establecimientoNombre, direccion: establecimientoDireccion } =
       assignmentDetails;

@@ -2456,7 +2456,7 @@ const FiscalizacionActions: React.FC = () => {
             </IonLabel>
           </IonItem>
         )}
-        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4 pb-64" style={{ paddingBottom: '120px' }}>
+        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4 pb-16">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
           </Button>
