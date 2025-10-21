@@ -16,7 +16,7 @@ import {
 import type { FiscalData } from '../FiscalDataContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Camera, CameraResultType } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource, CameraDirection } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '../AuthContext';
@@ -82,6 +82,13 @@ type FiscalMesaCard = {
   isMesaTestigo?: boolean;
 };
 
+type MesaResumen = {
+  id: string;
+  numero?: string;
+  fiscales?: string[];
+  esMesaTestigo?: boolean;
+};
+
 type EstablecimientoCard = {
   id: string;
   nombre?: string;
@@ -89,6 +96,19 @@ type EstablecimientoCard = {
   mapsQuery?: string;
   fiscalGeneral?: string;
   telefono?: string;
+  mesas?: MesaResumen[];
+};
+
+type MesasModalGroup = {
+  establecimiento: EstablecimientoCard;
+  mesas: MesaResumen[];
+};
+
+type MesasModalState = {
+  title: string;
+  groups: MesasModalGroup[];
+  emptyMessage: string;
+  noGroupsMessage?: string;
 };
 
 type RoleContact = {
@@ -453,9 +473,18 @@ const extractMesaNumero = (
       }
     }
   }
-  console.log(extractMesaNumero(record))
-  if ('mesa_asignada' in record && isRecord(record['mesa_asignada'])) {
-    const nested = extractMesaNumero(record['mesa_asignada'], visited);
+  const extraMesaSources = [
+    record['mesa_asignada'],
+    record['mesaAsignada'],
+    record['mesa_asignado'],
+    record['mesaAsignado'],
+  ];
+
+  for (const source of extraMesaSources) {
+    if (!source || typeof source !== 'object' || visited.has(source)) continue;
+    visited.add(source);
+    if (!isRecord(source)) continue;
+    const nested = extractMesaNumero(source, visited);
     if (nested) return nested;
   }
 
@@ -674,6 +703,213 @@ const DIRECCION_KEYS = [
   'calle',
 ] as const;
 
+const collectNamesFromValue = (
+  value: unknown,
+  results: Set<string>,
+  visited: Set<unknown>,
+) => {
+  if (value === null || value === undefined) return;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = `${value}`.trim();
+    if (text) results.add(text);
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectNamesFromValue(item, results, visited));
+    return;
+  }
+
+  if (typeof value !== 'object') return;
+  if (visited.has(value)) return;
+  visited.add(value);
+
+  const record = value as Record<string, unknown>;
+  const extracted = extractPersonName(record);
+  if (extracted) {
+    results.add(extracted);
+  }
+
+  if ('persona' in record) {
+    collectNamesFromValue(record['persona'], results, visited);
+  }
+  if ('miembro' in record) {
+    collectNamesFromValue(record['miembro'], results, visited);
+  }
+  if ('fiscal' in record) {
+    collectNamesFromValue(record['fiscal'], results, visited);
+  }
+
+  Object.entries(record).forEach(([key, child]) => {
+    if (!child) return;
+    const lower = key.toLowerCase();
+    if (
+      lower.includes('nombre') ||
+      lower.includes('persona') ||
+      lower.includes('miembro') ||
+      lower.includes('fiscal') ||
+      lower.includes('contacto') ||
+      lower.includes('fg')
+    ) {
+      collectNamesFromValue(child, results, visited);
+    }
+  });
+};
+
+type MesaSummaryAccumulator = {
+  numero?: string;
+  esMesaTestigo: boolean;
+  fiscales: Set<string>;
+};
+
+const collectMesaSummaries = (
+  value: unknown,
+  results: Map<string, MesaSummaryAccumulator>,
+  visited: Set<unknown>,
+  getFallbackKey: () => string,
+) => {
+  if (value === null || value === undefined) return;
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const numero = `${value}`.trim();
+    if (!numero) return;
+    const key = numero.toLowerCase();
+    if (!results.has(key)) {
+      results.set(key, {
+        numero,
+        esMesaTestigo: false,
+        fiscales: new Set<string>(),
+      });
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectMesaSummaries(item, results, visited, getFallbackKey));
+    return;
+  }
+
+  if (typeof value !== 'object') return;
+  if (visited.has(value)) return;
+  visited.add(value);
+
+  const record = value as Record<string, unknown>;
+  const numero = resolveMesaValue(record);
+  const esMesaTestigo = extractIsMesaTestigo(record);
+
+  const names = new Set<string>();
+  const namesVisited = new Set<unknown>();
+  const nameSources = [
+    record['fg_asignado'],
+    record['fgAsignado'],
+    record['fiscales'],
+    record['fiscales_mesa'],
+    record['fiscalesMesa'],
+    record['fiscales_asignados'],
+    record['fiscalesAsignados'],
+    record['fiscales_de_mesa'],
+    record['fiscalesDeMesa'],
+    record['miembros'],
+    record['asignados'],
+  ];
+  nameSources.forEach((source) => collectNamesFromValue(source, names, namesVisited));
+
+  if (!names.size) {
+    const directName = extractPersonName(record);
+    if (
+      directName &&
+      (numero || record['mesa'] || record['mesa_asignada'] || record['mesaAsignada'])
+    ) {
+      names.add(directName);
+    }
+  }
+
+  if ('persona' in record) {
+    collectNamesFromValue(record['persona'], names, namesVisited);
+  }
+  if ('miembro' in record) {
+    collectNamesFromValue(record['miembro'], names, namesVisited);
+  }
+  if ('fiscal' in record) {
+    collectNamesFromValue(record['fiscal'], names, namesVisited);
+  }
+
+  const mapKey = numero ? numero.toLowerCase() : getFallbackKey();
+  const existing = results.get(mapKey) ?? {
+    numero: numero ?? undefined,
+    esMesaTestigo: false,
+    fiscales: new Set<string>(),
+  };
+  if (numero && !existing.numero) existing.numero = numero;
+  if (esMesaTestigo) existing.esMesaTestigo = true;
+  names.forEach((name) => existing.fiscales.add(name));
+  results.set(mapKey, existing);
+
+  Object.entries(record).forEach(([key, child]) => {
+    if (!child) return;
+    const lower = key.toLowerCase();
+    if (
+      lower.includes('mesa') ||
+      lower.includes('fiscal') ||
+      lower.includes('miembro') ||
+      lower.includes('persona') ||
+      lower.includes('fg')
+    ) {
+      collectMesaSummaries(child, results, visited, getFallbackKey);
+    }
+  });
+};
+
+const collectEstablecimientoMesas = (record: Record<string, unknown>): MesaResumen[] => {
+  const results = new Map<string, MesaSummaryAccumulator>();
+  const visited = new Set<unknown>();
+  const containerVisited = new Set<unknown>();
+  let fallbackIndex = 0;
+
+  const getFallbackKey = () => `__mesa_${fallbackIndex++}`;
+
+  const traverseContainers = (value: unknown) => {
+    if (value === null || value === undefined) return;
+    if (typeof value === 'string' || typeof value === 'number') return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => traverseContainers(item));
+      return;
+    }
+    if (typeof value !== 'object') return;
+    if (containerVisited.has(value)) return;
+    containerVisited.add(value);
+
+    const recordValue = value as Record<string, unknown>;
+    Object.entries(recordValue).forEach(([key, child]) => {
+      if (!child) return;
+      const lower = key.toLowerCase();
+      if (lower.includes('mesa')) {
+        collectMesaSummaries(child, results, visited, getFallbackKey);
+      } else if (typeof child === 'object') {
+        traverseContainers(child);
+      }
+    });
+  };
+
+  collectMesaSummaries(record['mesas'], results, visited, getFallbackKey);
+  traverseContainers(record);
+
+  const mesas = Array.from(results.values()).map((entry, index) => ({
+    id: entry.numero ? `mesa-${entry.numero}` : `mesa-${index + 1}`,
+    numero: entry.numero,
+    esMesaTestigo: entry.esMesaTestigo ? true : undefined,
+    fiscales: entry.fiscales.size > 0 ? Array.from(entry.fiscales) : undefined,
+  }));
+
+  return mesas.sort((a, b) => {
+    const aNumero = a.numero ?? '';
+    const bNumero = b.numero ?? '';
+    if (!aNumero && bNumero) return 1;
+    if (aNumero && !bNumero) return -1;
+    return aNumero.localeCompare(bNumero, undefined, { numeric: true, sensitivity: 'base' });
+  });
+};
+
 const buildEstablecimientoCard = (
   record: Record<string, unknown>,
 ): Omit<EstablecimientoCard, 'id'> | undefined => {
@@ -715,12 +951,15 @@ const buildEstablecimientoCard = (
     return undefined;
   }
 
+  const mesas = collectEstablecimientoMesas(record);
+
   return {
     nombre,
     direccion,
     mapsQuery: mapsQuery || undefined,
     fiscalGeneral,
     telefono,
+    mesas: mesas.length > 0 ? mesas : undefined,
   };
 };
 
@@ -728,6 +967,7 @@ const ESTABLECIMIENTOS_KEYS = [
   'establecimientos',
   'establecimientos_asignados',
   'establecimientosAsignados',
+  'establecimiento_fiscalizacion',
   'establecimientos_fiscalizacion',
   'escuelas',
   'escuelas_asignadas',
@@ -772,6 +1012,39 @@ const collectEstablecimientos = (
       }
       if (!existing.mapsQuery && card.mapsQuery) {
         existing.mapsQuery = card.mapsQuery;
+      }
+      if (card.mesas?.length) {
+        const merged = new Map<string, MesaResumen>();
+        existing.mesas?.forEach((mesa) => {
+          const mesaKey = (mesa.numero ?? mesa.id).toLowerCase();
+          merged.set(mesaKey, mesa);
+        });
+        card.mesas.forEach((mesa) => {
+          const mesaKey = (mesa.numero ?? mesa.id).toLowerCase();
+          if (!merged.has(mesaKey)) {
+            merged.set(mesaKey, mesa);
+            return;
+          }
+          const current = merged.get(mesaKey)!;
+          const fiscales = new Set<string>(current.fiscales ?? []);
+          (mesa.fiscales ?? []).forEach((name) => {
+            if (name) fiscales.add(name);
+          });
+          merged.set(mesaKey, {
+            ...current,
+            numero: current.numero ?? mesa.numero,
+            esMesaTestigo: current.esMesaTestigo || mesa.esMesaTestigo,
+            fiscales: fiscales.size > 0 ? Array.from(fiscales) : undefined,
+          });
+        });
+        const mergedList = Array.from(merged.values()).sort((a, b) => {
+          const aNumero = a.numero ?? '';
+          const bNumero = b.numero ?? '';
+          if (!aNumero && bNumero) return 1;
+          if (aNumero && !bNumero) return -1;
+          return aNumero.localeCompare(bNumero, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        existing.mesas = mergedList;
       }
     }
   }
@@ -1451,24 +1724,6 @@ const FiscalizacionActions: React.FC = () => {
     () => Boolean(fiscalZonalContact) && !isFiscalZonal,
     [fiscalZonalContact, isFiscalZonal],
   );
-  const fiscalGeneralContact = useMemo(
-    () => extractRoleContact(fiscalData ?? undefined, FISCAL_GENERAL_CONTACT_CONFIG),
-    [fiscalData],
-  );
-  const fiscalZonalContact = useMemo(
-    () => extractRoleContact(fiscalData ?? undefined, FISCAL_ZONAL_CONTACT_CONFIG),
-    [fiscalData],
-  );
-
-  const shouldShowFiscalGeneralContact = useMemo(
-    () => Boolean(fiscalGeneralContact) && !isFiscalGeneral && !isFiscalZonal,
-    [fiscalGeneralContact, isFiscalGeneral, isFiscalZonal],
-  );
-
-  const shouldShowFiscalZonalContact = useMemo(
-    () => Boolean(fiscalZonalContact) && !isFiscalZonal,
-    [fiscalZonalContact, isFiscalZonal],
-  );
 
   /*const isFiscalZonal = memberTypeNormalized === 'FISCAL ZONAL';
   const isFiscalGeneral = memberTypeNormalized === 'FISCAL GENERAL';
@@ -1521,7 +1776,8 @@ const FiscalizacionActions: React.FC = () => {
   const [sendError, setSendError] = useState<string | null>(null);
   const [useCustomMesa, setUseCustomMesa] = useState(false);
   const [showFiscalesMesa, setShowFiscalesMesa] = useState(false);
-  const [showEstablecimientos, setShowEstablecimientos] = useState(false);
+  const [showEstablecimientosModal, setShowEstablecimientosModal] = useState(false);
+  const [mesasModalState, setMesasModalState] = useState<MesasModalState | null>(null);
 
   const fechaEnvio = new Date().toISOString();
   const fileDescriptor = 'archivo subido (acta.jpg)';
@@ -1893,6 +2149,54 @@ const FiscalizacionActions: React.FC = () => {
     return normalized ? `tel:${normalized}` : undefined;
   }, []);
 
+  const handleOpenGeneralMesas = useCallback(() => {
+    const groups = establecimientosAsignados.map((card) => ({
+      establecimiento: card,
+      mesas: card.mesas ?? [],
+    }));
+    setMesasModalState({
+      title:
+        establecimientosAsignados.length !== 1
+          ? 'Mesas por establecimiento'
+          : 'Mesas del establecimiento',
+      groups,
+      emptyMessage: 'No hay mesas registradas para este establecimiento.',
+      noGroupsMessage: 'No hay establecimientos asignados.',
+    });
+  }, [establecimientosAsignados]);
+
+  const handleOpenMesasForEstablecimiento = useCallback((card: EstablecimientoCard) => {
+    setMesasModalState({
+      title: card.nombre ? `Mesas de ${card.nombre}` : 'Mesas del establecimiento',
+      groups: [
+        {
+          establecimiento: card,
+          mesas: card.mesas ?? [],
+        },
+      ],
+      emptyMessage: 'No hay mesas registradas para este establecimiento.',
+      noGroupsMessage: 'No hay establecimientos asignados.',
+    });
+  }, []);
+
+  const handleCloseMesasModal = useCallback(() => {
+    setMesasModalState(null);
+  }, []);
+
+  const ensureCameraPermission = async () => {
+    try {
+      const current = await Camera.checkPermissions();
+      if (current.camera === 'granted' || current.camera === 'limited') {
+        return true;
+      }
+
+      const requested = await Camera.requestPermissions({ permissions: ['camera'] });
+      return requested.camera === 'granted' || requested.camera === 'limited';
+    } catch {
+      return false;
+    }
+  };
+
   // Tomar foto con Camera -> Blob real + preview
   const handleFoto = async () => {
     const platform = Capacitor.getPlatform();
@@ -1902,9 +2206,17 @@ const FiscalizacionActions: React.FC = () => {
     }
 
     try {
+      const hasPermission = await ensureCameraPermission();
+      if (!hasPermission) {
+        throw new Error('camera-permission-denied');
+      }
+
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.Uri, // URI -> podemos fetchear el Blob real
         quality: 80,
+        source: CameraSource.Camera,
+        allowEditing: false,
+        direction: CameraDirection.Rear,
       });
       if (photo.webPath) {
         const blob = await fetch(photo.webPath).then((r) => r.blob());
@@ -1964,10 +2276,10 @@ const FiscalizacionActions: React.FC = () => {
   }, [fiscalesMesa.length, showFiscalesMesa]);
 
   useEffect(() => {
-    if (establecimientosAsignados.length === 0 && showEstablecimientos) {
-      setShowEstablecimientos(false);
+    if (establecimientosAsignados.length === 0 && showEstablecimientosModal) {
+      setShowEstablecimientosModal(false);
     }
-  }, [establecimientosAsignados.length, showEstablecimientos]);
+  }, [establecimientosAsignados.length, showEstablecimientosModal]);
 
   useEffect(() => {
     if (!hasFiscalData) {
@@ -2144,14 +2456,7 @@ const FiscalizacionActions: React.FC = () => {
             </IonLabel>
           </IonItem>
         )}
-        {memberType === 'FISCAL GENERAL' && (
-        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4">
-        <Button routerLink="/escrutinio" className="flex flex-col items-center w-4/5">
-            Establecimiento
-          </Button>
-          </div>
-          )}
-        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4">
+        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4 pb-16">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
           </Button>
@@ -2185,8 +2490,20 @@ const FiscalizacionActions: React.FC = () => {
             Escrutinio
           </Button>
 
-          {isFiscalGeneral && fiscalesMesa.length > 0 && (
+          {isFiscalGeneral && (
             <div className="flex w-full flex-col items-center gap-3">
+              <Button
+                className="flex flex-col items-center w-4/5"
+                onClick={() => setShowEstablecimientosModal(true)}
+              >
+                Establecimiento
+              </Button>
+              <Button
+                className="flex flex-col items-center w-4/5"
+                onClick={handleOpenGeneralMesas}
+              >
+                Mesas
+              </Button>
               <Button
                 className="flex flex-col items-center w-4/5"
                 onClick={() => setShowFiscalesMesa((prev) => !prev)}
@@ -2195,142 +2512,254 @@ const FiscalizacionActions: React.FC = () => {
               </Button>
               {showFiscalesMesa && (
                 <div className="flex w-full flex-col gap-3">
-                  {fiscalesMesa.map((fiscal) => {
-                    const telHref = getTelHref(fiscal.telefono);
-                    return (
-                      <div
-                        key={fiscal.id}
-                        className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-base font-semibold text-gray-800">
-                              {fiscal.nombre || 'Sin nombre'}
-                            </p>
-                            {fiscal.mesa && (
-                              <p className="text-sm text-gray-600">
-                                Mesa:{' '}
-                                <span
-                                  className={
-                                    fiscal.isMesaTestigo
-                                      ? 'font-semibold uppercase tracking-wide text-red-600'
-                                      : 'font-medium text-gray-800'
-                                  }
-                                >
-                                  {fiscal.mesa}
-                                </span>
+                  {fiscalesMesa.length === 0 ? (
+                    <p className="text-center text-sm text-gray-600">
+                      No hay fiscales de mesa asignados.
+                    </p>
+                  ) : (
+                    fiscalesMesa.map((fiscal) => {
+                      const telHref = getTelHref(fiscal.telefono);
+                      return (
+                        <div
+                          key={fiscal.id}
+                          className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-base font-semibold text-gray-800">
+                                {fiscal.nombre || 'Sin nombre'}
                               </p>
+                              {fiscal.mesa && (
+                                <p className="text-sm text-gray-600">
+                                  Mesa:{' '}
+                                  <span
+                                    className={
+                                      fiscal.isMesaTestigo
+                                        ? 'font-semibold uppercase tracking-wide text-red-600'
+                                        : 'font-medium text-gray-800'
+                                    }
+                                  >
+                                    {fiscal.mesa}
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+                            {fiscal.isMesaTestigo && (
+                              <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                                Mesa Testigo
+                              </span>
                             )}
                           </div>
-                          {fiscal.isMesaTestigo && (
-                            <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
-                              Mesa Testigo
-                            </span>
+                          {fiscal.telefono && (
+                            <p className="mt-2 text-sm text-gray-600">
+                              Teléfono:{' '}
+                              {telHref ? (
+                                <a href={telHref} className="font-medium text-blue-600 underline">
+                                  {fiscal.telefono}
+                                </a>
+                              ) : (
+                                <span className="font-medium text-gray-800">{fiscal.telefono}</span>
+                              )}
+                            </p>
                           )}
                         </div>
-                        {fiscal.telefono && (
-                          <p className="mt-2 text-sm text-gray-600">
-                            Teléfono:{' '}
-                            {telHref ? (
-                              <a href={telHref} className="font-medium text-blue-600 underline">
-                                {fiscal.telefono}
-                              </a>
-                            ) : (
-                              <span className="font-medium text-gray-800">{fiscal.telefono}</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {isFiscalZonal && establecimientosAsignados.length > 0 && (
+          {isFiscalZonal && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button
                 className="flex flex-col items-center w-4/5"
-                onClick={() => setShowEstablecimientos((prev) => !prev)}
+                onClick={() => setShowEstablecimientosModal(true)}
               >
-                {showEstablecimientos ? 'Ocultar establecimientos' : 'Establecimientos'}
+                Establecimientos
               </Button>
-              {showEstablecimientos && (
-                <div className="flex w-full flex-col gap-3">
-                  {establecimientosAsignados.map((establecimiento) => {
-                    const telHref = getTelHref(establecimiento.telefono);
-                    const mapsHref = establecimiento.mapsQuery
-                      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          establecimiento.mapsQuery,
-                        )}`
-                      : undefined;
-                    return (
-                      <div
-                        key={establecimiento.id}
-                        className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
-                      >
-                        {establecimiento.nombre && (
-                          <p className="text-base font-semibold text-gray-800">
-                            {establecimiento.nombre}
-                          </p>
-                        )}
-                        {establecimiento.direccion && (
-                          <p className="mt-1 text-sm text-gray-600">
-                            Dirección:{' '}
-                            <span className="font-medium text-gray-800">
-                              {establecimiento.direccion}
-                            </span>
-                          </p>
-                        )}
-                        {mapsHref && (
-                          <a
-                            href={mapsHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-block text-sm font-medium text-blue-600 underline"
-                          >
-                            Ver en Google Maps
-                          </a>
-                        )}
-                        {(establecimiento.fiscalGeneral || establecimiento.telefono) && (
-                          <div className="mt-2 space-y-1 text-sm text-gray-600">
-                            {establecimiento.fiscalGeneral && (
-                              <p>
-                                FG:{' '}
-                                <span className="font-medium text-gray-800">
-                                  {establecimiento.fiscalGeneral}
-                                </span>
-                              </p>
-                            )}
-                            {establecimiento.telefono && (
-                              <p>
-                                Teléfono:{' '}
-                                {telHref ? (
-                                  <a
-                                    href={telHref}
-                                    className="font-medium text-blue-600 underline"
-                                  >
-                                    {establecimiento.telefono}
-                                  </a>
-                                ) : (
-                                  <span className="font-medium text-gray-800">
-                                    {establecimiento.telefono}
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
         </div>
       </IonContent>
+
+      <IonModal
+        isOpen={showEstablecimientosModal}
+        onDidDismiss={() => setShowEstablecimientosModal(false)}
+      >
+        <IonContent className="ion-padding">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {isFiscalZonal ? 'Establecimientos asignados' : 'Establecimiento asignado'}
+              </h2>
+              <Button size="small" onClick={() => setShowEstablecimientosModal(false)}>
+                Cerrar
+              </Button>
+            </div>
+            {establecimientosAsignados.length === 0 ? (
+              <p className="text-center text-sm text-gray-600">
+                {isFiscalZonal
+                  ? 'No hay establecimientos asignados.'
+                  : 'No hay establecimiento asignado.'}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {establecimientosAsignados.map((establecimiento) => {
+                  const telHref = getTelHref(establecimiento.telefono);
+                  const mapsHref = establecimiento.mapsQuery
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        establecimiento.mapsQuery,
+                      )}`
+                    : undefined;
+                  return (
+                    <div
+                      key={establecimiento.id}
+                      className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm"
+                    >
+                      {establecimiento.nombre && (
+                        <p className="text-base font-semibold text-gray-800">
+                          {establecimiento.nombre}
+                        </p>
+                      )}
+                      {establecimiento.direccion && (
+                        <p className="mt-1 text-sm text-gray-600">
+                          Dirección:{' '}
+                          <span className="font-medium text-gray-800">
+                            {establecimiento.direccion}
+                          </span>
+                        </p>
+                      )}
+                      {mapsHref && (
+                        <a
+                          href={mapsHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-block text-sm font-medium text-blue-600 underline"
+                        >
+                          Ver en Google Maps
+                        </a>
+                      )}
+                      {(establecimiento.fiscalGeneral || establecimiento.telefono) && (
+                        <div className="mt-2 space-y-1 text-sm text-gray-600">
+                          {establecimiento.fiscalGeneral && (
+                            <p>
+                              FG:{' '}
+                              <span className="font-medium text-gray-800">
+                                {establecimiento.fiscalGeneral}
+                              </span>
+                            </p>
+                          )}
+                          {establecimiento.telefono && (
+                            <p>
+                              Teléfono:{' '}
+                              {telHref ? (
+                                <a href={telHref} className="font-medium text-blue-600 underline">
+                                  {establecimiento.telefono}
+                                </a>
+                              ) : (
+                                <span className="font-medium text-gray-800">
+                                  {establecimiento.telefono}
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <Button
+                        size="small"
+                        className="mt-3 w-full"
+                        onClick={() => handleOpenMesasForEstablecimiento(establecimiento)}
+                      >
+                        Mesas
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </IonContent>
+      </IonModal>
+
+      <IonModal isOpen={mesasModalState !== null} onDidDismiss={handleCloseMesasModal}>
+        <IonContent className="ion-padding">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {mesasModalState?.title ?? 'Mesas'}
+              </h2>
+              <Button size="small" onClick={handleCloseMesasModal}>
+                Cerrar
+              </Button>
+            </div>
+            {mesasModalState?.groups.length ? (
+              mesasModalState.groups.map((group) => (
+                <div key={group.establecimiento.id} className="space-y-3">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm">
+                    {group.establecimiento.nombre && (
+                      <p className="text-base font-semibold text-gray-800">
+                        {group.establecimiento.nombre}
+                      </p>
+                    )}
+                    {group.establecimiento.direccion && (
+                      <p className="mt-1 text-sm text-gray-600">
+                        Dirección:{' '}
+                        <span className="font-medium text-gray-800">
+                          {group.establecimiento.direccion}
+                        </span>
+                      </p>
+                    )}
+                    {group.mesas.length === 0 ? (
+                      <p className="mt-2 text-sm text-gray-600">
+                        {mesasModalState.emptyMessage}
+                      </p>
+                    ) : (
+                      <div className="mt-3 space-y-2">
+                        {group.mesas.map((mesa) => (
+                          <div
+                            key={mesa.id}
+                            className="rounded-md border border-gray-200 bg-gray-50 p-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-semibold text-gray-800">
+                                {mesa.numero ? `Mesa ${mesa.numero}` : 'Mesa sin número'}
+                              </p>
+                              {mesa.esMesaTestigo && (
+                                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                                  Mesa Testigo
+                                </span>
+                              )}
+                            </div>
+                            {mesa.fiscales?.length ? (
+                              <ul className="mt-2 list-inside list-disc text-xs text-gray-600">
+                                {mesa.fiscales.map((nombre, fiscalIndex) => (
+                                  <li
+                                    key={`${mesa.id}-fiscal-${fiscalIndex}`}
+                                    className="font-medium text-gray-800"
+                                  >
+                                    {nombre}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-sm text-gray-600">
+                {mesasModalState?.noGroupsMessage ?? mesasModalState?.emptyMessage ??
+                  'No hay mesas registradas.'}
+              </p>
+            )}
+          </div>
+        </IonContent>
+      </IonModal>
 
       <IonModal
         isOpen={showPhotoModal}
