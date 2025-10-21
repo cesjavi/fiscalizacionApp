@@ -79,6 +79,121 @@ const readStoredString = (
 
 const CAMPOS_ESPECIALES = ['BLANCO', 'RECURRIDOS', 'NULO', 'IMPUGNADO'] as const;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const getTrimmedString = (value: unknown): string | undefined => {
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = `${value}`.trim();
+    if (text) return text;
+  }
+  return undefined;
+};
+
+const getFirstString = (
+  record: Record<string, unknown>,
+  keys: readonly string[],
+  visited: Set<unknown> = new Set(),
+): string | undefined => {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    const direct = getTrimmedString(value);
+    if (direct) return direct;
+    if (value && typeof value === 'object' && !visited.has(value)) {
+      visited.add(value);
+      if (isRecord(value)) {
+        const nested = getFirstString(value, keys, visited);
+        if (nested) return nested;
+      }
+    }
+  }
+  return undefined;
+};
+
+const findFirstStringDeep = (
+  value: unknown,
+  keys: readonly string[],
+  visited: Set<unknown> = new Set(),
+): string | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  if (visited.has(value)) {
+    return undefined;
+  }
+
+  visited.add(value);
+
+  if (isRecord(value)) {
+    const direct = getFirstString(value, keys, visited);
+    if (direct) {
+      return direct;
+    }
+
+    for (const child of Object.values(value)) {
+      const found = findFirstStringDeep(child, keys, visited);
+      if (found) {
+        return found;
+      }
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findFirstStringDeep(item, keys, visited);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const MESA_KEYS = [
+  'mesa',
+  'mesa_nro',
+  'mesaNumero',
+  'mesa_numero',
+  'numero_mesa',
+  'numeroMesa',
+  'numero',
+  'mesaId',
+  'mesa_id',
+  'mesaAsignada',
+  'mesa_asignada',
+  'mesaAsignado',
+  'mesa_asignado',
+] as const;
+
+const SECCION_KEYS = ['seccion', 'numero_seccion', 'seccionNumero', 'seccion_nro'] as const;
+const CIRCUITO_KEYS = ['circuito', 'numero_circuito', 'circuitoNumero', 'circuito_nro'] as const;
+const ESTABLECIMIENTO_NAME_KEYS = [
+  'nombre_establecimiento',
+  'nombreEstablecimiento',
+  'nombre_establecimiento_fiscalizacion',
+  'nombre',
+  'establecimiento',
+  'lugar',
+] as const;
+const ESTABLECIMIENTO_DIRECCION_KEYS = [
+  'direccion_establecimiento',
+  'direccionEstablecimiento',
+  'direccion_establecimiento_fiscalizacion',
+  'direccion',
+  'domicilio',
+  'ubicacion',
+] as const;
+
+type MesaOption = {
+  value: string;
+  label: string;
+  seccion?: string;
+  circuito?: string;
+  establecimientoNombre?: string;
+  establecimientoDireccion?: string;
+};
+
 type EscrutinioItem = {
   identificador: string;
   nomenclatura: string;
@@ -130,44 +245,180 @@ const Escrutinio: React.FC = () => {
   const [resultado, setResultado] = useState<Record<string, number> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const mesaOptions = useMemo(() => {
-    const values = new Set<string>();
-    const addValue = (value: unknown) => {
-      if (value === null || value === undefined) return;
-      const trimmed = `${value}`.trim();
-      if (trimmed) values.add(trimmed);
+  const fallbackSeccion = useMemo(
+    () => findFirstStringDeep(fiscalData, SECCION_KEYS),
+    [fiscalData],
+  );
+
+  const fallbackCircuito = useMemo(
+    () => findFirstStringDeep(fiscalData, CIRCUITO_KEYS),
+    [fiscalData],
+  );
+
+  const mesaDetailsList = useMemo(() => {
+    type PartialMesaOption = Partial<Omit<MesaOption, 'value' | 'label'>>;
+
+    const map = new Map<string, MesaOption>();
+
+    const mergeMesaOption = (value: string, incoming: PartialMesaOption = {}) => {
+      if (!value) return;
+      const existing = map.get(value);
+      const next: MesaOption = {
+        value,
+        label: `Mesa ${value}`,
+        seccion: existing?.seccion ?? incoming.seccion,
+        circuito: existing?.circuito ?? incoming.circuito,
+        establecimientoNombre:
+          existing?.establecimientoNombre ?? incoming.establecimientoNombre,
+        establecimientoDireccion:
+          existing?.establecimientoDireccion ?? incoming.establecimientoDireccion,
+      };
+      map.set(value, next);
     };
 
-    addValue(assignmentDetails.mesa);
+    const addMesaValue = (value: unknown, meta: PartialMesaOption = {}) => {
+      const normalized = getTrimmedString(value);
+      if (!normalized) return;
+      mergeMesaOption(normalized, meta);
+    };
 
-    const record = fiscalData as
-      | ({
-          f_g_asignado?: { mesas?: Array<{ numero?: string | number }> };
-          establecimiento_fiscalizacion?: { mesas?: Array<{ numero?: string | number }> } | null;
-        } &
-          Record<string, unknown>)
-      | null
-      | undefined;
-    const mesas = record?.f_g_asignado?.mesas;
-    if (Array.isArray(mesas)) {
-      mesas.forEach((mesa) => addValue(mesa?.numero));
-    }
+    const addMesaRecord = (
+      mesaValue: unknown,
+      meta: PartialMesaOption = {},
+    ) => {
+      if (!mesaValue) return;
+      if (typeof mesaValue === 'string' || typeof mesaValue === 'number') {
+        addMesaValue(mesaValue, meta);
+        return;
+      }
 
-    const establecimiento = record?.establecimiento_fiscalizacion;
-    if (establecimiento && typeof establecimiento === 'object' && !Array.isArray(establecimiento)) {
-      const mesasEstablecimiento = establecimiento.mesas;
-      if (Array.isArray(mesasEstablecimiento)) {
-        mesasEstablecimiento.forEach((mesa) => addValue(mesa?.numero));
+      if (!isRecord(mesaValue)) return;
+
+      const baseMeta: PartialMesaOption = { ...meta };
+      baseMeta.seccion = baseMeta.seccion ?? getFirstString(mesaValue, SECCION_KEYS);
+      baseMeta.circuito =
+        baseMeta.circuito ?? getFirstString(mesaValue, CIRCUITO_KEYS);
+
+      if (!baseMeta.establecimientoNombre || !baseMeta.establecimientoDireccion) {
+        const nestedEstablecimiento = mesaValue['establecimiento'];
+        if (isRecord(nestedEstablecimiento)) {
+          baseMeta.establecimientoNombre =
+            baseMeta.establecimientoNombre ??
+            getFirstString(nestedEstablecimiento, ESTABLECIMIENTO_NAME_KEYS);
+          baseMeta.establecimientoDireccion =
+            baseMeta.establecimientoDireccion ??
+            getFirstString(
+              nestedEstablecimiento,
+              ESTABLECIMIENTO_DIRECCION_KEYS,
+            );
+        }
+      }
+
+      baseMeta.establecimientoNombre =
+        baseMeta.establecimientoNombre ??
+        getFirstString(mesaValue, ESTABLECIMIENTO_NAME_KEYS);
+      baseMeta.establecimientoDireccion =
+        baseMeta.establecimientoDireccion ??
+        getFirstString(mesaValue, ESTABLECIMIENTO_DIRECCION_KEYS);
+
+      const numero = getFirstString(mesaValue, MESA_KEYS);
+      if (numero) {
+        mergeMesaOption(numero, baseMeta);
+      }
+    };
+
+    const addFromArray = (value: unknown, meta: PartialMesaOption = {}) => {
+      if (!Array.isArray(value)) return;
+      value.forEach((item) => addMesaRecord(item, meta));
+    };
+
+    const establecimientoMeta: PartialMesaOption = {
+      establecimientoNombre: assignmentDetails.establecimiento || undefined,
+      establecimientoDireccion: assignmentDetails.direccion || undefined,
+      seccion: fallbackSeccion,
+      circuito: fallbackCircuito,
+    };
+
+    addMesaValue(assignmentDetails.mesa, establecimientoMeta);
+
+    const record = fiscalData as Record<string, unknown> | null | undefined;
+    if (record) {
+      addMesaValue(getFirstString(record, MESA_KEYS), establecimientoMeta);
+
+      const fgAsignado = record['f_g_asignado'];
+      if (isRecord(fgAsignado)) {
+        const meta: PartialMesaOption = {
+          establecimientoNombre:
+            getFirstString(fgAsignado, ESTABLECIMIENTO_NAME_KEYS) ||
+            establecimientoMeta.establecimientoNombre,
+          establecimientoDireccion:
+            getFirstString(fgAsignado, ESTABLECIMIENTO_DIRECCION_KEYS) ||
+            establecimientoMeta.establecimientoDireccion,
+        };
+        addFromArray(fgAsignado['mesas'], meta);
+      }
+
+      const fgAsignadoArray = record['fg_asignado'];
+      if (Array.isArray(fgAsignadoArray)) {
+        fgAsignadoArray.forEach((item) => {
+          if (!isRecord(item)) return;
+          const meta: PartialMesaOption = {
+            establecimientoNombre:
+              getFirstString(item, ESTABLECIMIENTO_NAME_KEYS) ||
+              establecimientoMeta.establecimientoNombre,
+            establecimientoDireccion:
+              getFirstString(item, ESTABLECIMIENTO_DIRECCION_KEYS) ||
+              establecimientoMeta.establecimientoDireccion,
+          };
+          addFromArray(item['mesas'], meta);
+        });
+      }
+
+      const establecimiento = record['establecimiento_fiscalizacion'];
+      if (isRecord(establecimiento)) {
+        const meta: PartialMesaOption = {
+          establecimientoNombre:
+            getFirstString(establecimiento, ESTABLECIMIENTO_NAME_KEYS) ||
+            establecimientoMeta.establecimientoNombre,
+          establecimientoDireccion:
+            getFirstString(establecimiento, ESTABLECIMIENTO_DIRECCION_KEYS) ||
+            establecimientoMeta.establecimientoDireccion,
+          seccion: getFirstString(establecimiento, SECCION_KEYS),
+          circuito: getFirstString(establecimiento, CIRCUITO_KEYS),
+        };
+        addFromArray(establecimiento['mesas'], meta);
       }
     }
 
     if (typeof window !== 'undefined') {
-      addValue(localStorage.getItem('mesa_nro'));
-      addValue(localStorage.getItem('mesaId'));
+      addMesaValue(localStorage.getItem('mesa_nro'), establecimientoMeta);
+      addMesaValue(localStorage.getItem('mesaId'), establecimientoMeta);
     }
 
-    return Array.from(values).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  }, [assignmentDetails.mesa, fiscalData]);
+    return Array.from(map.values()).sort((a, b) =>
+      a.value.localeCompare(b.value, undefined, { numeric: true }),
+    );
+  }, [
+    assignmentDetails.direccion,
+    assignmentDetails.establecimiento,
+    assignmentDetails.mesa,
+    fallbackCircuito,
+    fallbackSeccion,
+    fiscalData,
+  ]);
+
+  const mesaOptions = useMemo(
+    () => mesaDetailsList.map((detail) => detail.value),
+    [mesaDetailsList],
+  );
+
+  const mesaDetailsMap = useMemo(() => {
+    const map = new Map<string, MesaOption>();
+    mesaDetailsList.forEach((detail) => {
+      map.set(detail.value, detail);
+    });
+    return map;
+  }, [mesaDetailsList]);
 
   const [mesaSeleccionada, setMesaSeleccionada] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -218,6 +469,46 @@ const Escrutinio: React.FC = () => {
   const handleMesaInputChange = useCallback((value: string) => {
     setMesaSeleccionada(value);
   }, []);
+
+  const selectedMesaDetail = useMemo(() => {
+    const key = mesaSeleccionada.trim();
+    if (!key) return undefined;
+    return mesaDetailsMap.get(key);
+  }, [mesaDetailsMap, mesaSeleccionada]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const detail = selectedMesaDetail;
+    if (!detail) return;
+    if (detail.seccion) {
+      localStorage.setItem('seccion', detail.seccion);
+    }
+    if (detail.circuito) {
+      localStorage.setItem('circuito', detail.circuito);
+    }
+    if (detail.establecimientoNombre) {
+      localStorage.setItem('nombre_establecimiento', detail.establecimientoNombre);
+      localStorage.setItem('establecimiento', detail.establecimientoNombre);
+      localStorage.setItem('establecimiento_fiscalizacion', detail.establecimientoNombre);
+    }
+    if (detail.establecimientoDireccion) {
+      localStorage.setItem('direccion_establecimiento', detail.establecimientoDireccion);
+      localStorage.setItem(
+        'direccion_establecimiento_fiscalizacion',
+        detail.establecimientoDireccion,
+      );
+    }
+  }, [selectedMesaDetail]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (fallbackSeccion && !localStorage.getItem('seccion')) {
+      localStorage.setItem('seccion', fallbackSeccion);
+    }
+    if (fallbackCircuito && !localStorage.getItem('circuito')) {
+      localStorage.setItem('circuito', fallbackCircuito);
+    }
+  }, [fallbackCircuito, fallbackSeccion]);
 
   const puedeEnviar = mesaSeleccionada.trim().length > 0;
 
@@ -404,14 +695,28 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
       : mesaIdNumero;
 
     //const foto = localStorage.getItem('fotoActa');
-    const seccion = localStorage.getItem('seccion')?.trim() || '';
-    console.log('seccion', seccion);  
-    const circuito = localStorage.getItem('circuito')?.trim() || '';
-    
+    const seccion =
+      selectedMesaDetail?.seccion ||
+      readStoredString(['seccion', 'numero_seccion', 'seccionNumero', 'seccion_nro']) ||
+      fallbackSeccion ||
+      '';
+    console.log('seccion', seccion);
+    const circuito =
+      selectedMesaDetail?.circuito ||
+      readStoredString([
+        'circuito',
+        'numero_circuito',
+        'circuitoNumero',
+        'circuito_nro',
+      ]) ||
+      fallbackCircuito ||
+      '';
+
     const { establecimiento: establecimientoNombre, direccion: establecimientoDireccion } =
       assignmentDetails;
 
     const establecimientoNombreFinal =
+      selectedMesaDetail?.establecimientoNombre ||
       establecimientoNombre ||
       readStoredString(
         [
@@ -430,6 +735,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
       '';
 
     const direccionNombreFinal =
+      selectedMesaDetail?.establecimientoDireccion ||
       establecimientoDireccion ||
       readStoredString(
         [
@@ -538,7 +844,83 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
           <IonLabel position="stacked" className="text-gray-700 font-semibold">
             Mesa
           </IonLabel>
-          {/* ...select/inputs de mesa iguales... */}
+          {mesaOptions.length > 0 && (
+            <>
+              <IonSelect
+                interface="popover"
+                placeholder="Seleccioná una mesa"
+                value={mesaSelectValue}
+                onIonChange={(event) => handleMesaSelectChange(event.detail.value)}
+              >
+                {mesaDetailsList.map((detail) => {
+                  const metadata: string[] = [];
+                  if (detail.seccion) {
+                    metadata.push(`Sec. ${detail.seccion}`);
+                  }
+                  if (detail.circuito) {
+                    metadata.push(`Circ. ${detail.circuito}`);
+                  }
+                  const suffix = metadata.length > 0 ? ` · ${metadata.join(' · ')}` : '';
+                  return (
+                    <IonSelectOption key={detail.value} value={detail.value}>
+                      {detail.label}
+                      {suffix}
+                    </IonSelectOption>
+                  );
+                })}
+                <IonSelectOption value="__custom__">Otra mesa…</IonSelectOption>
+              </IonSelect>
+              <IonNote color="medium" className="mt-2 block text-sm">
+                Elegí la mesa asignada o seleccioná “Otra mesa…” para escribirla manualmente.
+              </IonNote>
+            </>
+          )}
+          {(usarMesaPersonalizada || mesaOptions.length === 0) && (
+            <div className="mt-2 w-full">
+              <Input
+                value={mesaSeleccionada}
+                inputmode="numeric"
+                onIonChange={(e) => handleMesaInputChange(e.detail.value ?? '')}
+                placeholder="Número de mesa"
+              />
+            </div>
+          )}
+          {selectedMesaDetail && (
+            <div className="mt-3 space-y-1 text-sm text-gray-600">
+              {selectedMesaDetail.seccion && (
+                <IonText className="block">
+                  Sección:{' '}
+                  <span className="font-medium text-gray-800">
+                    {selectedMesaDetail.seccion}
+                  </span>
+                </IonText>
+              )}
+              {selectedMesaDetail.circuito && (
+                <IonText className="block">
+                  Circuito:{' '}
+                  <span className="font-medium text-gray-800">
+                    {selectedMesaDetail.circuito}
+                  </span>
+                </IonText>
+              )}
+              {selectedMesaDetail.establecimientoNombre && (
+                <IonText className="block">
+                  Establecimiento:{' '}
+                  <span className="font-medium text-gray-800">
+                    {selectedMesaDetail.establecimientoNombre}
+                  </span>
+                </IonText>
+              )}
+              {selectedMesaDetail.establecimientoDireccion && (
+                <IonText className="block">
+                  Dirección:{' '}
+                  <span className="font-medium text-gray-800">
+                    {selectedMesaDetail.establecimientoDireccion}
+                  </span>
+                </IonText>
+              )}
+            </div>
+          )}
         </IonItem>
 
         {/* Cards por lista */}
