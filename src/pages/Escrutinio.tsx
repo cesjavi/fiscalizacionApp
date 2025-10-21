@@ -981,6 +981,7 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
         ))}
 
         <Button
+        style={{ paddingBottom: '120px' }}
           expand="block"
           className="ion-margin-top"
           onClick={handleSubmit}

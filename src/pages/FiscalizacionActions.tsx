@@ -1780,7 +1780,7 @@ const FiscalizacionActions: React.FC = () => {
   const [mesasModalState, setMesasModalState] = useState<MesasModalState | null>(null);
 
   const fechaEnvio = new Date().toISOString();
-  const fileDescriptor = 'archivo subido (acta.jpg)';
+  const fileDescriptor = '';
 
   const personaRecord = useMemo(() => {
     if (!fiscalData) return undefined;
@@ -2769,11 +2769,6 @@ const FiscalizacionActions: React.FC = () => {
         <IonContent className="ion-padding">
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800">Confirmar envío de foto</h2>
-            <div>
-              <p className="text-sm text-gray-600">Archivo</p>
-              <p className="text-base text-gray-800 font-medium">{fileDescriptor}</p>
-            </div>
-
             <div className="space-y-2">
               <p className="text-sm text-gray-600">Datos del establecimiento</p>
               <div className="space-y-1 rounded-lg bg-gray-100 p-3 text-sm text-gray-700">
