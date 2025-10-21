@@ -16,7 +16,7 @@ import {
 import type { FiscalData } from '../FiscalDataContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Camera, CameraResultType } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource, CameraDirection } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '../AuthContext';
@@ -2183,6 +2183,20 @@ const FiscalizacionActions: React.FC = () => {
     setMesasModalState(null);
   }, []);
 
+  const ensureCameraPermission = async () => {
+    try {
+      const current = await Camera.checkPermissions();
+      if (current.camera === 'granted' || current.camera === 'limited') {
+        return true;
+      }
+
+      const requested = await Camera.requestPermissions({ permissions: ['camera'] });
+      return requested.camera === 'granted' || requested.camera === 'limited';
+    } catch {
+      return false;
+    }
+  };
+
   // Tomar foto con Camera -> Blob real + preview
   const handleFoto = async () => {
     const platform = Capacitor.getPlatform();
@@ -2192,9 +2206,17 @@ const FiscalizacionActions: React.FC = () => {
     }
 
     try {
+      const hasPermission = await ensureCameraPermission();
+      if (!hasPermission) {
+        throw new Error('camera-permission-denied');
+      }
+
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.Uri, // URI -> podemos fetchear el Blob real
         quality: 80,
+        source: CameraSource.Camera,
+        allowEditing: false,
+        direction: CameraDirection.Rear,
       });
       if (photo.webPath) {
         const blob = await fetch(photo.webPath).then((r) => r.blob());
@@ -2434,7 +2456,7 @@ const FiscalizacionActions: React.FC = () => {
             </IonLabel>
           </IonItem>
         )}
-        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4">
+        <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4 pb-16">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
           </Button>
