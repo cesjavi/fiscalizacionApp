@@ -2424,38 +2424,6 @@ const FiscalizacionActions: React.FC = () => {
           </div>
         )}
 
-        {coords && (
-          <IonItem lines="none" className="ion-margin-bottom rounded-lg overflow-hidden">
-            <IonLabel>
-              <p className="text-sm text-gray-600 mb-2">Mapa del establecimiento</p>
-              <div className="w-full" style={{ height: 240, borderRadius: 8, overflow: 'hidden' }}>
-                <iframe
-                  title="Mapa"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={
-                    mapsQuery
-                      ? `https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`
-                      : ''
-                  }
-                />
-              </div>
-              {mapsQuery && (
-                <a
-                  className="text-sm text-blue-600 underline mt-2 inline-block"
-                  href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Abrir en Google Maps
-                </a>
-              )}
-            </IonLabel>
-          </IonItem>
-        )}
         <div className="flex flex-col items-center gap-4 w-4/5 mx-auto mt-4 pb-16">
           <Button onClick={handleFoto} className="flex flex-col items-center w-4/5">
             Tomar/Subir Foto
@@ -2570,7 +2538,6 @@ const FiscalizacionActions: React.FC = () => {
               )}
             </div>
           )}
-
           {isFiscalZonal && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button
@@ -2581,8 +2548,40 @@ const FiscalizacionActions: React.FC = () => {
               </Button>
             </div>
           )}
-        </div>
-      </IonContent>
+      </div>
+      {coords && (
+        <IonItem lines="none" className="ion-margin-bottom rounded-lg overflow-hidden">
+          <IonLabel>
+            <p className="text-sm text-gray-600 mb-2">Mapa del establecimiento</p>
+            {mapsQuery && (
+              <a
+                className="mb-2 inline-block text-sm font-medium text-blue-600 underline"
+                href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Abrir en Google Maps
+              </a>
+            )}
+            <div className="w-full" style={{ height: 240, borderRadius: 8, overflow: 'hidden' }}>
+              <iframe
+                title="Mapa"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={
+                  mapsQuery
+                    ? `https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`
+                    : ''
+                }
+              />
+            </div>
+          </IonLabel>
+        </IonItem>
+      )}
+    </IonContent>
 
       <IonModal
         isOpen={showEstablecimientosModal}
