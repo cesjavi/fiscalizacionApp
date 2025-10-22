@@ -1900,6 +1900,14 @@ const FiscalizacionActions: React.FC = () => {
     return storedMesa?.trim() ? storedMesa.trim() : undefined;
   }, [fiscalData, mesaAsignadaDesdeData]);
 
+  const mesaAsignadaDisplay = useMemo(() => {
+    const trimmed = typeof mesaAsignada === 'string' ? mesaAsignada.trim() : '';
+    if (!trimmed) return undefined;
+    if (/^0+$/.test(trimmed)) return undefined;
+    if (isFiscalGeneral && !isFiscalMesa) return undefined;
+    return trimmed;
+  }, [isFiscalGeneral, isFiscalMesa, mesaAsignada]);
+
   const isMesaTestigoAsignada = useMemo(() => {
     if (!isRecord(fiscalData)) return false;
     return extractIsMesaTestigo(fiscalData);
@@ -2309,7 +2317,7 @@ const FiscalizacionActions: React.FC = () => {
                   Tipo de fiscal: <span className={metadataValueClass}>{memberType}</span>
                 </p>
               )}
-              {mesaAsignada && (
+              {mesaAsignadaDisplay && (
                 <p className={metadataLabelClass}>
                   Mesa:{' '}
                   <span
@@ -2321,7 +2329,7 @@ const FiscalizacionActions: React.FC = () => {
                         : metadataValueClass
                     }
                   >
-                    {mesaAsignada}
+                    {mesaAsignadaDisplay}
                   </span>
                   {isFiscalMesa && isMesaTestigoAsignada && (
                     <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
