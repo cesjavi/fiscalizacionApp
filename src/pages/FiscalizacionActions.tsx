@@ -975,6 +975,8 @@ const ESTABLECIMIENTOS_KEYS = [
   'colegios',
   'lugares',
   'lugaresFiscalizacion',
+  'zonaEleccion',
+  'zona_eleccion',
 ] as const;
 
 const collectEstablecimientos = (
