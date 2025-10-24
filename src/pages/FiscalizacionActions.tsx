@@ -2472,12 +2472,6 @@ const FiscalizacionActions: React.FC = () => {
             <div className="flex w-full flex-col items-center gap-3">
               <Button
                 className="flex flex-col items-center w-4/5"
-                onClick={() => setShowEstablecimientosModal(true)}
-              >
-                Establecimiento
-              </Button>
-              <Button
-                className="flex flex-col items-center w-4/5"
                 onClick={handleOpenGeneralMesas}
               >
                 Mesas
