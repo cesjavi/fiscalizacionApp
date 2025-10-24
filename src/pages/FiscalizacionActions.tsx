@@ -1704,6 +1704,21 @@ const FiscalizacionActions: React.FC = () => {
   );
 
   const fiscalesMesa = useMemo(() => extractFiscalesDeMesa(fiscalData ?? undefined), [fiscalData]);
+  const previousFiscalesMesaLength = useRef(fiscalesMesa.length);
+  const fiscalesMesaSummary = useMemo(() => {
+    if (fiscalesMesa.length === 0) return undefined;
+    const items = fiscalesMesa.map((fiscal) => {
+      const nombre = fiscal.nombre?.trim();
+      const mesa = fiscal.mesa ? `${fiscal.mesa}`.trim() : '';
+      if (nombre && mesa) return `${nombre} - Mesa ${mesa}`;
+      if (nombre) return nombre;
+      if (mesa) return `Mesa ${mesa}`;
+      return undefined;
+    });
+    const filtered = items.filter((item): item is string => Boolean(item));
+    if (filtered.length === 0) return undefined;
+    return filtered.join(' • ');
+  }, [fiscalesMesa]);
   const establecimientosAsignados = useMemo(
     () => extractEstablecimientos(fiscalData ?? undefined),
     [fiscalData],
@@ -2280,10 +2295,12 @@ const FiscalizacionActions: React.FC = () => {
   const mesaSelectValue = useCustomMesa ? '__custom__' : establecimientoForm.mesa;
 
   useEffect(() => {
-    if (fiscalesMesa.length === 0 && showFiscalesMesa) {
+    const lastLength = previousFiscalesMesaLength.current;
+    if (fiscalesMesa.length === 0 && lastLength > 0) {
       setShowFiscalesMesa(false);
     }
-  }, [fiscalesMesa.length, showFiscalesMesa]);
+    previousFiscalesMesaLength.current = fiscalesMesa.length;
+  }, [fiscalesMesa.length]);
 
   useEffect(() => {
     if (establecimientosAsignados.length === 0 && showEstablecimientosModal) {
@@ -2472,12 +2489,6 @@ const FiscalizacionActions: React.FC = () => {
             <div className="flex w-full flex-col items-center gap-3">
               <Button
                 className="flex flex-col items-center w-4/5"
-                onClick={() => setShowEstablecimientosModal(true)}
-              >
-                Establecimiento
-              </Button>
-              <Button
-                className="flex flex-col items-center w-4/5"
                 onClick={handleOpenGeneralMesas}
               >
                 Mesas
@@ -2486,7 +2497,14 @@ const FiscalizacionActions: React.FC = () => {
                 className="flex flex-col items-center w-4/5"
                 onClick={() => setShowFiscalesMesa((prev) => !prev)}
               >
-                {showFiscalesMesa ? 'Ocultar fiscales de mesa' : 'Fiscales de mesa'}
+                <span className="font-semibold">
+                  {showFiscalesMesa ? 'Ocultar fiscales de mesa' : 'Fiscales de mesa'}
+                </span>
+                {!showFiscalesMesa && fiscalesMesaSummary && (
+                  <span className="mt-1 text-center text-sm text-gray-700">
+                    {fiscalesMesaSummary}
+                  </span>
+                )}
               </Button>
               {showFiscalesMesa && (
                 <div className="flex w-full flex-col gap-3">
