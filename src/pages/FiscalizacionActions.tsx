@@ -352,22 +352,19 @@ const collectEstablecimientos = (
     }
   }
 
-  const establecimientoValue = value['establecimiento_fiscalizacion'];
-  if (establecimientoValue && typeof establecimientoValue === 'object') {
-    collectEstablecimientos(establecimientoValue, results, visited);
+  for (const nested of Object.values(value)) {
+    if (nested && typeof nested === 'object') {
+      collectEstablecimientos(nested, results, visited);
+    }
   }
 };
 
 const extractEstablecimientos = (data?: FiscalData | null): EstablecimientoCard[] => {
   if (!data) return [];
-  const record = data as Record<string, unknown>;
+
   const visited = new Set<unknown>();
   const results = new Map<string, EstablecimientoCard>();
-
-  const establecimientoValue = record['establecimiento_fiscalizacion'];
-  if (establecimientoValue) {
-    collectEstablecimientos(establecimientoValue, results, visited);
-  }
+  collectEstablecimientos(data, results, visited);
 
   return Array.from(results.values());
 };
