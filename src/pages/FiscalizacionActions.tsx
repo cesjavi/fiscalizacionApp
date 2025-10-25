@@ -1704,6 +1704,7 @@ const FiscalizacionActions: React.FC = () => {
   );
 
   const fiscalesMesa = useMemo(() => extractFiscalesDeMesa(fiscalData ?? undefined), [fiscalData]);
+  const previousFiscalesMesaLength = useRef(fiscalesMesa.length);
   const fiscalesMesaSummary = useMemo(() => {
     if (fiscalesMesa.length === 0) return undefined;
     const items = fiscalesMesa.map((fiscal) => {
@@ -2294,10 +2295,12 @@ const FiscalizacionActions: React.FC = () => {
   const mesaSelectValue = useCustomMesa ? '__custom__' : establecimientoForm.mesa;
 
   useEffect(() => {
-    if (fiscalesMesa.length === 0 && showFiscalesMesa) {
+    const lastLength = previousFiscalesMesaLength.current;
+    if (fiscalesMesa.length === 0 && lastLength > 0) {
       setShowFiscalesMesa(false);
     }
-  }, [fiscalesMesa.length, showFiscalesMesa]);
+    previousFiscalesMesaLength.current = fiscalesMesa.length;
+  }, [fiscalesMesa.length]);
 
   useEffect(() => {
     if (establecimientosAsignados.length === 0 && showEstablecimientosModal) {
