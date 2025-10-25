@@ -352,22 +352,19 @@ const collectEstablecimientos = (
     }
   }
 
-  const establecimientoValue = value['establecimiento_fiscalizacion'];
-  if (establecimientoValue && typeof establecimientoValue === 'object') {
-    collectEstablecimientos(establecimientoValue, results, visited);
+  for (const nested of Object.values(value)) {
+    if (nested && typeof nested === 'object') {
+      collectEstablecimientos(nested, results, visited);
+    }
   }
 };
 
 const extractEstablecimientos = (data?: FiscalData | null): EstablecimientoCard[] => {
   if (!data) return [];
-  const record = data as Record<string, unknown>;
+
   const visited = new Set<unknown>();
   const results = new Map<string, EstablecimientoCard>();
-
-  const establecimientoValue = record['establecimiento_fiscalizacion'];
-  if (establecimientoValue) {
-    collectEstablecimientos(establecimientoValue, results, visited);
-  }
+  collectEstablecimientos(data, results, visited);
 
   return Array.from(results.values());
 };
@@ -429,6 +426,11 @@ const FiscalizacionActions: React.FC = () => {
   const establecimientosAsignados = useMemo(
     () => extractEstablecimientos(fiscalData ?? undefined),
     [fiscalData],
+  );
+
+  const canViewEstablecimientos = useMemo(
+    () => isFiscalGeneral || isFiscalZonal,
+    [isFiscalGeneral, isFiscalZonal],
   );
 
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -664,7 +666,7 @@ const FiscalizacionActions: React.FC = () => {
             Escrutinio
           </Button>
 
-          {isFiscalGeneral && (
+          {canViewEstablecimientos && (
             <Button className="w-full" onClick={() => setShowEstablecimientosModal(true)}>
               Ver Mesas
             </Button>
@@ -710,15 +712,19 @@ const FiscalizacionActions: React.FC = () => {
                 Cerrar
               </Button>
             </div>
-            {establecimientosAsignados.map((est) => (
-              <div key={est.id} className="rounded-lg border p-4">
-                {est.nombre && <p className="font-semibold">{est.nombre}</p>}
-                {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
-                <Button size="small" className="mt-2 w-full" onClick={() => handleOpenMesasForEstablecimiento(est)}>
-                  Ver Mesas
-                </Button>
-              </div>
-            ))}
+            {establecimientosAsignados.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay establecimientos asignados.</p>
+            ) : (
+              establecimientosAsignados.map((est) => (
+                <div key={est.id} className="rounded-lg border p-4">
+                  {est.nombre && <p className="font-semibold">{est.nombre}</p>}
+                  {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
+                  <Button size="small" className="mt-2 w-full" onClick={() => handleOpenMesasForEstablecimiento(est)}>
+                    Ver Mesas
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </IonContent>
       </IonModal>
