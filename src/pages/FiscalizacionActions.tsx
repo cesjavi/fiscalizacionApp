@@ -431,6 +431,11 @@ const FiscalizacionActions: React.FC = () => {
     [fiscalData],
   );
 
+  const canViewEstablecimientos = useMemo(
+    () => isFiscalGeneral || isFiscalZonal,
+    [isFiscalGeneral, isFiscalZonal],
+  );
+
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [establecimientoForm, setEstablecimientoForm] = useState<EstablecimientoFormState>({
     seccion: '',
@@ -664,7 +669,7 @@ const FiscalizacionActions: React.FC = () => {
             Escrutinio
           </Button>
 
-          {isFiscalGeneral && (
+          {canViewEstablecimientos && (
             <Button className="w-full" onClick={() => setShowEstablecimientosModal(true)}>
               Ver Mesas
             </Button>
@@ -710,15 +715,19 @@ const FiscalizacionActions: React.FC = () => {
                 Cerrar
               </Button>
             </div>
-            {establecimientosAsignados.map((est) => (
-              <div key={est.id} className="rounded-lg border p-4">
-                {est.nombre && <p className="font-semibold">{est.nombre}</p>}
-                {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
-                <Button size="small" className="mt-2 w-full" onClick={() => handleOpenMesasForEstablecimiento(est)}>
-                  Ver Mesas
-                </Button>
-              </div>
-            ))}
+            {establecimientosAsignados.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay establecimientos asignados.</p>
+            ) : (
+              establecimientosAsignados.map((est) => (
+                <div key={est.id} className="rounded-lg border p-4">
+                  {est.nombre && <p className="font-semibold">{est.nombre}</p>}
+                  {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
+                  <Button size="small" className="mt-2 w-full" onClick={() => handleOpenMesasForEstablecimiento(est)}>
+                    Ver Mesas
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </IonContent>
       </IonModal>
