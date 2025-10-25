@@ -145,6 +145,14 @@ const PHONE_KEYS = [
   'telefono_fg',
   'telefonoFG',
   'telefono_fiscal_general',
+  'telefono_fiscalgeneral',
+  'telefono_fg_asignado',
+  'whatsapp_fg',
+  'cel_fg',
+  'celular_miembro',
+  'celularMiembro',
+  'telefono_miembro',
+  'telefonoMiembro',
   'tel',
   'telefono1',
   'telefono_1',
@@ -549,24 +557,77 @@ const collectFiscalesDeMesa = (
   const telefono = extractPhone(value);
   const nombre = extractPersonName(value);
   const isMesaTestigo = extractIsMesaTestigo(value);
+  const fmAsignadoValue = value['fm_asignado'] ?? value['fmAsignado'];
 
-  if (mesa || telefono || nombre) {
-    const key = `${(nombre ?? '').toLowerCase()}|${telefono ?? ''}|${mesa ?? ''}`;
-    if (!results.has(key)) {
-      results.set(key, {
-        id: key || `fiscal-${results.size}`,
-        mesa,
-        telefono,
-        nombre,
-        isMesaTestigo,
-      });
+  const addFiscalCard = ({
+    nombre: overrideNombre,
+    telefono: overrideTelefono,
+    mesa: overrideMesa,
+    isMesaTestigo: overrideIsMesaTestigo,
+  }: {
+    nombre?: string;
+    telefono?: string;
+    mesa?: string;
+    isMesaTestigo?: boolean;
+  }) => {
+    const finalNombre = overrideNombre ?? nombre;
+    const finalTelefono = overrideTelefono ?? telefono;
+    const finalMesa = overrideMesa ?? mesa;
+    const finalIsMesaTestigo = overrideIsMesaTestigo ?? isMesaTestigo;
+
+    if (!finalNombre && !finalTelefono && !finalMesa) return;
+
+    const key = `${(finalNombre ?? '').toLowerCase()}|${finalTelefono ?? ''}|${
+      finalMesa ?? ''
+    }`;
+    const existing = results.get(key);
+    if (existing) {
+      if (!existing.nombre && finalNombre) existing.nombre = finalNombre;
+      if (!existing.telefono && finalTelefono) existing.telefono = finalTelefono;
+      if (!existing.mesa && finalMesa) existing.mesa = finalMesa;
+      if (finalIsMesaTestigo) existing.isMesaTestigo = true;
+      return;
     }
+
+    results.set(key, {
+      id: key || `fiscal-${results.size}`,
+      nombre: finalNombre,
+      telefono: finalTelefono,
+      mesa: finalMesa,
+      isMesaTestigo: finalIsMesaTestigo ? true : undefined,
+    });
+  };
+
+  if (mesa && (nombre || telefono)) {
+    addFiscalCard({});
   }
 
-  Object.values(value).forEach((nested) => {
-    if (nested && typeof nested === 'object') {
-      collectFiscalesDeMesa(nested, results, visited);
-    }
+  if (Array.isArray(fmAsignadoValue)) {
+    fmAsignadoValue.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      visited.add(item);
+      if (!isRecord(item)) return;
+
+      const nestedNombre = extractPersonName(item);
+      const nestedTelefono = extractPhone(item);
+      const nestedMesa = extractMesaNumero(item) ?? mesa;
+      const nestedIsMesaTestigo =
+        extractIsMesaTestigo(item) || isMesaTestigo || undefined;
+
+      addFiscalCard({
+        nombre: nestedNombre,
+        telefono: nestedTelefono,
+        mesa: nestedMesa ?? mesa,
+        isMesaTestigo: nestedIsMesaTestigo || undefined,
+      });
+    });
+  }
+
+  Object.entries(value).forEach(([key, nested]) => {
+    if (!nested || typeof nested !== 'object') return;
+    if (key === 'fm_asignado' || key === 'fmAsignado') return;
+    if (key === 'fg_asignado' || key === 'fgAsignado' || key === 'f_g_asignado') return;
+    collectFiscalesDeMesa(nested, results, visited);
   });
 };
 
@@ -580,6 +641,11 @@ const FISCALES_KEYS = [
   'mesasAsignadas',
   'mesas_asignadas',
   'mesas',
+  'fm_asignado',
+  'fmAsignado',
+  'establecimiento_fiscalizacion',
+  'establecimientoFiscalizacion',
+  'establecimientos',
   'lista_fiscales',
   'listado_fiscales',
 ] as const;
@@ -749,7 +815,9 @@ const collectNamesFromValue = (
       lower.includes('miembro') ||
       lower.includes('fiscal') ||
       lower.includes('contacto') ||
-      lower.includes('fg')
+      lower.includes('fg') ||
+      lower.includes('fm_asignado') ||
+      lower.includes('fmasignado')
     ) {
       collectNamesFromValue(child, results, visited);
     }
@@ -802,6 +870,8 @@ const collectMesaSummaries = (
   const nameSources = [
     record['fg_asignado'],
     record['fgAsignado'],
+    record['fm_asignado'],
+    record['fmAsignado'],
     record['fiscales'],
     record['fiscales_mesa'],
     record['fiscalesMesa'],
@@ -853,7 +923,9 @@ const collectMesaSummaries = (
       lower.includes('fiscal') ||
       lower.includes('miembro') ||
       lower.includes('persona') ||
-      lower.includes('fg')
+      lower.includes('fg') ||
+      lower.includes('fm_asignado') ||
+      lower.includes('fmasignado')
     ) {
       collectMesaSummaries(child, results, visited, getFallbackKey);
     }
