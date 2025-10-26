@@ -538,21 +538,7 @@ const extractEstablecimientos = (data?: FiscalData | null): EstablecimientoCard[
 
   const visited = new Set<unknown>();
   const results = new Map<string, EstablecimientoCard>();
-  
-  // Buscar específicamente en zonaEleccion.establecimientos
-  if (isRecord(data)) {
-    const zonaEleccion = data['zonaEleccion'];
-    if (isRecord(zonaEleccion)) {
-      const establecimientos = zonaEleccion['establecimientos'];      
-      if (Array.isArray(establecimientos)) {
-        establecimientos.forEach((est) => {          
-          if (est && typeof est === 'object') {
-            collectEstablecimientos(est, results, visited);            
-          }
-        });
-      }
-    }
-  }
+  collectEstablecimientos(data, results, visited);
 
   return Array.from(results.values());
 };
@@ -770,19 +756,24 @@ const FiscalizacionActions: React.FC = () => {
 
   const handleOpenAssignments = useCallback(() => {
     if (isFiscalGeneral) {
-      const groups = establecimientosAsignados
-        .map((establecimiento) => ({
-          establecimiento,
-          mesas: sanitizeMesas(establecimiento.mesas),
-        }))
-        .filter((group) => group.mesas.length > 0);
-
-      setMesasModalState({
-        title: 'Mesas asignadas',
-        groups,
-        emptyMessage: 'No hay mesas registradas para este establecimiento.',
-        noGroupsMessage: 'No hay mesas registradas para tus establecimientos asignados.',
-      });
+      // Para fiscal general, mostrar solo las mesas del primer establecimiento asignado
+      const primerEstablecimiento = establecimientosAsignados[0];
+      if (primerEstablecimiento) {
+        const mesas = sanitizeMesas(primerEstablecimiento.mesas);
+        setMesasModalState({
+          title: primerEstablecimiento.nombre 
+            ? `Mesas de ${primerEstablecimiento.nombre}` 
+            : 'Mesas asignadas',
+          groups: [
+            {
+              establecimiento: primerEstablecimiento,
+              mesas,
+            },
+          ],
+          emptyMessage: 'No hay mesas registradas para este establecimiento.',
+          noGroupsMessage: 'No hay mesas registradas.',
+        });
+      }
       return;
     }
 
@@ -993,7 +984,9 @@ const FiscalizacionActions: React.FC = () => {
 
       <IonModal isOpen={mesasModalState !== null} onDidDismiss={() => {
         setMesasModalState(null);
-        setShowEstablecimientosModal(true);
+        if (isFiscalZonal) {
+          setShowEstablecimientosModal(true);
+        }
       }}>
         <IonContent className="ion-padding">
           <div className="space-y-4">
@@ -1001,7 +994,9 @@ const FiscalizacionActions: React.FC = () => {
               <h2 className="text-lg font-semibold">{mesasModalState?.title ?? 'Mesas'}</h2>
               <Button size="small" onClick={() => {
                 setMesasModalState(null);
-                setShowEstablecimientosModal(true);
+                if (isFiscalZonal) {
+                  setShowEstablecimientosModal(true);
+                }
               }}>
                 Cerrar
               </Button>
