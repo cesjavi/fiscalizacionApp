@@ -97,6 +97,110 @@ type RoleContact = {
   telefono?: string;
 };
 
+const sortMesas = (mesas: MesaResumen[]): MesaResumen[] =>
+  [...mesas].sort((a, b) => {
+    const aNum = a.numero ?? '';
+    const bNum = b.numero ?? '';
+    return aNum.localeCompare(bNum, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+const mergeRoleContacts = (
+  existing?: RoleContact[],
+  incoming?: RoleContact[],
+): RoleContact[] | undefined => {
+  if ((!existing || existing.length === 0) && (!incoming || incoming.length === 0)) {
+    return undefined;
+  }
+
+  const byKey = new Map<string, RoleContact>();
+
+  const addContact = (contact?: RoleContact) => {
+    if (!contact) return;
+    const nombre = contact.nombre?.trim();
+    const telefono = contact.telefono?.trim();
+    if (!nombre && !telefono) return;
+
+    const key = `${nombre ?? ''}|${telefono ?? ''}`.toLowerCase();
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, { nombre, telefono });
+      return;
+    }
+
+    byKey.set(key, {
+      nombre: prev.nombre ?? nombre,
+      telefono: prev.telefono ?? telefono,
+    });
+  };
+
+  (existing ?? []).forEach(addContact);
+  (incoming ?? []).forEach(addContact);
+
+  return byKey.size > 0 ? Array.from(byKey.values()) : undefined;
+};
+
+const mergeMesasResumen = (
+  existing?: MesaResumen[],
+  incoming?: MesaResumen[],
+): MesaResumen[] | undefined => {
+  if ((!existing || existing.length === 0) && (!incoming || incoming.length === 0)) {
+    return undefined;
+  }
+
+  const mesas = new Map<string, MesaResumen>();
+
+  const addMesa = (mesa?: MesaResumen) => {
+    if (!mesa) return;
+    const key = (mesa.numero ?? mesa.id).toString().toLowerCase();
+    const current = mesas.get(key);
+
+    if (!current) {
+      mesas.set(key, {
+        ...mesa,
+        fiscales: mesa.fiscales ? [...mesa.fiscales] : undefined,
+      });
+      return;
+    }
+
+    const fiscales = new Set<string>();
+    (current.fiscales ?? []).forEach((f) => {
+      if (f.trim()) fiscales.add(f.trim());
+    });
+    (mesa.fiscales ?? []).forEach((f) => {
+      if (f.trim()) fiscales.add(f.trim());
+    });
+
+    mesas.set(key, {
+      ...current,
+      ...mesa,
+      esMesaTestigo: Boolean(current.esMesaTestigo || mesa.esMesaTestigo),
+      fiscales: fiscales.size > 0 ? Array.from(fiscales) : undefined,
+    });
+  };
+
+  (existing ?? []).forEach(addMesa);
+  (incoming ?? []).forEach(addMesa);
+
+  if (mesas.size === 0) return undefined;
+
+  return sortMesas(Array.from(mesas.values()));
+};
+
+const mergeEstablecimientoCard = (
+  existing: EstablecimientoCard,
+  incoming: Omit<EstablecimientoCard, 'id'>,
+): EstablecimientoCard => ({
+  ...existing,
+  nombre: existing.nombre ?? incoming.nombre,
+  direccion: existing.direccion ?? incoming.direccion,
+  mapsQuery: existing.mapsQuery ?? incoming.mapsQuery,
+  mapsUrl: existing.mapsUrl ?? incoming.mapsUrl,
+  fiscalGeneral: existing.fiscalGeneral ?? incoming.fiscalGeneral,
+  telefono: existing.telefono ?? incoming.telefono,
+  fiscalesGenerales: mergeRoleContacts(existing.fiscalesGenerales, incoming.fiscalesGenerales),
+  mesas: mergeMesasResumen(existing.mesas, incoming.mesas),
+});
+
 type MesaSummaryAccumulator = {
   numero?: string;
   esMesaTestigo: boolean;
@@ -326,18 +430,14 @@ const buildEstablecimientoCard = (
       }
     });
     
-    mesas = Array.from(mesasMap.values())
-      .map((entry) => ({
+    mesas = sortMesas(
+      Array.from(mesasMap.values()).map((entry) => ({
         id: `mesa-${entry.numero}`,
         numero: entry.numero,
         esMesaTestigo: entry.esMesaTestigo ? true : undefined,
         fiscales: entry.fiscales.size > 0 ? Array.from(entry.fiscales) : undefined,
-      }))
-      .sort((a, b) => {
-        const aNum = a.numero ?? '';
-        const bNum = b.numero ?? '';
-        return aNum.localeCompare(bNum, undefined, { numeric: true, sensitivity: 'base' });
-      });
+      })),
+    );
   }
 
   const fiscalGeneral = stringFromKeys(record, ['nombre_fiscal_general']);
@@ -396,7 +496,10 @@ const collectEstablecimientos = (
   const card = buildEstablecimientoCard(value);
   if (card) {
     const key = `${(card.nombre ?? '').toLowerCase()}|${(card.direccion ?? '').toLowerCase()}`;
-    if (!results.has(key)) {
+    const existing = results.get(key);
+    if (existing) {
+      results.set(key, mergeEstablecimientoCard(existing, card));
+    } else {
       results.set(key, {
         id: key || `est-${results.size}`,
         ...card,
