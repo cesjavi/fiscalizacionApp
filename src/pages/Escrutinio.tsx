@@ -12,7 +12,7 @@ import {
   IonCardHeader,
   IonCardTitle,
 } from '@ionic/react';
-import { Button, Input } from '../components';
+import { Button, Input, NumericStepperInput } from '../components';
 import Layout from '../components/Layout';
 import { useHistory } from 'react-router-dom';
 import {
@@ -925,43 +925,43 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
 
         {/* Cards por lista */}
         {listas.map((l) => (
-  <IonCard
-    key={l.id}
-    className="text-20xl ion-margin-bottom shadow-sm border border-solid border-gray-200"
-  >
-    <IonCardHeader className="pb-0">
-      {/* Cabecera con nombre a la izquierda y número a la derecha */}
-      <div className="text-1xl flex items-start justify-between items-center">
-        <div>
-          <IonCardTitle className="text-xl font-semibold text-gray-900 leading-tight">
-            {l.numeroLista} - {l.lista}
-          </IonCardTitle>
-          {l.sigla && (
-            <IonNote
-              color="medium"
-              className="mt-1 block text-sm text-gray-600 uppercase tracking-wide"
-            >
-              {l.sigla}
-            </IonNote>
-          )}
-        </div>
+          <IonCard
+            key={l.id}
+            className="text-20xl ion-margin-bottom shadow-sm border border-solid border-gray-200"
+          >
+            <IonCardHeader className="pb-0">
+              {/* Cabecera con nombre a la izquierda y número a la derecha */}
+              <div className="text-1xl flex items-start justify-between items-center">
+                <div>
+                  <IonCardTitle className="text-xl font-semibold text-gray-900 leading-tight">
+                    {l.numeroLista} - {l.lista}
+                  </IonCardTitle>
+                  {l.sigla && (
+                    <IonNote
+                      color="medium"
+                      className="mt-1 block text-sm text-gray-600 uppercase tracking-wide"
+                    >
+                      {l.sigla}
+                    </IonNote>
+                  )}
+                </div>
+              </div>
+            </IonCardHeader>
 
-      </div>
-    </IonCardHeader>
-
-    <IonCardContent className="pt-4">
-      <IonItem lines="none" className="form-field ion-no-padding">
-        <Input
-          type="number"
-          value={valores[l.id] || ''}
-          onIonChange={(e) => handleChange(l.id, e.detail.value ?? '')}
-          placeholder="Cantidad de votos"
-          aria-label={`Cantidad de votos para ${l.lista}`}
-        />
-      </IonItem>
-    </IonCardContent>
-  </IonCard>
-))}
+            <IonCardContent className="pt-4">
+              <IonItem lines="none" className="form-field ion-no-padding">
+                <div className="w-full">
+                  <NumericStepperInput
+                    value={valores[l.id] || ''}
+                    onValueChange={(nextValue) => handleChange(l.id, nextValue)}
+                    placeholder="Cantidad de votos"
+                    ariaLabel={`Cantidad de votos para ${l.lista}`}
+                  />
+                </div>
+              </IonItem>
+            </IonCardContent>
+          </IonCard>
+        ))}
 
 
         {/* Campos especiales: se dejan igual */}
@@ -971,17 +971,17 @@ const Gap: React.FC<{ h?: number }> = ({ h = 8 }) => <div style={{ height: h }} 
               {ESPECIALES_DETALLE[key].nombre}
             </IonLabel>
             <div style={{ height: 6 }} />
-            <Input
-              type="number"
+            <NumericStepperInput
               value={valores[key] || ''}
-              onIonChange={(e) => handleChange(key, e.detail.value ?? '')}
+              onValueChange={(nextValue) => handleChange(key, nextValue)}
               placeholder={`Cantidad - ${ESPECIALES_DETALLE[key].nombre}`}
+              ariaLabel={`Cantidad de votos para ${ESPECIALES_DETALLE[key].nombre}`}
             />
           </IonItem>
         ))}
 
         <Button
-        style={{ paddingBottom: '120px' }}
+          style={{ paddingBottom: '120px' }}
           expand="block"
           className="ion-margin-top"
           onClick={handleSubmit}
