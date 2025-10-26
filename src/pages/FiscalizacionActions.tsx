@@ -73,8 +73,10 @@ type EstablecimientoCard = {
   nombre?: string;
   direccion?: string;
   mapsQuery?: string;
+  mapsUrl?: string;
   fiscalGeneral?: string;
   telefono?: string;
+  fiscalesGenerales?: RoleContact[];
   mesas?: MesaResumen[];
 };
 
@@ -206,9 +208,16 @@ const extractCoords = (
 
   const lat = toNumber(value['lat'] ?? value['latitude'] ?? value['latitud']);
   const lng = toNumber(value['lng'] ?? value['lon'] ?? value['longitude'] ?? value['longitud']);
-  
+
   if (lat !== undefined && lng !== undefined) {
     return { lat, lng };
+  }
+
+  if (isRecord(value)) {
+    for (const nested of Object.values(value)) {
+      const coords = extractCoords(nested, visited);
+      if (coords) return coords;
+    }
   }
 
   return undefined;
@@ -296,6 +305,10 @@ const buildEstablecimientoCard = (
     ? `${coords.lat},${coords.lng}`
     : [nombre, direccion].filter(Boolean).join(' ');
 
+  const mapsUrl = mapsQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
+    : undefined;
+
   if (!nombre && !direccion) {
     return undefined;
   }
@@ -330,12 +343,35 @@ const buildEstablecimientoCard = (
   const fiscalGeneral = stringFromKeys(record, ['nombre_fiscal_general']);
   const telefono = stringFromKeys(record, ['telefono_fg', 'telefono']);
 
+  const fiscalesGeneralesRaw = record['fg_asignado'];
+  const fiscalesGenerales = Array.isArray(fiscalesGeneralesRaw)
+    ? fiscalesGeneralesRaw.reduce<RoleContact[]>((acc, value) => {
+        if (!isRecord(value)) return acc;
+        const apellidos = str(value['apellidos_miembro'] ?? value['apellidos']);
+        const nombres = str(value['nombres_miembro'] ?? value['nombres']);
+        const telefonoFiscal = stringFromKeys(value, PHONE_KEYS);
+
+        const nombreCompleto =
+          apellidos && nombres ? `${apellidos}, ${nombres}` : apellidos || nombres;
+
+        if (!nombreCompleto && !telefonoFiscal) return acc;
+
+        acc.push({
+          nombre: nombreCompleto,
+          telefono: telefonoFiscal,
+        });
+        return acc;
+      }, [])
+    : undefined;
+
   return {
     nombre,
     direccion,
     mapsQuery: mapsQuery || undefined,
+    mapsUrl,
     fiscalGeneral,
     telefono,
+    fiscalesGenerales,
     mesas: mesas.length > 0 ? mesas : undefined,
   };
 };
@@ -743,10 +779,54 @@ const FiscalizacionActions: React.FC = () => {
             ) : (
               establecimientosAsignados.map((est) => {
                 const mesas = sanitizeMesas(est.mesas);
+                const fiscalesGenerales = est.fiscalesGenerales ?? [];
+                const fallbackFiscal = est.fiscalGeneral
+                  ? [{ nombre: est.fiscalGeneral, telefono: est.telefono }]
+                  : [];
+                const contactos =
+                  fiscalesGenerales.length > 0
+                    ? fiscalesGenerales
+                    : fallbackFiscal.filter((contacto) => contacto.nombre || contacto.telefono);
+
                 return (
                   <div key={est.id} className="rounded-lg border p-4 space-y-3">
                     {est.nombre && <p className="font-semibold">{est.nombre}</p>}
                     {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
+
+                    {contactos.length > 0 && (
+                      <div className="rounded-md bg-gray-50 p-3 text-sm">
+                        <p className="text-xs font-semibold uppercase text-gray-500 tracking-wide">
+                          Fiscal general asignado
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {contactos.map((contacto, index) => (
+                            <li key={index} className="flex flex-col text-sm">
+                              {contacto.nombre && <span className="font-medium">{contacto.nombre}</span>}
+                              {contacto.telefono && (
+                                <a
+                                  href={`tel:${contacto.telefono.replace(/\s+/g, '')}`}
+                                  className="text-xs text-blue-600 underline"
+                                >
+                                  {contacto.telefono}
+                                </a>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {est.mapsUrl && (
+                      <a
+                        href={est.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 underline"
+                      >
+                        Ver en Google Maps
+                      </a>
+                    )}
+
                     {mesas.length > 0 ? (
                       <div className="space-y-2">
                         {mesas.map((mesa) => {
