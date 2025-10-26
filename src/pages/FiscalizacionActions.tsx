@@ -404,6 +404,12 @@ const buildEstablecimientoCard = (
 ): Omit<EstablecimientoCard, 'id'> | undefined => {
   const nombre = stringFromKeys(record, ESTABLECIMIENTO_NAME_KEYS);
   const direccion = stringFromKeys(record, DIRECCION_KEYS);
+  
+  // Si no tiene nombre ni dirección, no es un establecimiento válido
+  if (!nombre && !direccion) {
+    return undefined;
+  }
+
   const coords = extractCoords(record);
   const mapsQuery = coords
     ? `${coords.lat},${coords.lng}`
@@ -412,10 +418,6 @@ const buildEstablecimientoCard = (
   const mapsUrl = mapsQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
     : undefined;
-
-  if (!nombre && !direccion) {
-    return undefined;
-  }
 
   const mesasRaw = record['mesas'];
   let mesas: MesaResumen[] = [];
@@ -493,20 +495,37 @@ const collectEstablecimientos = (
 
   if (!isRecord(value)) return;
 
-  const card = buildEstablecimientoCard(value);
-  if (card) {
-    const key = `${(card.nombre ?? '').toLowerCase()}|${(card.direccion ?? '').toLowerCase()}`;
-    const existing = results.get(key);
-    if (existing) {
-      results.set(key, mergeEstablecimientoCard(existing, card));
-    } else {
-      results.set(key, {
-        id: key || `est-${results.size}`,
-        ...card,
-      });
+  // Solo procesar si tiene nombre O dirección de establecimiento
+  const hasEstablecimientoData = ESTABLECIMIENTO_NAME_KEYS.some(key => {
+    const val = value[key];
+    return typeof val === 'string' && val.trim().length > 0;
+  }) || DIRECCION_KEYS.some(key => {
+    const val = value[key];
+    return typeof val === 'string' && val.trim().length > 0;
+  });
+
+  if (hasEstablecimientoData) {
+    const card = buildEstablecimientoCard(value);
+    if (card && (card.nombre || card.direccion)) {
+      // Usar nombre y dirección como clave única
+      const key = `${(card.nombre ?? '').toLowerCase().trim()}|${(card.direccion ?? '').toLowerCase().trim()}`;
+      
+      // Solo agregar si la clave tiene contenido real
+      if (key !== '|') {
+        const existing = results.get(key);
+        if (existing) {
+          results.set(key, mergeEstablecimientoCard(existing, card));
+        } else {
+          results.set(key, {
+            id: key || `est-${results.size}`,
+            ...card,
+          });
+        }
+      }
     }
   }
 
+  // Continuar buscando recursivamente en objetos anidados
   for (const nested of Object.values(value)) {
     if (nested && typeof nested === 'object') {
       collectEstablecimientos(nested, results, visited);
@@ -950,45 +969,6 @@ const FiscalizacionActions: React.FC = () => {
                       >
                         Ver en Google Maps
                       </a>
-                    )}
-
-                    {mesas.length > 0 ? (
-                      <div className="space-y-2">
-                        {mesas.map((mesa) => {
-                          const numero =
-                            typeof mesa.numero === 'number'
-                              ? String(mesa.numero)
-                              : typeof mesa.numero === 'string'
-                              ? mesa.numero
-                              : undefined;
-                          const mesaLabel = numero ? `Mesa ${numero}` : 'Mesa asignada';
-                          return (
-                            <div key={mesa.id} className="rounded-md border p-3">
-                              <div className="flex items-center justify-between">
-                                <p className="font-semibold text-sm">{mesaLabel}</p>
-                                {mesa.esMesaTestigo && (
-                                  <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                                    TESTIGO
-                                  </span>
-                                )}
-                              </div>
-                              {mesa.fiscales?.length ? (
-                                <ul className="mt-2 space-y-1">
-                                  {mesa.fiscales.map((f, i) => (
-                                    <li key={i} className="text-xs">• {f}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-xs text-gray-500 italic mt-2">Sin fiscal asignado</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500 italic">
-                        No hay mesas registradas para este establecimiento.
-                      </p>
                     )}
                   </div>
                 );
