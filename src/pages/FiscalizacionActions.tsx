@@ -73,8 +73,10 @@ type EstablecimientoCard = {
   nombre?: string;
   direccion?: string;
   mapsQuery?: string;
+  mapsUrl?: string;
   fiscalGeneral?: string;
   telefono?: string;
+  fiscalesGenerales?: RoleContact[];
   mesas?: MesaResumen[];
 };
 
@@ -95,11 +97,131 @@ type RoleContact = {
   telefono?: string;
 };
 
+const sortMesas = (mesas: MesaResumen[]): MesaResumen[] =>
+  [...mesas].sort((a, b) => {
+    const aNum = a.numero ?? '';
+    const bNum = b.numero ?? '';
+    return aNum.localeCompare(bNum, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+const mergeRoleContacts = (
+  existing?: RoleContact[],
+  incoming?: RoleContact[],
+): RoleContact[] | undefined => {
+  if ((!existing || existing.length === 0) && (!incoming || incoming.length === 0)) {
+    return undefined;
+  }
+
+  const byKey = new Map<string, RoleContact>();
+
+  const addContact = (contact?: RoleContact) => {
+    if (!contact) return;
+    const nombre = contact.nombre?.trim();
+    const telefono = contact.telefono?.trim();
+    if (!nombre && !telefono) return;
+
+    const key = `${nombre ?? ''}|${telefono ?? ''}`.toLowerCase();
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, { nombre, telefono });
+      return;
+    }
+
+    byKey.set(key, {
+      nombre: prev.nombre ?? nombre,
+      telefono: prev.telefono ?? telefono,
+    });
+  };
+
+  (existing ?? []).forEach(addContact);
+  (incoming ?? []).forEach(addContact);
+
+  return byKey.size > 0 ? Array.from(byKey.values()) : undefined;
+};
+
+const mergeMesasResumen = (
+  existing?: MesaResumen[],
+  incoming?: MesaResumen[],
+): MesaResumen[] | undefined => {
+  if ((!existing || existing.length === 0) && (!incoming || incoming.length === 0)) {
+    return undefined;
+  }
+
+  const mesas = new Map<string, MesaResumen>();
+
+  const addMesa = (mesa?: MesaResumen) => {
+    if (!mesa) return;
+    const key = (mesa.numero ?? mesa.id).toString().toLowerCase();
+    const current = mesas.get(key);
+
+    if (!current) {
+      mesas.set(key, {
+        ...mesa,
+        fiscales: mesa.fiscales ? [...mesa.fiscales] : undefined,
+      });
+      return;
+    }
+
+    const fiscales = new Set<string>();
+    (current.fiscales ?? []).forEach((f) => {
+      if (f.trim()) fiscales.add(f.trim());
+    });
+    (mesa.fiscales ?? []).forEach((f) => {
+      if (f.trim()) fiscales.add(f.trim());
+    });
+
+    mesas.set(key, {
+      ...current,
+      ...mesa,
+      esMesaTestigo: Boolean(current.esMesaTestigo || mesa.esMesaTestigo),
+      fiscales: fiscales.size > 0 ? Array.from(fiscales) : undefined,
+    });
+  };
+
+  (existing ?? []).forEach(addMesa);
+  (incoming ?? []).forEach(addMesa);
+
+  if (mesas.size === 0) return undefined;
+
+  return sortMesas(Array.from(mesas.values()));
+};
+
+const mergeEstablecimientoCard = (
+  existing: EstablecimientoCard,
+  incoming: Omit<EstablecimientoCard, 'id'>,
+): EstablecimientoCard => ({
+  ...existing,
+  nombre: existing.nombre ?? incoming.nombre,
+  direccion: existing.direccion ?? incoming.direccion,
+  mapsQuery: existing.mapsQuery ?? incoming.mapsQuery,
+  mapsUrl: existing.mapsUrl ?? incoming.mapsUrl,
+  fiscalGeneral: existing.fiscalGeneral ?? incoming.fiscalGeneral,
+  telefono: existing.telefono ?? incoming.telefono,
+  fiscalesGenerales: mergeRoleContacts(existing.fiscalesGenerales, incoming.fiscalesGenerales),
+  mesas: mergeMesasResumen(existing.mesas, incoming.mesas),
+});
+
 type MesaSummaryAccumulator = {
   numero?: string;
   esMesaTestigo: boolean;
   fiscales: Set<string>;
 };
+
+const sanitizeMesas = (mesas?: MesaResumen[]): MesaResumen[] =>
+  (mesas ?? [])
+    .map((mesa) => ({
+      ...mesa,
+      numero: typeof mesa.numero === 'string' ? mesa.numero.trim() || undefined : mesa.numero,
+      fiscales:
+        Array.isArray(mesa.fiscales) && mesa.fiscales.length > 0
+          ? Array.from(new Set(mesa.fiscales.map((f) => f.trim()).filter(Boolean)))
+          : undefined,
+    }))
+    .filter((mesa) => {
+      const hasNumero = typeof mesa.numero === 'string' ? mesa.numero.trim().length > 0 : Boolean(mesa.numero);
+      const hasFiscales = Array.isArray(mesa.fiscales) && mesa.fiscales.length > 0;
+      return hasNumero || hasFiscales;
+    });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -190,9 +312,16 @@ const extractCoords = (
 
   const lat = toNumber(value['lat'] ?? value['latitude'] ?? value['latitud']);
   const lng = toNumber(value['lng'] ?? value['lon'] ?? value['longitude'] ?? value['longitud']);
-  
+
   if (lat !== undefined && lng !== undefined) {
     return { lat, lng };
+  }
+
+  if (isRecord(value)) {
+    for (const nested of Object.values(value)) {
+      const coords = extractCoords(nested, visited);
+      if (coords) return coords;
+    }
   }
 
   return undefined;
@@ -280,6 +409,10 @@ const buildEstablecimientoCard = (
     ? `${coords.lat},${coords.lng}`
     : [nombre, direccion].filter(Boolean).join(' ');
 
+  const mapsUrl = mapsQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
+    : undefined;
+
   if (!nombre && !direccion) {
     return undefined;
   }
@@ -297,29 +430,48 @@ const buildEstablecimientoCard = (
       }
     });
     
-    mesas = Array.from(mesasMap.values())
-      .map((entry) => ({
+    mesas = sortMesas(
+      Array.from(mesasMap.values()).map((entry) => ({
         id: `mesa-${entry.numero}`,
         numero: entry.numero,
         esMesaTestigo: entry.esMesaTestigo ? true : undefined,
         fiscales: entry.fiscales.size > 0 ? Array.from(entry.fiscales) : undefined,
-      }))
-      .sort((a, b) => {
-        const aNum = a.numero ?? '';
-        const bNum = b.numero ?? '';
-        return aNum.localeCompare(bNum, undefined, { numeric: true, sensitivity: 'base' });
-      });
+      })),
+    );
   }
 
   const fiscalGeneral = stringFromKeys(record, ['nombre_fiscal_general']);
   const telefono = stringFromKeys(record, ['telefono_fg', 'telefono']);
 
+  const fiscalesGeneralesRaw = record['fg_asignado'];
+  const fiscalesGenerales = Array.isArray(fiscalesGeneralesRaw)
+    ? fiscalesGeneralesRaw.reduce<RoleContact[]>((acc, value) => {
+        if (!isRecord(value)) return acc;
+        const apellidos = str(value['apellidos_miembro'] ?? value['apellidos']);
+        const nombres = str(value['nombres_miembro'] ?? value['nombres']);
+        const telefonoFiscal = stringFromKeys(value, PHONE_KEYS);
+
+        const nombreCompleto =
+          apellidos && nombres ? `${apellidos}, ${nombres}` : apellidos || nombres;
+
+        if (!nombreCompleto && !telefonoFiscal) return acc;
+
+        acc.push({
+          nombre: nombreCompleto,
+          telefono: telefonoFiscal,
+        });
+        return acc;
+      }, [])
+    : undefined;
+
   return {
     nombre,
     direccion,
     mapsQuery: mapsQuery || undefined,
+    mapsUrl,
     fiscalGeneral,
     telefono,
+    fiscalesGenerales,
     mesas: mesas.length > 0 ? mesas : undefined,
   };
 };
@@ -344,7 +496,10 @@ const collectEstablecimientos = (
   const card = buildEstablecimientoCard(value);
   if (card) {
     const key = `${(card.nombre ?? '').toLowerCase()}|${(card.direccion ?? '').toLowerCase()}`;
-    if (!results.has(key)) {
+    const existing = results.get(key);
+    if (existing) {
+      results.set(key, mergeEstablecimientoCard(existing, card));
+    } else {
       results.set(key, {
         id: key || `est-${results.size}`,
         ...card,
@@ -428,7 +583,7 @@ const FiscalizacionActions: React.FC = () => {
     [fiscalData],
   );
 
-  const canViewEstablecimientos = useMemo(
+  const canViewAssignments = useMemo(
     () => isFiscalGeneral || isFiscalZonal,
     [isFiscalGeneral, isFiscalZonal],
   );
@@ -580,16 +735,26 @@ const FiscalizacionActions: React.FC = () => {
     localStorage.setItem('fotoActa', preview);
   };
 
-  const handleOpenMesasForEstablecimiento = useCallback((card: EstablecimientoCard) => {
-    setMesasModalState({
-      title: card.nombre ? `Mesas de ${card.nombre}` : 'Mesas del establecimiento',
-      groups: [{
-        establecimiento: card,
-        mesas: card.mesas ?? [],
-      }],
-      emptyMessage: 'No hay mesas registradas para este establecimiento.',
-    });
-  }, []);
+  const handleOpenAssignments = useCallback(() => {
+    if (isFiscalGeneral) {
+      const groups = establecimientosAsignados
+        .map((establecimiento) => ({
+          establecimiento,
+          mesas: sanitizeMesas(establecimiento.mesas),
+        }))
+        .filter((group) => group.mesas.length > 0);
+
+      setMesasModalState({
+        title: 'Mesas asignadas',
+        groups,
+        emptyMessage: 'No hay mesas registradas para este establecimiento.',
+        noGroupsMessage: 'No hay mesas registradas para tus establecimientos asignados.',
+      });
+      return;
+    }
+
+    setShowEstablecimientosModal(true);
+  }, [establecimientosAsignados, isFiscalGeneral, setMesasModalState, setShowEstablecimientosModal]);
 
   const coords = useMemo<{ lat: number; lng: number } | undefined>(() => {
     const fd = (fiscalData as unknown as FiscalDataGeo) || null;
@@ -666,9 +831,9 @@ const FiscalizacionActions: React.FC = () => {
             Escrutinio
           </Button>
 
-          {canViewEstablecimientos && (
-            <Button className="w-full" onClick={() => setShowEstablecimientosModal(true)}>
-              Ver Mesas
+          {canViewAssignments && (
+            <Button className="w-full" onClick={handleOpenAssignments}>
+              {isFiscalGeneral ? 'Ver Mesas' : 'Ver Establecimientos'}
             </Button>
           )}
         </div>
@@ -715,15 +880,119 @@ const FiscalizacionActions: React.FC = () => {
             {establecimientosAsignados.length === 0 ? (
               <p className="text-sm text-gray-500">No hay establecimientos asignados.</p>
             ) : (
-              establecimientosAsignados.map((est) => (
-                <div key={est.id} className="rounded-lg border p-4">
-                  {est.nombre && <p className="font-semibold">{est.nombre}</p>}
-                  {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
-                  <Button size="small" className="mt-2 w-full" onClick={() => handleOpenMesasForEstablecimiento(est)}>
-                    Ver Mesas
-                  </Button>
-                </div>
-              ))
+              establecimientosAsignados.map((est) => {
+                const mesas = sanitizeMesas(est.mesas);
+                const fiscalesGenerales = est.fiscalesGenerales ?? [];
+                const fallbackFiscal = est.fiscalGeneral
+                  ? [{ nombre: est.fiscalGeneral, telefono: est.telefono }]
+                  : [];
+                const contactos =
+                  fiscalesGenerales.length > 0
+                    ? fiscalesGenerales
+                    : fallbackFiscal.filter((contacto) => contacto.nombre || contacto.telefono);
+
+                return (
+                  <div key={est.id} className="rounded-lg border p-4 space-y-3">
+                    {est.nombre && <p className="font-semibold">{est.nombre}</p>}
+                    {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setShowEstablecimientosModal(false);
+                          setMesasModalState({
+                            title: est.nombre ? `Mesas de ${est.nombre}` : 'Mesas del establecimiento',
+                            groups: [
+                              {
+                                establecimiento: est,
+                                mesas,
+                              },
+                            ],
+                            emptyMessage: 'No hay mesas registradas para este establecimiento.',
+                            noGroupsMessage: 'No hay mesas registradas para este establecimiento.',
+                          });
+                        }}
+                      >
+                        Mesas
+                      </Button>
+                    </div>
+
+                    {contactos.length > 0 && (
+                      <div className="rounded-md bg-gray-50 p-3 text-sm">
+                        <p className="text-xs font-semibold uppercase text-gray-500 tracking-wide">
+                          Fiscal general asignado
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {contactos.map((contacto, index) => (
+                            <li key={index} className="flex flex-col text-sm">
+                              {contacto.nombre && <span className="font-medium">{contacto.nombre}</span>}
+                              {contacto.telefono && (
+                                <a
+                                  href={`tel:${contacto.telefono.replace(/\s+/g, '')}`}
+                                  className="text-xs text-blue-600 underline"
+                                >
+                                  {contacto.telefono}
+                                </a>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {est.mapsUrl && (
+                      <a
+                        href={est.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 underline"
+                      >
+                        Ver en Google Maps
+                      </a>
+                    )}
+
+                    {mesas.length > 0 ? (
+                      <div className="space-y-2">
+                        {mesas.map((mesa) => {
+                          const numero =
+                            typeof mesa.numero === 'number'
+                              ? String(mesa.numero)
+                              : typeof mesa.numero === 'string'
+                              ? mesa.numero
+                              : undefined;
+                          const mesaLabel = numero ? `Mesa ${numero}` : 'Mesa asignada';
+                          return (
+                            <div key={mesa.id} className="rounded-md border p-3">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold text-sm">{mesaLabel}</p>
+                                {mesa.esMesaTestigo && (
+                                  <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                    TESTIGO
+                                  </span>
+                                )}
+                              </div>
+                              {mesa.fiscales?.length ? (
+                                <ul className="mt-2 space-y-1">
+                                  {mesa.fiscales.map((f, i) => (
+                                    <li key={i} className="text-xs">• {f}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-xs text-gray-500 italic mt-2">Sin fiscal asignado</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500 italic">
+                        No hay mesas registradas para este establecimiento.
+                      </p>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </IonContent>
@@ -738,31 +1007,67 @@ const FiscalizacionActions: React.FC = () => {
                 Cerrar
               </Button>
             </div>
-            {mesasModalState?.groups.map((group) => (
-              <div key={group.establecimiento.id}>
-                {group.mesas.filter(m => m.numero && /^\d{4}$/.test(m.numero)).map((mesa) => (
-                  <div key={mesa.id} className="rounded-md border p-3 mb-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold">Mesa {mesa.numero}</p>
-                      {mesa.esMesaTestigo && (
-                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
-                          TESTIGO
-                        </span>
-                      )}
-                    </div>
-                    {mesa.fiscales?.length ? (
-                      <ul className="mt-2 space-y-1">
-                        {mesa.fiscales.map((f, i) => (
-                          <li key={i} className="text-sm">• {f}</li>
-                        ))}
-                      </ul>
+            {mesasModalState?.groups && mesasModalState.groups.length > 0 ? (
+              mesasModalState.groups.map((group) => {
+                const mesas = group.mesas;
+                return (
+                  <div key={group.establecimiento.id} className="space-y-3">
+                    {(group.establecimiento.nombre || group.establecimiento.direccion) && (
+                      <div>
+                        {group.establecimiento.nombre && (
+                          <p className="font-semibold text-sm">{group.establecimiento.nombre}</p>
+                        )}
+                        {group.establecimiento.direccion && (
+                          <p className="text-xs text-gray-500">{group.establecimiento.direccion}</p>
+                        )}
+                      </div>
+                    )}
+                    {mesas.length > 0 ? (
+                      mesas.map((mesa) => {
+                        const numero =
+                          typeof mesa.numero === 'number'
+                            ? String(mesa.numero)
+                            : typeof mesa.numero === 'string'
+                            ? mesa.numero
+                            : undefined;
+                        const mesaLabel = numero ? `Mesa ${numero}` : 'Mesa asignada';
+                        return (
+                          <div key={mesa.id} className="rounded-md border p-3">
+                            <div className="flex items-center justify-between">
+                              <p className="font-semibold">{mesaLabel}</p>
+                              {mesa.esMesaTestigo && (
+                                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                                  TESTIGO
+                                </span>
+                              )}
+                            </div>
+                            {mesa.fiscales?.length ? (
+                              <ul className="mt-2 space-y-1">
+                                {mesa.fiscales.map((f, i) => (
+                                  <li key={i} className="text-sm">• {f}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-500 mt-2 italic">Sin fiscal asignado</p>
+                            )}
+                          </div>
+                        );
+                      })
                     ) : (
-                      <p className="text-sm text-gray-500 mt-2 italic">Sin fiscal asignado</p>
+                      <p className="text-sm text-gray-500 italic">
+                        {mesasModalState?.emptyMessage ?? 'No hay mesas registradas para este establecimiento.'}
+                      </p>
                     )}
                   </div>
-                ))}
-              </div>
-            ))}
+                );
+              })
+            ) : (
+              <p className="text-sm text-gray-500">
+                {mesasModalState?.noGroupsMessage ??
+                  mesasModalState?.emptyMessage ??
+                  'No hay mesas disponibles.'}
+              </p>
+            )}
           </div>
         </IonContent>
       </IonModal>
