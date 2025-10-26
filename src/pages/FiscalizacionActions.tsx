@@ -506,7 +506,7 @@ const collectEstablecimientos = (
 
   if (hasEstablecimientoData) {
     const card = buildEstablecimientoCard(value);
-    if (card && (card.nombre || card.direccion)) {
+    if (card && (card.nombre && card.direccion)) {
       // Usar nombre y dirección como clave única
       const key = `${(card.nombre ?? '').toLowerCase().trim()}|${(card.direccion ?? '').toLowerCase().trim()}`;
       
@@ -538,7 +538,21 @@ const extractEstablecimientos = (data?: FiscalData | null): EstablecimientoCard[
 
   const visited = new Set<unknown>();
   const results = new Map<string, EstablecimientoCard>();
-  collectEstablecimientos(data, results, visited);
+  
+  // Buscar específicamente en zonaEleccion.establecimientos
+  if (isRecord(data)) {
+    const zonaEleccion = data['zonaEleccion'];
+    if (isRecord(zonaEleccion)) {
+      const establecimientos = zonaEleccion['establecimientos'];      
+      if (Array.isArray(establecimientos)) {
+        establecimientos.forEach((est) => {          
+          if (est && typeof est === 'object') {
+            collectEstablecimientos(est, results, visited);            
+          }
+        });
+      }
+    }
+  }
 
   return Array.from(results.values());
 };
@@ -919,7 +933,6 @@ const FiscalizacionActions: React.FC = () => {
                       <Button
                         size="small"
                         onClick={() => {
-                          setShowEstablecimientosModal(false);
                           setMesasModalState({
                             title: est.nombre ? `Mesas de ${est.nombre}` : 'Mesas del establecimiento',
                             groups: [
@@ -978,12 +991,18 @@ const FiscalizacionActions: React.FC = () => {
         </IonContent>
       </IonModal>
 
-      <IonModal isOpen={mesasModalState !== null} onDidDismiss={() => setMesasModalState(null)}>
+      <IonModal isOpen={mesasModalState !== null} onDidDismiss={() => {
+        setMesasModalState(null);
+        setShowEstablecimientosModal(true);
+      }}>
         <IonContent className="ion-padding">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{mesasModalState?.title ?? 'Mesas'}</h2>
-              <Button size="small" onClick={() => setMesasModalState(null)}>
+              <Button size="small" onClick={() => {
+                setMesasModalState(null);
+                setShowEstablecimientosModal(true);
+              }}>
                 Cerrar
               </Button>
             </div>
@@ -1012,7 +1031,11 @@ const FiscalizacionActions: React.FC = () => {
                             : undefined;
                         const mesaLabel = numero ? `Mesa ${numero}` : 'Mesa asignada';
                         return (
-                          <div key={mesa.id} className="rounded-md border p-3">
+                          <div 
+                            key={mesa.id} 
+                            className="rounded-md border p-3"
+                            style={mesa.esMesaTestigo ? { backgroundColor: '#fee2e2' } : undefined}
+                          >
                             <div className="flex items-center justify-between">
                               <p className="font-semibold">{mesaLabel}</p>
                               {mesa.esMesaTestigo && (
