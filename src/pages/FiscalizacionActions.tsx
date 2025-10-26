@@ -896,6 +896,28 @@ const FiscalizacionActions: React.FC = () => {
                     {est.nombre && <p className="font-semibold">{est.nombre}</p>}
                     {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
 
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setShowEstablecimientosModal(false);
+                          setMesasModalState({
+                            title: est.nombre ? `Mesas de ${est.nombre}` : 'Mesas del establecimiento',
+                            groups: [
+                              {
+                                establecimiento: est,
+                                mesas,
+                              },
+                            ],
+                            emptyMessage: 'No hay mesas registradas para este establecimiento.',
+                            noGroupsMessage: 'No hay mesas registradas para este establecimiento.',
+                          });
+                        }}
+                      >
+                        Mesas
+                      </Button>
+                    </div>
+
                     {contactos.length > 0 && (
                       <div className="rounded-md bg-gray-50 p-3 text-sm">
                         <p className="text-xs font-semibold uppercase text-gray-500 tracking-wide">
