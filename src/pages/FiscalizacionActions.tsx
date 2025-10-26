@@ -444,7 +444,7 @@ const FiscalizacionActions: React.FC = () => {
     [fiscalData],
   );
 
-  const canViewEstablecimientos = useMemo(
+  const canViewAssignments = useMemo(
     () => isFiscalGeneral || isFiscalZonal,
     [isFiscalGeneral, isFiscalZonal],
   );
@@ -596,24 +596,6 @@ const FiscalizacionActions: React.FC = () => {
     localStorage.setItem('fotoActa', preview);
   };
 
-  const handleOpenMesasForEstablecimiento = useCallback((card: EstablecimientoCard) => {
-    const mesas = sanitizeMesas(card.mesas);
-    setMesasModalState({
-      title: card.nombre ? `Mesas de ${card.nombre}` : 'Mesas del establecimiento',
-      groups:
-        mesas.length > 0
-          ? [
-              {
-                establecimiento: card,
-                mesas,
-              },
-            ]
-          : [],
-      emptyMessage: 'No hay mesas registradas para este establecimiento.',
-      noGroupsMessage: 'No hay mesas registradas para este establecimiento.',
-    });
-  }, [setMesasModalState]);
-
   const handleOpenAssignments = useCallback(() => {
     if (isFiscalGeneral) {
       const groups = establecimientosAsignados
@@ -710,17 +692,10 @@ const FiscalizacionActions: React.FC = () => {
             Escrutinio
           </Button>
 
-          {canViewEstablecimientos && (
-            <>
-              <Button className="w-full" onClick={handleOpenAssignments}>
-                {isFiscalGeneral ? 'Ver Mesas' : 'Ver Establecimientos'}
-              </Button>
-              {isFiscalGeneral && (
-                <Button className="w-full" fill="outline" onClick={() => setShowEstablecimientosModal(true)}>
-                  Ver Establecimientos
-                </Button>
-              )}
-            </>
+          {canViewAssignments && (
+            <Button className="w-full" onClick={handleOpenAssignments}>
+              {isFiscalGeneral ? 'Ver Mesas' : 'Ver Establecimientos'}
+            </Button>
           )}
         </div>
 
@@ -766,15 +741,53 @@ const FiscalizacionActions: React.FC = () => {
             {establecimientosAsignados.length === 0 ? (
               <p className="text-sm text-gray-500">No hay establecimientos asignados.</p>
             ) : (
-              establecimientosAsignados.map((est) => (
-                <div key={est.id} className="rounded-lg border p-4">
-                  {est.nombre && <p className="font-semibold">{est.nombre}</p>}
-                  {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
-                  <Button size="small" className="mt-2 w-full" onClick={() => handleOpenMesasForEstablecimiento(est)}>
-                    Ver Mesas
-                  </Button>
-                </div>
-              ))
+              establecimientosAsignados.map((est) => {
+                const mesas = sanitizeMesas(est.mesas);
+                return (
+                  <div key={est.id} className="rounded-lg border p-4 space-y-3">
+                    {est.nombre && <p className="font-semibold">{est.nombre}</p>}
+                    {est.direccion && <p className="text-sm text-gray-600">{est.direccion}</p>}
+                    {mesas.length > 0 ? (
+                      <div className="space-y-2">
+                        {mesas.map((mesa) => {
+                          const numero =
+                            typeof mesa.numero === 'number'
+                              ? String(mesa.numero)
+                              : typeof mesa.numero === 'string'
+                              ? mesa.numero
+                              : undefined;
+                          const mesaLabel = numero ? `Mesa ${numero}` : 'Mesa asignada';
+                          return (
+                            <div key={mesa.id} className="rounded-md border p-3">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold text-sm">{mesaLabel}</p>
+                                {mesa.esMesaTestigo && (
+                                  <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                    TESTIGO
+                                  </span>
+                                )}
+                              </div>
+                              {mesa.fiscales?.length ? (
+                                <ul className="mt-2 space-y-1">
+                                  {mesa.fiscales.map((f, i) => (
+                                    <li key={i} className="text-xs">• {f}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-xs text-gray-500 italic mt-2">Sin fiscal asignado</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500 italic">
+                        No hay mesas registradas para este establecimiento.
+                      </p>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </IonContent>
